@@ -6,6 +6,7 @@ describe("CustomMove", () => {
 	test("uses a namespaced client-side id", () => {
 		expect(CustomMove.id("1234")).toBe("custom:1234")
 		expect(CustomMove.uuid("custom:1234")).toBe("1234")
+		expect(CustomMove.uuid("1234")).toBe("1234")
 		expect(CustomMove.isCustom("custom:1234")).toBe(true)
 		expect(CustomMove.isCustom("earthquake")).toBe(false)
 	})
