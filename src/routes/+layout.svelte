@@ -113,6 +113,12 @@
 		color: "blue",
 		icon: HitIcon,
 	}, {
+		id: "custom-moves",
+		href: Url.customMoves(),
+		name: "Custom Moves",
+		color: "blue",
+		icon: HitIcon,
+	}, {
 		id: "tms",
 		href: Url.tms(),
 		name: m["tmsSection.title"](),
