@@ -1,5 +1,4 @@
 import { browser } from "$app/environment"
-import type { Data } from "$lib/DataClass"
 import type { Move } from "$lib/moves/Move"
 import type { Fetched } from "$lib/site/stores"
 import { supabase } from "$lib/supabase"
