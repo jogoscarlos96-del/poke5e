@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { MovesStore as allMoves } from "./store"
+	import { CustomMove } from "./custom"
 	import { Url } from "$lib/site/url"
 
 	export let moves: string[]
 
 	const name = (m: string) => $allMoves.result?.find(it => it.id === m)?.name
+	const href = (m: string) => CustomMove.isCustom(m) ? Url.customMoves(m) : Url.moves(m)
 </script>
 
 {#if $allMoves.result !== undefined}
 	<ul>
 		{#each moves as move}
-			<li><a href="{Url.moves(move)}">{name(move)}</a></li>
+			<li><a href={href(move)}>{name(move)}</a></li>
 		{/each}
 	</ul>
 {:else}
