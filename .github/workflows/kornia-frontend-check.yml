@@ -1,0 +1,30 @@
+name: Kornia Frontend Checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-and-build:
+    name: Typecheck and Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PUBLIC_OFFLINE: false
+      PUBLIC_ANALYTICS_ENABLED: false
+      PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      PUBLIC_SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYXNlLWRlbW8iLCJyb2xlIjoiYW5vbiIsImV4cCI6MTk4MzgxMjk5Nn0.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      PUBLIC_USER_ASSETS_BASE_URL: http://127.0.0.1:9000/user-assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Svelte and TypeScript check
+        run: pnpm check
+      - name: Production build
+        run: pnpm build
