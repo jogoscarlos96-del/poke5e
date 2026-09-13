@@ -22,9 +22,9 @@
 	let canEdit = false
 	let copied: "view" | "edit" | undefined
 
-	$: selectedParam = $page.url.searchParams.get("id") ?? ""
+	$: selectedParam = browser ? ($page.url.searchParams.get("id") ?? "") : ""
 	$: selectedId = selectedParam ? CustomMove.id(CustomMove.uuid(selectedParam)) : ""
-	$: action = $page.url.searchParams.get("action") ?? ""
+	$: action = browser ? ($page.url.searchParams.get("action") ?? "") : ""
 	$: selected = $CustomMovesStore.result?.find((it) => it.id === selectedId)
 	$: isNew = action === "new"
 	$: isEditing = isNew || action === "edit"
@@ -228,7 +228,6 @@
 	.heading-row { justify-content: space-between; align-items: flex-start; }
 	.move-id { font-size: var(--font-sz-mars); opacity: 0.65; margin-top: -0.5rem; }
 	.access-box, .share-box { background: var(--skin-content); padding: 1rem; border-radius: 0.5rem; margin-block: 1rem; }
-	.access-row > :first-child { flex: 1; }
 	.share-row { margin-block: 0.5rem; align-items: flex-start; }
 	.share-row code { flex: 1; overflow-wrap: anywhere; padding: 0.5rem; background: var(--skin-input-bg); }
 	.warning, .error { color: var(--skin-danger-text, currentColor); font-weight: bold; }
