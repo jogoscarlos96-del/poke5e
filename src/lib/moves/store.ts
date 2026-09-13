@@ -2,9 +2,9 @@ import { derived, writable, type Readable } from "svelte/store"
 import type { Tm } from "./tms/Tm"
 import { TmDetails } from "./tms/TmDetails"
 import type { Fetched } from "$lib/site/stores"
-import { MovesStore } from "./MovesStore"
+import { MovesStore, OfficialMovesStore } from "./MovesStore"
 
-export { MovesStore }
+export { MovesStore, OfficialMovesStore }
 
 export const TmsStore: Readable<Fetched<Tm[]>> = derived(MovesStore, ({ result, fetching, error }) => ({
 	result: result
