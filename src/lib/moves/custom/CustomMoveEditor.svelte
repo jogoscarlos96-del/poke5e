@@ -4,7 +4,8 @@
 	import type { MoveDiceType } from "$lib/moves/dice/MoveDice"
 	import { PokemonType } from "$lib/pokemon/types"
 	import { Button } from "$lib/ui/elements"
-	import { IntField, MarkdownField, SelectField, TextField, type SelectFieldChangeEvent, type TextFieldChangeEvent } from "$lib/ui/forms"
+	import { IntField, MarkdownField, SelectField, TextField, type SelectFieldChangeEvent } from "$lib/ui/forms"
+	import type { TextFieldChangeEvent } from "$lib/ui/forms/TextField.svelte"
 	import { createEventDispatcher } from "svelte"
 
 	export let value: Move
