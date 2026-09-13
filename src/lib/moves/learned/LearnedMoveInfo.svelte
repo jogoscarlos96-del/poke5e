@@ -3,6 +3,7 @@
 	import type { Level } from "$lib/dnd/level"
 	import { MoveStatsInfo } from "$lib/moves"
 	import MoveDescription from "$lib/moves/MoveDescription.svelte"
+	import { CustomMove } from "$lib/moves/custom"
 	import type { Stab } from "$lib/pokemon/stab"
 	import type { PokemonType } from "$lib/pokemon/types"
 	import { currentEdition } from "$lib/site/edition"
@@ -38,6 +39,7 @@
 	} = $props()
 
 	const move = $derived($MovesStore.result?.find((it) => it.id === value.moveId))
+	const moveHref = $derived(CustomMove.isCustom(value.moveId) ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
 	const currentPp = $derived(value.pp.current)
 	const moveStats = $derived(move?.calculateMoveStats($currentEdition, {
 		attributes: attributes,
@@ -58,7 +60,7 @@
 	<div class="vstack space-after">
 		<div class="vstack bg-by-type rounded space-inner" style:--bg="var(--skin-{move.type}-bg)">
 			<div class="hrow space-after-tiny">
-				<span class="flex-span bold"><a href="{Url.moves(value.moveId)}">{move.name}</a></span>
+				<span class="flex-span bold"><a href={moveHref}>{move.name}</a></span>
 				<span class="pp">
 					<VisuallyHidden><label for="current-hp">{move.name} PP</label></VisuallyHidden>
 					<span class="current">
