@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { Attribute } from "$lib/dnd/attributes"
 	import type { Move } from "$lib/moves/Move"
+	import type { MoveDiceType } from "$lib/moves/dice/MoveDice"
 	import { PokemonType } from "$lib/pokemon/types"
 	import { Button } from "$lib/ui/elements"
-	import { IntField, MarkdownField, SelectField, TextField, type SelectFieldChangeEvent } from "$lib/ui/forms"
+	import { IntField, MarkdownField, SelectField, TextField, type SelectFieldChangeEvent, type TextFieldChangeEvent } from "$lib/ui/forms"
 	import { createEventDispatcher } from "svelte"
 
 	export let value: Move
@@ -21,11 +22,11 @@
 		{ value: "cha", name: "CHA" },
 	]
 
-	const typeOptions = PokemonType.list.map((type) => ({ name: type, value: type }))
-		.concat([
-			{ name: "Typeless", value: "typeless" },
-			{ name: "Varies", value: "varies" },
-		])
+	const typeOptions: { name: string, value: string }[] = [
+		...PokemonType.list.map((type) => ({ name: type, value: type })),
+		{ name: "Typeless", value: "typeless" },
+		{ name: "Varies", value: "varies" },
+	]
 
 	const timeOptions = [
 		{ name: "Action", value: "action" },
@@ -129,6 +130,23 @@
 		value = value
 	}
 
+	const changeDiceTier = (index: 0 | 1 | 2 | 3) => (event: TextFieldChangeEvent) => {
+		if (!value.data.dice) return
+		const tiers = [...value.data.dice.tiers]
+		tiers[index] = event.detail.value as typeof tiers[number]
+		value.data.dice = {
+			...value.data.dice,
+			tiers: tiers as unknown as typeof value.data.dice.tiers,
+		}
+		value = value
+	}
+
+	const changeDiceType = (event: SelectFieldChangeEvent) => {
+		if (!value.data.dice) return
+		value.data.dice = { ...value.data.dice, type: event.detail.value as MoveDiceType }
+		value = value
+	}
+
 	const submit = () => dispatch("save", { value })
 </script>
 
@@ -181,14 +199,14 @@
 		<label class="standalone"><input type="checkbox" checked={hasDice} on:change={toggleDice} {disabled} /> This move uses scalable dice</label>
 		{#if value.data.dice}
 			<div class="grid four">
-				<TextField label="Base" bind:value={value.data.dice.tiers[0]} {disabled} />
-				<TextField label="Level 5" bind:value={value.data.dice.tiers[1]} {disabled} />
-				<TextField label="Level 10" bind:value={value.data.dice.tiers[2]} {disabled} />
-				<TextField label="Level 17" bind:value={value.data.dice.tiers[3]} {disabled} />
+				<TextField label="Base" value={value.data.dice.tiers[0]} on:change={changeDiceTier(0)} {disabled} />
+				<TextField label="Level 5" value={value.data.dice.tiers[1]} on:change={changeDiceTier(1)} {disabled} />
+				<TextField label="Level 10" value={value.data.dice.tiers[2]} on:change={changeDiceTier(2)} {disabled} />
+				<TextField label="Level 17" value={value.data.dice.tiers[3]} on:change={changeDiceTier(3)} {disabled} />
 			</div>
 			<div class="grid two">
 				<TextField label="Modifier" bind:value={value.data.dice.modifier} placeholder="MOVE" {disabled} />
-				<SelectField label="Dice Purpose" options={diceTypeOptions} bind:value={value.data.dice.type} {disabled} />
+				<SelectField label="Dice Purpose" options={diceTypeOptions} value={value.data.dice.type} on:change={changeDiceType} {disabled} />
 			</div>
 		{/if}
 	</fieldset>
