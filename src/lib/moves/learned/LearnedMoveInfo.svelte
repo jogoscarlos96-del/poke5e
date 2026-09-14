@@ -26,6 +26,7 @@
 		stab,
 		pokemonType,
 		attributes,
+		attributeModifierMultiplier = 1,
 		editable = false,
 		onupdatepp,
 	}: {
@@ -34,6 +35,7 @@
 		stab: Stab,
 		pokemonType: PokemonType,
 		attributes: Attributes,
+		attributeModifierMultiplier?: number,
 		editable?: boolean,
 		onupdatepp: (value: number) => void,
 	} = $props()
@@ -46,6 +48,7 @@
 		level: level,
 		type: pokemonType.data,
 		stab: stab,
+		attributeModifierMultiplier,
 	}))
 
 	const attributeList = $derived(move?.power.attributeList())
