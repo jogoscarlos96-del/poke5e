@@ -1,7 +1,7 @@
 import { resolve } from "$app/paths"
 import { localizeUrl } from "$lib/site/i18n"
-import type { Edition } from "../editions"
-import type { ContestEffectJson, ContestEffectListJson } from "./schema"
+import type { Edition } from "$lib/srd/editions"
+import type { ContestEffectJson, ContestEffectListJson } from "$lib/srd/contest-effects/schema"
 
 export class ContestEffectsSrdClient {
 	constructor(readonly edition: Edition, private readonly customFetch = fetch) {}
