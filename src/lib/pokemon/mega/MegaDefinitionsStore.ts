@@ -22,6 +22,10 @@ type MegaMediaUploadResponse = {
 	sprite?: { filename: string, uploadUrl: string },
 }
 
+type UserAssetsResponse<T> = {
+	values: T,
+}
+
 const initial: Fetched<MegaDefinition[]> = {
 	result: undefined,
 	fetching: true,
@@ -139,24 +143,29 @@ async function updateMedia(id: string, media: MegaMediaInput): Promise<boolean> 
 		sizeInBytes: value.value.size,
 	} : undefined
 
-	const { data, error } = await supabase.functions.invoke<MegaMediaUploadResponse>("user-assets", {
-		method: "POST",
-		body: {
-			type: "mega-media",
-			params: {
-				id,
-				key: writeKey,
-				portrait: uploadParams(media.portrait),
-				sprite: uploadParams(media.sprite),
+	const hasNewPortrait = media.portrait?.type === "new"
+	const hasNewSprite = media.sprite?.type === "new"
+	if (hasNewPortrait || hasNewSprite) {
+		const { data, error } = await supabase.functions.invoke<UserAssetsResponse<MegaMediaUploadResponse>>("user-assets", {
+			method: "POST",
+			body: {
+				type: "mega-media",
+				params: {
+					id,
+					key: writeKey,
+					portrait: uploadParams(media.portrait),
+					sprite: uploadParams(media.sprite),
+				},
 			},
-		},
-	})
-	if (error) throw error
+		})
+		if (error) throw error
 
-	await Promise.all([
-		data?.portrait && media.portrait?.type === "new" ? userAssets.upload(data.portrait.uploadUrl, media.portrait.value) : undefined,
-		data?.sprite && media.sprite?.type === "new" ? userAssets.upload(data.sprite.uploadUrl, media.sprite.value) : undefined,
-	].filter((it): it is Promise<void> => it != null))
+		const uploads = data?.values
+		await Promise.all([
+			uploads?.portrait && media.portrait?.type === "new" ? userAssets.upload(uploads.portrait.uploadUrl, media.portrait.value) : undefined,
+			uploads?.sprite && media.sprite?.type === "new" ? userAssets.upload(uploads.sprite.uploadUrl, media.sprite.value) : undefined,
+		].filter((it): it is Promise<void> => it != null))
+	}
 
 	const removePortrait = media.portrait?.type === "remove"
 	const removeSprite = media.sprite?.type === "remove"
