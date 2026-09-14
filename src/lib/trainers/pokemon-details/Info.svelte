@@ -23,7 +23,7 @@
 	import { KnownAbilitiesInfo } from "$lib/pokemon/ability"
 	import DmInfo from "./DmInfo.svelte"
 	import { TagList, TagListInfo } from "$lib/poke5e/tags"
-	import { MegaEvolution, type MegaEvolutionState } from "$lib/pokemon/mega"
+	import { MegaEvolution, type MegaDefinition } from "$lib/pokemon/mega"
 
 	const dispatch = createEventDispatcher()
 
@@ -32,17 +32,15 @@
 	export let species: PokemonSpecies
 	export let editable: boolean
 	export let pokemonTags: TagList
-	export let megaState: MegaEvolutionState = MegaEvolution.empty()
+	export let megaDefinition: MegaDefinition | undefined = undefined
 	export let megaEligible = false
 
-	$: activeMegaForm = MegaEvolution.activeForm(megaState, megaEligible)
-	$: effectiveType = MegaEvolution.effectiveType(pokemon, megaState, megaEligible)
-	$: effectiveAbilities = MegaEvolution.effectiveAbilities(pokemon, megaState, megaEligible)
-	$: effectiveAc = MegaEvolution.effectiveAc(pokemon, megaState, megaEligible)
-	$: abilityModifierMultiplier = MegaEvolution.attributeModifierMultiplier(megaState, megaEligible)
-	$: megaAvatar = activeMegaForm?.imageUrl
-		? { name: `${activeMegaForm.name} portrait`, href: activeMegaForm.imageUrl }
-		: pokemon.avatar
+	$: activeMegaDefinition = megaEligible ? megaDefinition : undefined
+	$: effectiveType = MegaEvolution.effectiveType(pokemon, megaDefinition, megaEligible)
+	$: effectiveAbilities = MegaEvolution.effectiveAbilities(pokemon, megaDefinition, megaEligible)
+	$: effectiveAc = MegaEvolution.effectiveAc(pokemon, megaDefinition, megaEligible)
+	$: abilityModifierMultiplier = MegaEvolution.attributeModifierMultiplier(megaDefinition, megaEligible)
+	$: megaAvatar = activeMegaDefinition?.portrait ?? pokemon.avatar
 	$: hasImage = megaAvatar != null || species.media != null && species.media.hasAnyMedia()
 
 	const onUpdateHealth = (e: CustomEvent<HealthUpdateDetail>) => {
