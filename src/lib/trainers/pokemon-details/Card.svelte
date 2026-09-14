@@ -9,13 +9,29 @@
 	import TrainerPokemonActions from "./TrainerPokemonActions.svelte"
 	import { Url } from "$lib/site/url"
 	import { PageAction } from "../page-action"
+	import { EvolutionStore } from "$lib/pokemon/evolution"
+	import { MegaEvolution, MegaEvolutionControl, MegaEvolutionStore } from "$lib/pokemon/mega"
+	import { onMount } from "svelte"
 
 	export let trainer: TrainerStore
 	export let id: PokemonId
 
+	const evolutions = EvolutionStore.all()
+
 	$: canEdit = $trainer.update != null
 	$: pokemon = $trainer.pokemon.find((it) => it.id === id)
 	$: pokemonTags = $trainer.tags.getForPokemon()
+	$: megaState = pokemon ? ($MegaEvolutionStore[pokemon.id] ?? MegaEvolution.empty()) : MegaEvolution.empty()
+	$: evolutionDataReady = $evolutions != null
+	$: isFinalEvolution = pokemon != null && evolutionDataReady && ($evolutions?.evolvesTo(pokemon.pokemonId).length ?? 0) === 0
+	$: megaEligible = pokemon != null && MegaEvolution.eligibility(pokemon, isFinalEvolution, evolutionDataReady).eligible
+	$: effectiveType = pokemon ? MegaEvolution.effectiveType(pokemon, megaState, megaEligible) : undefined
+
+	onMount(() => {
+		if (pokemon) {
+			MegaEvolutionStore.refresh(pokemon.id, $trainer.info.readKey).catch(() => {})
+		}
+	})
 
 	const onUpdateHealth = (e: CustomEvent<TrainerPokemon>) => {
 		$trainer.update?.pokemon(e.detail, {
@@ -44,8 +60,11 @@
 	<RequirePokemon trainer={$trainer} {id}>
 		<WithSpecies let:species ids={[pokemon?.pokemonId]}>
 			<Card title={pokemon.nickname} dismissToHref="{Url.trainers($trainer.info.readKey, undefined, PageAction.fullList)}">
-				<TypeTag slot="header-extra" type={pokemon.type.data} />
-				<Info trainer={$trainer.info} {pokemon} {species} editable={canEdit} {pokemonTags} on:update-health={onUpdateHealth} on:update-pp={onUpdatePp} on:update-bond={onUpdateBond} on:update-tags={onUpdateTags} />
+				{#if effectiveType}<TypeTag slot="header-extra" type={effectiveType.data} />{/if}
+				{#if megaState.forms.length > 0}
+					<MegaEvolutionControl {pokemon} {species} {trainer} />
+				{/if}
+				<Info trainer={$trainer.info} {pokemon} {species} editable={canEdit} {pokemonTags} {megaState} {megaEligible} on:update-health={onUpdateHealth} on:update-pp={onUpdatePp} on:update-bond={onUpdateBond} on:update-tags={onUpdateTags} />
 				{#if canEdit}
 					<TrainerPokemonActions {trainer} {species} {pokemon} />
 				{/if}
