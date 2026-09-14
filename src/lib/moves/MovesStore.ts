@@ -44,6 +44,7 @@ export const MovesStore: Readable<Fetched<Move[]>> = derived(
 		const result = $official.result == null
 			? undefined
 			: [...$official.result, ...($custom.result ?? [])]
+				.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
 
 		return {
 			result,
