@@ -3,6 +3,8 @@ import { SupabaseClient } from "npm:@supabase/supabase-js@2"
 export type PokemonId = string
 export type TrainerWriteKey = string
 export type FakemonWriteKey = string
+export type MegaEvolutionId = string
+export type MegaEvolutionWriteKey = string
 
 export type FakemonMedia<T> = {
 	normalPortrait?: T,
@@ -29,6 +31,22 @@ export async function forEachFakemonMediaTypeAsync<T>(fn: (type: keyof FakemonMe
 	}), {})
 }
 
+export type MegaMedia<T> = {
+	portrait?: T,
+	sprite?: T,
+}
+const MegaMediaTypes = ["portrait", "sprite"] as const
+export function forEachMegaMediaType<T>(fn: (type: keyof MegaMedia<T>) => T): MegaMedia<T> {
+	return MegaMediaTypes.reduce((obj, type) => ({
+		...obj,
+		[type]: fn(type),
+	}), {})
+}
+export async function forEachMegaMediaTypeAsync<T>(fn: (type: keyof MegaMedia<T>) => Promise<T>): Promise<MegaMedia<T>> {
+	const values = await Promise.all(MegaMediaTypes.map(async (it) => ({ type: it, value: await fn(it) })))
+	return values.reduce((obj, { type, value }) => ({ ...obj, [type]: value }), {})
+}
+
 export class DataProvider {
 	constructor(private readonly supabase: SupabaseClient) {}
 
@@ -43,10 +61,7 @@ export class DataProvider {
 			_extension: "." + options.extension,
 		}).single<string>()
 
-		if (error) {
-			throw new Error(error.message)
-		}
-
+		if (error) throw new Error(error.message)
 		return filename
 	}
 
@@ -59,10 +74,7 @@ export class DataProvider {
 			_write_key: options.key,
 		}).single<number>()
 
-		if (error) {
-			throw new Error(error.message)
-		}
-
+		if (error) throw new Error(error.message)
 		return data > 0
 	}
 
@@ -82,9 +94,7 @@ export class DataProvider {
 			shiny_sprite_filename?: string,
 		}>()
 
-		if (error) {
-			throw new Error(error.message)
-		}
+		if (error) throw new Error(error.message)
 
 		return {
 			normalPortrait: data.normal_portrait_filename,
@@ -105,10 +115,40 @@ export class DataProvider {
 			_remove_shiny_sprite: options.shinySprite ?? false,
 		}).single<number>()
 
-		if (error) {
-			throw new Error(error.message)
-		}
+		if (error) throw new Error(error.message)
+		return data > 0
+	}
 
+	async newMegaMediaFilenames(options: {
+		id: MegaEvolutionId,
+		key: MegaEvolutionWriteKey,
+	} & MegaMedia<{ extension: string }>): Promise<MegaMedia<string>> {
+		const { data, error } = await this.supabase.rpc("new_mega_media_filenames", {
+			_id: options.id,
+			_write_key: options.key,
+			_portrait_extension: options.portrait ? "." + options.portrait.extension : null,
+			_sprite_extension: options.sprite ? "." + options.sprite.extension : null,
+		}).single<{
+			portrait_filename?: string,
+			sprite_filename?: string,
+		}>()
+
+		if (error) throw new Error(error.message)
+		return { portrait: data?.portrait_filename, sprite: data?.sprite_filename }
+	}
+
+	async removeMegaMedia(options: {
+		id: MegaEvolutionId,
+		key: MegaEvolutionWriteKey,
+	} & MegaMedia<boolean>): Promise<boolean> {
+		const { data, error } = await this.supabase.rpc("remove_mega_media", {
+			_id: options.id,
+			_write_key: options.key,
+			_remove_portrait: options.portrait ?? false,
+			_remove_sprite: options.sprite ?? false,
+		}).single<number>()
+
+		if (error) throw new Error(error.message)
 		return data > 0
 	}
 }
