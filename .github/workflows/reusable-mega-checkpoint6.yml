@@ -30,6 +30,8 @@ jobs:
         with:
           version: latest
       - run: pnpm install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
       - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
       - name: Start local services
         run: pnpm services:start
