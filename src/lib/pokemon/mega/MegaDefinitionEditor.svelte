@@ -147,8 +147,8 @@
 		<legend>Images</legend>
 		<p class="hint">Portrait and sprite are independent. Each image may be up to 512 KiB.</p>
 		<div class="media-grid">
-			<ImageField name="Mega portrait" previousValue={value?.portrait?.href} maxSizeInBytes={512 * 1024} optional bind:value={portrait} />
-			<ImageField name="Mega sprite" previousValue={value?.sprite?.href} maxSizeInBytes={512 * 1024} optional bind:value={sprite} />
+			<ImageField label="Mega portrait" previousValue={value?.portrait?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={portrait} />
+			<ImageField label="Mega sprite" previousValue={value?.sprite?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={sprite} />
 		</div>
 	</fieldset>
 
