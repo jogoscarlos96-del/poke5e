@@ -1,6 +1,6 @@
 CREATE TABLE private.pokemon_mega (
 	pokemon_id INT PRIMARY KEY REFERENCES private.pokemon(id) ON DELETE CASCADE,
-	forms JSONB NOT NULL DEFAULT '[]'::JSONB,
+	forms JSONB NOT NULL DEFAULT '[]'::JSONB CHECK (jsonb_typeof(forms) = 'array'),
 	active_form_id VARCHAR(128)
 );
 
@@ -43,6 +43,7 @@ SET search_path = 'pg_catalog', 'public', 'private', 'extensions'
 AS $$
 DECLARE
 	affected_rows INT := 0;
+	normalized_forms JSONB;
 	validated_active_form_id VARCHAR(128);
 BEGIN
 	IF NOT EXISTS (
@@ -54,18 +55,24 @@ BEGIN
 		RETURN 0;
 	END IF;
 
+	normalized_forms := CASE
+		WHEN _mega_forms IS NULL THEN '[]'::JSONB
+		WHEN jsonb_typeof(_mega_forms) = 'array' THEN _mega_forms
+		ELSE '[]'::JSONB
+	END;
+
 	validated_active_form_id := CASE
 		WHEN _mega_active_form_id IS NULL THEN NULL
 		WHEN EXISTS (
 			SELECT 1
-			FROM jsonb_array_elements(COALESCE(_mega_forms, '[]'::JSONB)) form
+			FROM jsonb_array_elements(normalized_forms) form
 			WHERE form->>'id' = _mega_active_form_id
 		) THEN _mega_active_form_id
 		ELSE NULL
 	END;
 
 	INSERT INTO private.pokemon_mega (pokemon_id, forms, active_form_id)
-	VALUES (_pokemon_id, COALESCE(_mega_forms, '[]'::JSONB), validated_active_form_id)
+	VALUES (_pokemon_id, normalized_forms, validated_active_form_id)
 	ON CONFLICT (pokemon_id) DO UPDATE SET
 		forms = EXCLUDED.forms,
 		active_form_id = EXCLUDED.active_form_id;
