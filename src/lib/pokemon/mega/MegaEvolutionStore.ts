@@ -21,16 +21,20 @@ const refresh = (pokemonId: PokemonId, readKey: ReadWriteKey): Promise<MegaEvolu
 	const existing = pending.get(pokemonId)
 	if (existing) return existing
 
-	const request = supabase.rpc("get_pokemon_mega", {
-		_pokemon_id: parseInt(pokemonId),
-		_read_key: readKey,
-	}).maybeSingle<{ selected_mega_id: string | null }>()
-		.then(({ data, error }) => {
+	const request = (async () => {
+		try {
+			const { data, error } = await supabase.rpc("get_pokemon_mega", {
+				_pokemon_id: parseInt(pokemonId),
+				_read_key: readKey,
+			}).maybeSingle<{ selected_mega_id: string | null }>()
+
 			if (error) throw error
 			if (!data) return setOne(pokemonId, MegaEvolution.empty())
 			return setOne(pokemonId, normalizeState({ selectedMegaId: data.selected_mega_id }))
-		})
-		.finally(() => pending.delete(pokemonId))
+		} finally {
+			pending.delete(pokemonId)
+		}
+	})()
 
 	pending.set(pokemonId, request)
 	return request
