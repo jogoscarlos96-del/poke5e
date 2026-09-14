@@ -155,7 +155,7 @@ BEGIN
 
 	INSERT INTO private.mega_evolutions (species_id, mega_data)
 	VALUES (
-		_species_id,
+		BTRIM(_species_id),
 		CASE WHEN jsonb_typeof(_mega_data) = 'object' THEN _mega_data ELSE '{}'::JSONB END
 	)
 	RETURNING id, write_key INTO ret_id, ret_write_key;
@@ -173,18 +173,33 @@ SECURITY DEFINER
 SET search_path = 'pg_catalog', 'public', 'private', 'extensions'
 AS $$
 DECLARE affected_rows INT := 0;
+DECLARE normalized_species_id VARCHAR(255);
 BEGIN
-	IF NULLIF(BTRIM(_species_id), '') IS NULL THEN
+	normalized_species_id := NULLIF(BTRIM(_species_id), '');
+	IF normalized_species_id IS NULL THEN
 		RETURN 0;
 	END IF;
 
 	UPDATE private.mega_evolutions SET
-		species_id = _species_id,
+		species_id = normalized_species_id,
 		mega_data = CASE WHEN jsonb_typeof(_mega_data) = 'object' THEN _mega_data ELSE '{}'::JSONB END,
 		updated_at = NOW()
 	WHERE id = _id AND write_key = _write_key;
 
 	GET DIAGNOSTICS affected_rows := ROW_COUNT;
+
+	-- A reusable definition may be reassigned to another base species. Keep the
+	-- per-Pokemon reference invariant intact by clearing selections that no longer
+	-- belong to the owning Pokemon's species.
+	IF affected_rows > 0 THEN
+		UPDATE private.pokemon_mega pm
+		SET selected_mega_id = NULL
+		FROM private.pokemon p
+		WHERE pm.pokemon_id = p.id
+			AND pm.selected_mega_id = _id
+			AND p.species::VARCHAR(255) IS DISTINCT FROM normalized_species_id;
+	END IF;
+
 	RETURN affected_rows;
 END $$;
 
