@@ -156,12 +156,13 @@ export class Move extends DataClass<{
 		level: Level,
 		type: PokeType[],
 		stab: Stab,
+		attributeModifierMultiplier?: number,
 	}): MoveStats {
 		const result: MoveStats = {}
 
 		const bestPower = this.power.bestAttribute(forCharacter.attributes)[0]
-
-		const attributeMod = bestPower == null ? 0 : forCharacter.attributes[bestPower].modifier
+		const modifierMultiplier = forCharacter.attributeModifierMultiplier ?? 1
+		const attributeMod = bestPower == null ? 0 : forCharacter.attributes[bestPower].modifier * modifierMultiplier
 
 		const pb = forCharacter.level.proficiencyBonus
 
