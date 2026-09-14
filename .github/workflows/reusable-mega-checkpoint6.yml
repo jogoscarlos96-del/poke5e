@@ -35,10 +35,12 @@ jobs:
         run: pnpm services:start
       - name: Reset local database and apply migrations
         run: pnpm supabase db reset
-      - name: Production build
-        run: pnpm build
+      - name: Compile Paraglide translations
+        run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/site/i18n/paraglide --strategy url,baseLocale --emit-ts-declarations
       - name: Svelte and TypeScript checks
         run: pnpm check
+      - name: Production build
+        run: pnpm build
       - name: Unit tests
         run: pnpm test:unit
       - name: Database migration tests
