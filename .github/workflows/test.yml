@@ -8,14 +8,16 @@ on:
     paths:
       - src/**
       - static/**
+      - supabase/**
+      - test/db/**
   pull_request:
-    type: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 jobs:
   unit-tests:
-    name: Unit Tests
+    name: Unit and Database Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       PUBLIC_OFFLINE: false
       PUBLIC_ANALYTICS_ENABLED: false
@@ -37,5 +39,7 @@ jobs:
       - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
       - run: pnpm services:start
       - run: pnpm supabase db reset
-      - name: Unit Test
+      - name: Unit Tests
         run: pnpm test:unit
+      - name: Database Migration Tests
+        run: pnpm test:db:quick

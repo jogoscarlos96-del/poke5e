@@ -13,6 +13,7 @@
 
 	export let type: PokemonType | undefined = undefined
 	export let specializations: Specializations | undefined = undefined
+	export let savingThrowModifierMultiplier = 1
 
 	$: extraModifiers = type != null && specializations != null ? skillModifiersFromSpecializations(specializations, type.data) : undefined
 </script>
@@ -24,7 +25,7 @@
 		attr: attr.abbr,
 		proficient: savingThrows.includes(attr.abbr),
 		expert: false,
-	}))} columnsLg={3} columns={2} />
+	}))} columnsLg={3} columns={2} attributeModifierMultiplier={savingThrowModifierMultiplier} />
 </div>
 
 <h3>{m.skills()}</h3>

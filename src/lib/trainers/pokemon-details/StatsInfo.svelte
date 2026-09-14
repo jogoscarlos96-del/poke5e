@@ -8,6 +8,7 @@
 
 	export let pokemon: TrainerPokemon
 	export let species: PokemonSpecies
+	export let acOverride: number | undefined = undefined
 
 	$: pb = pokemon.level.proficiencyBonus
 	$: speeds = species.speed.mergeWith(pokemon.speeds)
@@ -16,7 +17,7 @@
 
 <FlatDl columns={2}>
 	<dt><abbr title="{m.armorClass()}">{m.ac()}</abbr></dt>
-	<dd>{pokemon.ac}</dd>
+	<dd>{acOverride ?? pokemon.ac}</dd>
 	<dt>{m.nature()}</dt>
 	<dd class="cap">{pokemon.nature.data}</dd>
 	<dt>{m.sr()}</dt>

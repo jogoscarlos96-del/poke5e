@@ -13,13 +13,14 @@
 	export let level: Level
 	export let columnsLg: number = 1
 	export let columns: number = 1
+	export let attributeModifierMultiplier: number = 1
 
 	$: pb = level.proficiencyBonus
 </script>
 
 <dl style:--columns={columns} style:--columns-lg={columnsLg}>
 	{#each values as value, index}
-		{@const modifier = attributes[value.attr].modifier + (value.proficient ? pb : 0) + (value.expert ? pb : 0) + (value.extraModifiers?.[value.name] ?? 0)}
+		{@const modifier = attributes[value.attr].modifier * attributeModifierMultiplier + (value.proficient ? pb : 0) + (value.expert ? pb : 0) + (value.extraModifiers?.[value.name] ?? 0)}
 		{@const evenLg = index % (2 * columnsLg) >= columnsLg}
 		{@const even = index % (2 * columns) >= columns}
 		<dt class:even class:even-lg={evenLg}>
