@@ -3,6 +3,7 @@
 	import { goto } from "$app/navigation"
 	import { page } from "$app/stores"
 	import { Move } from "$lib/moves/Move"
+	import PokeMove from "$lib/moves/PokeMove.svelte"
 	import { CustomMove, CustomMoveLocalStorage, CustomMovesStore } from "$lib/moves/custom"
 	import CustomMoveEditor from "$lib/moves/custom/CustomMoveEditor.svelte"
 	import { Url } from "$lib/site/url"
@@ -26,6 +27,8 @@
 	$: selectedId = selectedParam ? CustomMove.id(CustomMove.uuid(selectedParam)) : ""
 	$: action = browser ? ($page.url.searchParams.get("action") ?? "") : ""
 	$: selected = $CustomMovesStore.result?.find((it) => it.id === selectedId)
+	$: sortedCustomMoves = [...($CustomMovesStore.result ?? [])]
+		.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
 	$: isNew = action === "new"
 	$: isEditing = isNew || action === "edit"
 
@@ -140,7 +143,7 @@
 			<p>No custom moves yet.</p>
 		{:else}
 			<ul class="move-list">
-				{#each $CustomMovesStore.result ?? [] as move (move.id)}
+				{#each sortedCustomMoves as move (move.id)}
 					<li class:selected={move.id === selectedId}>
 						<a href={Url.customMoves(move.id)}>
 							<strong>{move.name}</strong>
@@ -164,17 +167,14 @@
 		</section>
 	{:else if selected && draft}
 		<section>
-			<div class="heading-row">
-				<div>
-					<h1>{selected.name}</h1>
-					<p class="move-id">{selected.id}</p>
-				</div>
-				{#if !isEditing && canEdit}
-					<Button href={Url.customMoves(selected.id, "edit")}>Edit</Button>
-				{/if}
-			</div>
-
 			{#if isEditing}
+				<div class="heading-row">
+					<div>
+						<h1>{selected.name}</h1>
+						<p class="move-id">{selected.id}</p>
+					</div>
+				</div>
+
 				{#if canEdit}
 					<CustomMoveEditor value={draft} disabled={saving} submitLabel={saving ? "Saving…" : "Save Move"} on:save={saveExisting} />
 				{:else}
@@ -189,7 +189,12 @@
 					</div>
 				{/if}
 			{:else}
-				<CustomMoveEditor value={draft} disabled />
+				<div class="view-actions">
+					{#if canEdit}
+						<Button href={Url.customMoves(selected.id, "edit")}>Edit Custom Move</Button>
+					{/if}
+				</div>
+				<PokeMove move={selected} dismissToHref={Url.customMoves()} />
 				<div class="share-box">
 					<h2>Share</h2>
 					<div class="share-row"><code>{viewUrl}</code><Button on:click={() => copyUrl("view", viewUrl)}>{copied === "view" ? "Copied" : "Copy View Link"}</Button></div>
@@ -226,6 +231,7 @@
 	.type { text-transform: capitalize; opacity: 0.75; }
 	section { height: 100%; overflow: auto; padding: 0.5rem; }
 	.heading-row { justify-content: space-between; align-items: flex-start; }
+	.view-actions { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
 	.move-id { font-size: var(--font-sz-mars); opacity: 0.65; margin-top: -0.5rem; }
 	.access-box, .share-box { background: var(--skin-content); padding: 1rem; border-radius: 0.5rem; margin-block: 1rem; }
 	.share-row { margin-block: 0.5rem; align-items: flex-start; }
