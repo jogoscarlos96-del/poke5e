@@ -20,6 +20,15 @@ export const Url = {
 		const url = localizeUrl(resolve("/custom-moves") + `?${params.toString()}`)
 		return url.pathname + url.search
 	},
+	megaEvolutions: (id?: string, action?: string, accessKey?: string) => {
+		const params = new URLSearchParams()
+		if (id) params.append("id", id)
+		if (action) params.append("action", action)
+		if (accessKey) params.append("access_key", accessKey)
+
+		const url = localizeUrl(resolve("/mega-evolutions") + `?${params.toString()}`)
+		return url.pathname + url.search
+	},
 	items: (id?: string) => localizeUrl(id ? resolve("/items/[id]", { id }) : resolve("/items")).pathname,
 	pokemon: (id?: string) => localizeUrl(id ? resolve("/pokemon/[id]", { id }) : resolve("/pokemon")).pathname,
 	moves: (id?: string) => localizeUrl(id ? resolve("/moves/[id]", { id }) : resolve("/moves")).pathname,
