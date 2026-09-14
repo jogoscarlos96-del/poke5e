@@ -2,18 +2,19 @@
 	import { Ability, AbilityStore } from "$lib/pokemon/ability"
 	import { PokemonType, type PokeType } from "$lib/pokemon/types"
 	import { Button } from "$lib/ui/elements"
-	import { Fieldset, SelectField, TextField, type SelectFieldChangeEvent } from "$lib/ui/forms"
+	import { Fieldset, MarkdownField, SelectField, TextField, type SelectFieldChangeEvent } from "$lib/ui/forms"
 	import { MegaEvolution, type MegaForm } from "./MegaEvolution"
 
 	export let forms: MegaForm[] = []
 	export let disabled = false
 
 	const none = { name: "— None —", value: "" }
+	const customAbility = { name: "— Custom Ability —", value: "__custom__" }
 	const typeOptions = [none, ...PokemonType.list.map((type) => ({ name: PokemonType.name(type), value: type }))]
 	$: abilityOptions = [none, ...($AbilityStore.result ?? []).filter((ability) => !ability.deprecated).map((ability) => ({
 		name: ability.name,
 		value: ability.referenceId,
-	}))]
+	})), customAbility]
 
 	const touch = () => { forms = [...forms] }
 
@@ -46,7 +47,13 @@
 	}
 
 	const changeAbility = async (form: MegaForm, event: SelectFieldChangeEvent) => {
-		form.ability = event.detail.value ? await Ability.resolve(event.detail.value) : undefined
+		if (!event.detail.value) {
+			form.ability = undefined
+		} else if (event.detail.value === customAbility.value) {
+			form.ability = Ability.createNewCustom()
+		} else {
+			form.ability = await Ability.resolve(event.detail.value)
+		}
 		touch()
 	}
 </script>
@@ -72,7 +79,13 @@
 				<TextField label="Mega Portrait URL (optional)" value={form.imageUrl ?? ""} on:change={(event) => { form.imageUrl = event.detail.value || undefined; touch() }} {disabled} />
 				<SelectField label="Primary Type Override" options={typeOptions} value={form.type?.primary ?? ""} on:change={(event) => changePrimaryType(form, event)} {disabled} />
 				<SelectField label="Secondary Type Override" options={typeOptions} value={form.type?.secondary ?? ""} on:change={(event) => changeSecondaryType(form, event)} disabled={disabled || !form.type} />
-				<SelectField label="Mega Ability Override" options={abilityOptions} value={form.ability?.referenceId ?? ""} on:change={(event) => changeAbility(form, event)} {disabled} />
+				<SelectField label="Mega Ability Override" options={abilityOptions} value={form.ability?.custom ? customAbility.value : form.ability?.referenceId ?? ""} on:change={(event) => changeAbility(form, event)} {disabled} />
+				{#if form.ability?.custom}
+					<div class="custom-ability">
+						<TextField label="Custom Ability Name" bind:value={form.ability.data.name} on:change={touch} {disabled} required />
+						<MarkdownField label="Custom Ability Description" bind:value={form.ability.data.description} on:change={touch} {disabled} />
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/each}
@@ -88,6 +101,9 @@
 	.mega-form { grid-column: 1 / -1; border: 0.0625em solid var(--skin-input-bg); border-radius: 0.5em; padding: 0.75em; }
 	.form-heading { display: flex; justify-content: space-between; align-items: center; gap: 1em; margin-block-end: 1em; }
 	.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em 0.5em; }
+	.custom-ability { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em 0.5em; }
 	.add-row { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
-	@media (max-width: 50rem) { .fields { grid-template-columns: 1fr; } }
+	@media (max-width: 50rem) {
+		.fields, .custom-ability { grid-template-columns: 1fr; }
+	}
 </style>
