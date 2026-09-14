@@ -23,6 +23,7 @@
 	import { KnownAbilitiesInfo } from "$lib/pokemon/ability"
 	import DmInfo from "./DmInfo.svelte"
 	import { TagList, TagListInfo } from "$lib/poke5e/tags"
+	import { MegaEvolution, type MegaEvolutionState } from "$lib/pokemon/mega"
 
 	const dispatch = createEventDispatcher()
 
@@ -31,8 +32,18 @@
 	export let species: PokemonSpecies
 	export let editable: boolean
 	export let pokemonTags: TagList
+	export let megaState: MegaEvolutionState = MegaEvolution.empty()
+	export let megaEligible = false
 
-	$: hasImage = pokemon.avatar != null || species.media != null && species.media.hasAnyMedia()
+	$: activeMegaForm = MegaEvolution.activeForm(megaState, megaEligible)
+	$: effectiveType = MegaEvolution.effectiveType(pokemon, megaState, megaEligible)
+	$: effectiveAbilities = MegaEvolution.effectiveAbilities(pokemon, megaState, megaEligible)
+	$: effectiveAc = MegaEvolution.effectiveAc(pokemon, megaState, megaEligible)
+	$: abilityModifierMultiplier = MegaEvolution.attributeModifierMultiplier(megaState, megaEligible)
+	$: megaAvatar = activeMegaForm?.imageUrl
+		? { name: `${activeMegaForm.name} portrait`, href: activeMegaForm.imageUrl }
+		: pokemon.avatar
+	$: hasImage = megaAvatar != null || species.media != null && species.media.hasAnyMedia()
 
 	const onUpdateHealth = (e: CustomEvent<HealthUpdateDetail>) => {
 		dispatch("update-health", {
@@ -91,11 +102,11 @@
 			on:update={onUpdateHealth}
 		/>
 	</div>
-	<StatsInfo {pokemon} {species} />
+	<StatsInfo {pokemon} {species} acOverride={effectiveAc} />
 	{#if !hasImage}
 		<BondInfo value={pokemon.bond} {editable} on:update={onUpdateBond} />
 	{/if}
-	<SpeciesPortrait slot="art" media={species.media} avatar={pokemon.avatar} alt="" shiny={pokemon.isShiny} gender={pokemon.gender} />
+	<SpeciesPortrait slot="art" media={species.media} avatar={megaAvatar} alt="" shiny={pokemon.isShiny} gender={pokemon.gender} />
 	<BondInfo slot="after-art" value={pokemon.bond} {editable} on:update={onUpdateBond} />
 </SideArtCardSection>
 <section class="stats">
@@ -106,16 +117,17 @@
 		attributes={pokemon.attributes}
 		savingThrows={pokemon.savingThrows}
 		proficiencies={pokemon.proficiencies}
-		type={pokemon.type}
+		type={effectiveType}
 		specializations={trainer.specializations}
+		savingThrowModifierMultiplier={abilityModifierMultiplier}
 	/>
 	<FlatDl>
-		<TypeEffectiveness type={pokemon.type} />
+		<TypeEffectiveness type={effectiveType} />
 	</FlatDl>
 </section>
 <section>
 	<h2>{m.abilitiesAndItems()}</h2>
-	<KnownAbilitiesInfo value={pokemon.abilities} />
+	<KnownAbilitiesInfo value={effectiveAbilities} />
 	<HeldItemsInfo {pokemon} />
 </section>
 <SpeciesFormsInfo value={species.forms} />
@@ -126,7 +138,7 @@
 	</section>
 {/if}
 <section>
-	<MovesInfo {pokemon} {editable} on:update={onUpdatePp} />
+	<MovesInfo {pokemon} {editable} pokemonType={effectiveType} attributeModifierMultiplier={abilityModifierMultiplier} on:update={onUpdatePp} />
 </section>
 {#if pokemon.notes?.length > 0}
 	<hr />
