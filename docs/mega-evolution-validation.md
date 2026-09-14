@@ -24,7 +24,9 @@
 - The performance advisor reports no Mega-specific findings; `pokemon_mega.pokemon_id` is the table primary key and covers its Pokémon foreign-key lookup.
 - The `kornia-poke5e` Vercel preview reported Ready for the Mega branch. The separate duplicate `poke5e` Vercel project failed only because its Hobby deployment quota was exhausted, not because of a build failure.
 
-## Remaining manual QA before merge
+## Manual smoke test before merge
+
+The implementation is code-complete and automated validation is green. The final gate is a short browser smoke test against the hosted preview because the deployment cannot currently be opened through the connected Vercel tooling.
 
 - Open the hosted Kornia preview and edit a final-stage level 10+ Pokémon holding a Megalite Stone.
 - Configure at least one Mega form and verify it survives a reload.
