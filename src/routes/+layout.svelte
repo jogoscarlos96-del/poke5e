@@ -119,6 +119,12 @@
 		color: "blue",
 		icon: HitIcon,
 	}, {
+		id: "mega-evolutions",
+		href: Url.megaEvolutions(),
+		name: "Mega Evolutions",
+		color: "purple",
+		icon: GreatballIcon,
+	}, {
 		id: "tms",
 		href: Url.tms(),
 		name: m["tmsSection.title"](),
