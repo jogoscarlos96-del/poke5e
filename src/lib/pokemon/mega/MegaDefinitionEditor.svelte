@@ -32,6 +32,8 @@
 	let customAbilityDescription = value?.ability?.custom ? value.ability.description : ""
 	let portrait: ImageInputValue | undefined
 	let sprite: ImageInputValue | undefined
+	let portraitValid = true
+	let spriteValid = true
 	let error: string | undefined
 
 	const noOverride = { name: "Use base Pokémon", value: "" }
@@ -65,6 +67,10 @@
 			error = "Enter a Mega Evolution name."
 			return
 		}
+		if (!portraitValid || !spriteValid) {
+			error = "Portrait and sprite uploads must each be 512 KiB or smaller."
+			return
+		}
 
 		const typeValues = [primaryType, secondaryType]
 			.filter(PokemonType.isPokeType)
@@ -95,8 +101,10 @@
 				name: name.trim(),
 				type,
 				ability,
-				portrait: value?.portrait,
-				sprite: value?.sprite,
+				// Any explicit media change replaces/removes legacy URL fallbacks. The
+				// uploaded filenames themselves are stored separately by updateMedia().
+				portrait: portrait == null ? value?.portrait : undefined,
+				sprite: sprite == null ? value?.sprite : undefined,
 			},
 			portrait,
 			sprite,
@@ -147,8 +155,8 @@
 		<legend>Images</legend>
 		<p class="hint">Portrait and sprite are independent. Each image may be up to 512 KiB.</p>
 		<div class="media-grid">
-			<ImageField label="Mega portrait" previousValue={value?.portrait?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={portrait} />
-			<ImageField label="Mega sprite" previousValue={value?.sprite?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={sprite} />
+			<ImageField label="Mega portrait" previousValue={value?.portrait?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={portrait} bind:isValid={portraitValid} />
+			<ImageField label="Mega sprite" previousValue={value?.sprite?.href} maxbytes={512 * 1024} {disabled} bind:currentValue={sprite} bind:isValid={spriteValid} />
 		</div>
 	</fieldset>
 
