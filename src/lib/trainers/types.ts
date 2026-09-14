@@ -23,6 +23,7 @@ import type { Stab } from "$lib/pokemon/stab"
 import type { TagList } from "$lib/poke5e/tags"
 import type { Token } from "$lib/dnd/token"
 import type { HitPoints } from "$lib/poke5e/resource/HitPoints"
+import type { MegaEvolutionState } from "$lib/pokemon/mega"
 
 export type LearnedMove = {
 	id: string,
@@ -88,6 +89,7 @@ export type TrainerPokemon = {
 	stab: Stab,
 	avatar?: StorageResource,
 	tags: TagList,
+	mega: MegaEvolutionState,
 }
 
 export type WithPokemonData = {
