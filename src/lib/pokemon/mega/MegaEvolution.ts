@@ -37,28 +37,27 @@ export const MegaEvolution = {
 		name,
 	}),
 
-	activeForm: (pokemon: Pick<TrainerPokemon, "mega">): MegaForm | undefined =>
-		pokemon.mega.forms.find((form) => form.id === pokemon.mega.activeFormId),
+	activeForm: (state: MegaEvolutionState): MegaForm | undefined =>
+		state.forms.find((form) => form.id === state.activeFormId),
 
-	isActive: (pokemon: Pick<TrainerPokemon, "mega">): boolean =>
-		MegaEvolution.activeForm(pokemon) != null,
+	isActive: (state: MegaEvolutionState): boolean => MegaEvolution.activeForm(state) != null,
 
 	hasMegaliteStone: (pokemon: Pick<TrainerPokemon, "items">): boolean =>
 		pokemon.items.some((item) => item.type === "standard" && item.itemId === MEGALITE_STONE_ID),
 
-	effectiveType: (pokemon: Pick<TrainerPokemon, "mega" | "type">): PokemonType =>
-		MegaEvolution.activeForm(pokemon)?.type ?? pokemon.type,
+	effectiveType: (pokemon: Pick<TrainerPokemon, "type">, state: MegaEvolutionState): PokemonType =>
+		MegaEvolution.activeForm(state)?.type ?? pokemon.type,
 
-	effectiveAbilities: (pokemon: Pick<TrainerPokemon, "mega" | "abilities">): Ability[] => {
-		const megaAbility = MegaEvolution.activeForm(pokemon)?.ability
+	effectiveAbilities: (pokemon: Pick<TrainerPokemon, "abilities">, state: MegaEvolutionState): Ability[] => {
+		const megaAbility = MegaEvolution.activeForm(state)?.ability
 		return megaAbility ? [megaAbility] : pokemon.abilities
 	},
 
-	effectiveAc: (pokemon: Pick<TrainerPokemon, "mega" | "ac">): number =>
-		pokemon.ac + (MegaEvolution.isActive(pokemon) ? 2 : 0),
+	effectiveAc: (pokemon: Pick<TrainerPokemon, "ac">, state: MegaEvolutionState): number =>
+		pokemon.ac + (MegaEvolution.isActive(state) ? 2 : 0),
 
-	attributeModifierMultiplier: (pokemon: Pick<TrainerPokemon, "mega">): number =>
-		MegaEvolution.isActive(pokemon) ? 2 : 1,
+	attributeModifierMultiplier: (state: MegaEvolutionState): number =>
+		MegaEvolution.isActive(state) ? 2 : 1,
 
 	toStoredForms: (forms: MegaForm[]): StoredMegaForm[] => forms.map((form) => ({
 		id: form.id,
