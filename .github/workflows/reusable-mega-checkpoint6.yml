@@ -14,7 +14,7 @@ jobs:
       PUBLIC_OFFLINE: false
       PUBLIC_ANALYTICS_ENABLED: false
       PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      PUBLIC_SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYXNlLWRlbW8iLCJyb2xlIjoiYW5vbiIsImV4cCI6MTk4MzgxMjk5Nn0.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      PUBLIC_SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInR5cCI6IkpXVCJ9
       PUBLIC_USER_ASSETS_BASE_URL: http://127.0.0.1:9000/user-assets
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,21 @@ jobs:
       - name: Production build
         run: pnpm build
       - name: Unit tests
-        run: pnpm test:unit
+        id: unit-tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm test:unit 2>&1 | tee unit-test.log
+      - name: Upload unit test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkpoint6-unit-test-log
+          path: unit-test.log
+      - name: Fail on unit test failure
+        if: steps.unit-tests.outcome == 'failure'
+        run: exit 1
       - name: Database migration tests
         run: pnpm test:db:quick
       - name: Edge Function tests
