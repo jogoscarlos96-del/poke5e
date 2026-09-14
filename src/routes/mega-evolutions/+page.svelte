@@ -7,13 +7,12 @@
 	import { MegaDefinitionsStore, type DraftMegaDefinition, type MegaDefinition } from "$lib/pokemon/mega"
 	import { Url } from "$lib/site/url"
 	import { Button, Loader } from "$lib/ui/elements"
-	import { TextField } from "$lib/ui/forms"
+	import { TextField, type ImageInputValue } from "$lib/ui/forms"
 	import { GreatballIcon } from "$lib/ui/icons"
 	import { Page, Title } from "$lib/ui/layout"
 	import { MAIN_SEARCH_ID } from "$lib/ui/layout/SkipLinks.svelte"
 	import { onMount } from "svelte"
 	import type { Unsubscriber } from "svelte/store"
-	import type { ImageInputValue } from "$lib/ui/forms"
 
 	type SaveEvent = CustomEvent<{
 		value: DraftMegaDefinition,
@@ -27,29 +26,42 @@
 	let error: string | undefined
 	let accessKey = ""
 	let accessError: string | undefined
-	let accessGranted = false
+	let accessFor = ""
+	let previousSelectedId = ""
 	let copied: "view" | "edit" | undefined
 	let search = ""
+	let speciesNames = new Map<string, string>()
 
 	$: selectedId = browser ? ($page.url.searchParams.get("id") ?? "") : ""
 	$: action = browser ? ($page.url.searchParams.get("action") ?? "") : ""
 	$: selected = $MegaDefinitionsStore.result?.find((definition) => definition.id === selectedId)
 	$: isNew = action === "new"
 	$: isEditing = !isNew && action === "edit"
-	$: canEdit = selected ? (MegaDefinitionsStore.canEdit(selected.id) || accessGranted) : isNew
+	$: canEdit = selected ? (MegaDefinitionsStore.canEdit(selected.id) || accessFor === selected.id) : isNew
+	$: speciesNames = new Map(allSpecies.map((species) => [species.id.data, species.name]))
 	$: sortedDefinitions = [...($MegaDefinitionsStore.result ?? [])]
 		.sort((a, b) => {
-			const speciesCompare = speciesName(a.speciesId).localeCompare(speciesName(b.speciesId), undefined, { sensitivity: "base" })
+			const aSpecies = speciesNames.get(a.speciesId) ?? a.speciesId
+			const bSpecies = speciesNames.get(b.speciesId) ?? b.speciesId
+			const speciesCompare = aSpecies.localeCompare(bSpecies, undefined, { sensitivity: "base" })
 			return speciesCompare || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
 		})
 	$: normalizedSearch = search.trim().toLocaleLowerCase()
 	$: filteredDefinitions = normalizedSearch
-		? sortedDefinitions.filter((definition) => `${definition.name} ${speciesName(definition.speciesId)}`.toLocaleLowerCase().includes(normalizedSearch))
+		? sortedDefinitions.filter((definition) => {
+			const baseSpecies = speciesNames.get(definition.speciesId) ?? definition.speciesId
+			return `${definition.name} ${baseSpecies}`.toLocaleLowerCase().includes(normalizedSearch)
+		})
 		: sortedDefinitions
 
-	const speciesName = (speciesId: string): string =>
-		allSpecies.find((species) => species.id.data === speciesId)?.name ?? speciesId
+	$: if (selectedId !== previousSelectedId) {
+		previousSelectedId = selectedId
+		accessFor = ""
+		accessKey = ""
+		accessError = undefined
+	}
 
+	const speciesName = (speciesId: string): string => speciesNames.get(speciesId) ?? speciesId
 	const absoluteUrl = (path: string) => browser ? new URL(path, window.location.origin).toString() : path
 	$: viewUrl = selected ? absoluteUrl(Url.megaEvolutions(selected.id)) : ""
 	$: localWriteKey = selected ? MegaDefinitionsStore.getWriteKey(selected.id) : undefined
@@ -65,8 +77,9 @@
 				const keyFromUrl = $page.url.searchParams.get("access_key")
 				const idFromUrl = $page.url.searchParams.get("id")
 				if (idFromUrl && keyFromUrl) {
-					accessGranted = await MegaDefinitionsStore.verifyAccess(idFromUrl, keyFromUrl)
-					if (!accessGranted) accessError = "That edit key is not valid for this Mega Evolution."
+					const valid = await MegaDefinitionsStore.verifyAccess(idFromUrl, keyFromUrl)
+					if (valid) accessFor = idFromUrl
+					else accessError = "That edit key is not valid for this Mega Evolution."
 				}
 			} catch (e) {
 				error = e instanceof Error ? e.message : String(e)
@@ -123,8 +136,9 @@
 		if (!selected) return
 		accessError = undefined
 		try {
-			accessGranted = await MegaDefinitionsStore.verifyAccess(selected.id, accessKey)
-			if (!accessGranted) accessError = "That edit key is not valid for this Mega Evolution."
+			const valid = await MegaDefinitionsStore.verifyAccess(selected.id, accessKey)
+			if (valid) accessFor = selected.id
+			else accessError = "That edit key is not valid for this Mega Evolution."
 		} catch (e) {
 			accessError = e instanceof Error ? e.message : String(e)
 		}
@@ -200,9 +214,13 @@
 			{#if isEditing}
 				<h1>Edit {selected.name}</h1>
 				{#if canEdit}
-					{#key selected.id}
-						<MegaDefinitionEditor value={selected} {allSpecies} disabled={saving} submitLabel={saving ? "Saving…" : "Save Mega Evolution"} on:save={saveExisting} />
-					{/key}
+					{#if allSpecies.length === 0}
+						<Loader />
+					{:else}
+						{#key selected.id}
+							<MegaDefinitionEditor value={selected} {allSpecies} disabled={saving} submitLabel={saving ? "Saving…" : "Save Mega Evolution"} on:save={saveExisting} />
+						{/key}
+					{/if}
 				{:else}
 					<div class="access-box">
 						<h2>Edit Access Required</h2>
