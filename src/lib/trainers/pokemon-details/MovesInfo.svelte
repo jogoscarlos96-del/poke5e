@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { LearnedMovesListInfo } from "$lib/moves/learned"
 	import { MovesStore } from "$lib/moves/store"
+	import type { PokemonType } from "$lib/pokemon/types"
 	import { Loader } from "$lib/ui/elements"
 	import { createEventDispatcher } from "svelte"
 	import type { LearnedMove, TrainerPokemon } from "../types"
@@ -9,6 +10,8 @@
 
 	export let pokemon: TrainerPokemon
 	export let editable: boolean = false
+	export let pokemonType: PokemonType = pokemon.type
+	export let attributeModifierMultiplier = 1
 
 	const onUpdate = (move: LearnedMove) => {
 		dispatch("update", { ...move } as LearnedMove)
@@ -18,7 +21,7 @@
 {#if pokemon.moves.length > 0}
 	{#if $MovesStore.result}
 		<h2>Moves</h2>
-		<LearnedMovesListInfo {pokemon} {editable} onupdate={onUpdate} />
+		<LearnedMovesListInfo {pokemon} {editable} {pokemonType} {attributeModifierMultiplier} onupdate={onUpdate} />
 	{:else}
 		<Loader />
 	{/if}
