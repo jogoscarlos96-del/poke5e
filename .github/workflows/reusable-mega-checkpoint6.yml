@@ -32,11 +32,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
-      - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
-      - name: Start local services
-        run: pnpm services:start
-      - name: Reset local database and apply migrations
-        run: pnpm supabase db reset
       - name: Compile Paraglide translations
         run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/site/i18n/paraglide --strategy url,baseLocale --emit-ts-declarations
       - name: Svelte and TypeScript checks
@@ -59,6 +54,11 @@ jobs:
       - name: Fail on unit test failure
         if: steps.unit-tests.outcome == 'failure'
         run: exit 1
+      - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
+      - name: Start local services
+        run: pnpm services:start
+      - name: Reset local database and apply migrations
+        run: pnpm supabase db reset
       - name: Database migration tests
         run: pnpm test:db:quick
       - name: Edge Function tests
