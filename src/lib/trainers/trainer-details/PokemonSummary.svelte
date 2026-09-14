@@ -9,12 +9,29 @@
 	import { GenderIcon } from "$lib/pokemon/gender"
 	import { SpeciesSprite } from "$lib/poke5e/species/media"
 	import { WithSpecies } from "$lib/poke5e/species"
+	import { EvolutionStore } from "$lib/pokemon/evolution"
+	import { MegaDefinitionsStore, MegaEvolution, MegaEvolutionStore } from "$lib/pokemon/mega"
+	import { onMount } from "svelte"
 
 	export let trainer: ReadWriteKey
 	export let pokemon: TrainerPokemon
 	export let editable: boolean = false
 
+	const evolutions = EvolutionStore.all()
+
 	$: heldItem = pokemon.items.length > 0 ? getItemDetails(pokemon.items[0], $ItemStore) : undefined
+	$: megaState = $MegaEvolutionStore[pokemon.id] ?? MegaEvolution.empty()
+	$: availableMegaDefinitions = MegaDefinitionsStore.forSpecies($MegaDefinitionsStore.result, pokemon.pokemonId.data)
+	$: selectedMegaDefinition = MegaEvolution.selectedDefinition(megaState, availableMegaDefinitions)
+	$: evolutionDataReady = $evolutions != null
+	$: isFinalEvolution = evolutionDataReady && ($evolutions?.evolvesTo(pokemon.pokemonId).length ?? 0) === 0
+	$: megaEligible = MegaEvolution.eligibility(pokemon, isFinalEvolution, evolutionDataReady).eligible
+	$: megaSprite = megaEligible ? selectedMegaDefinition?.sprite?.href : undefined
+
+	onMount(() => {
+		void MegaDefinitionsStore.refresh().catch(() => {})
+		void MegaEvolutionStore.refresh(pokemon.id, trainer).catch(() => {})
+	})
 </script>
 
 <div class="side-by-side">
@@ -22,8 +39,12 @@
 		<span style:grid-area="sprite" class="max-height holding-item jumping-animation">
 			<WithSpecies let:species ids={[pokemon.pokemonId]}>
 				<div slot="loader"></div>
-				<SpeciesSprite media={species?.media} alt={species?.data.name} shiny={pokemon.isShiny} gender={pokemon.gender} />
-				{#if species?.media.sprite().value != null}
+				{#if megaSprite}
+					<img class="mega-sprite" src={megaSprite} alt={selectedMegaDefinition?.name ?? species?.data.name ?? pokemon.nickname} />
+				{:else}
+					<SpeciesSprite media={species?.media} alt={species?.data.name} shiny={pokemon.isShiny} gender={pokemon.gender} />
+				{/if}
+				{#if megaSprite != null || species?.media.sprite().value != null}
 					<span class="shadow"></span>
 				{/if}
 			</WithSpecies>
@@ -71,6 +92,16 @@
 
 	.max-height {
 		max-height: 3em;
+	}
+
+	.mega-sprite {
+		display: block;
+		inline-size: 100%;
+		margin: 0 auto;
+		border: none;
+		box-shadow: none;
+		aspect-ratio: 1;
+		object-fit: contain;
 	}
 
 	.selectable-bubble {
