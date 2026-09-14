@@ -35,10 +35,10 @@ jobs:
         run: pnpm services:start
       - name: Reset local database and apply migrations
         run: pnpm supabase db reset
-      - name: Svelte and TypeScript checks
-        run: pnpm check
       - name: Production build
         run: pnpm build
+      - name: Svelte and TypeScript checks
+        run: pnpm check
       - name: Unit tests
         run: pnpm test:unit
       - name: Database migration tests
