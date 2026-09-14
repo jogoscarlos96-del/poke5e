@@ -58,13 +58,12 @@ const mediaResource = (filename?: string | null, fallbackUrl?: string): MegaMedi
 export const MegaDefinitions = {
 	fromRow: async (row: MegaDefinitionRow): Promise<MegaDefinition> => {
 		const data = row.mega_data ?? { name: "Mega Form" }
+		const type = data.type?.filter(PokemonType.isPokeType) ?? []
 		return {
 			id: row.id,
 			speciesId: row.species_id,
 			name: data.name || "Mega Form",
-			type: data.type && data.type.length > 0
-				? new PokemonType(data.type.filter(PokemonType.isPokeType))
-				: undefined,
+			type: type.length > 0 ? new PokemonType(type) : undefined,
 			ability: data.ability
 				? isReferenceAbility(data.ability)
 					? await Ability.resolve(data.ability.referenceId)
