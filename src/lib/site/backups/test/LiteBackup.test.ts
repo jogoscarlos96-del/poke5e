@@ -1,12 +1,15 @@
 import { FakemonLocalStorage } from "$lib/fakemon/data/FakemonLocalStorage"
+import { fakemonStore } from "$lib/fakemon/store"
 import { CustomMoveLocalStorage } from "$lib/moves/custom/CustomMoveLocalStorage"
 import { MegaDefinitionLocalStorage } from "$lib/pokemon/mega/MegaDefinitionLocalStorage"
 import { TrainerLocalStorage } from "$lib/trainers/data/TrainerLocalStorage"
-import { test, expect, beforeEach, describe } from "vitest"
+import { trainers } from "$lib/trainers/trainers"
+import { test, expect, beforeEach, describe, vi } from "vitest"
 import { LiteBackup } from "../LiteBackup"
 import { BackupError } from "../BackupError"
 
 beforeEach(() => {
+	vi.restoreAllMocks()
 	localStorage.clear()
 })
 
@@ -51,6 +54,42 @@ test("records fakemon and trainers", async () => {
 	expect(TrainerLocalStorage.getReadKeys()).toEqual(["tr1", "tr2"])
 	expect(TrainerLocalStorage.getWriteKey("tr1")).toEqual("tw1")
 	expect(TrainerLocalStorage.getWriteKey("tr2")).toBeNull()
+})
+
+test("refreshes live stores after a legacy migration", async () => {
+	const fakemonGet = vi.spyOn(fakemonStore, "get")
+	const trainerGet = vi.spyOn(trainers, "get")
+	const backup = new Blob([JSON.stringify({
+		$schema: "https://poke5e.app/backups/schemas/2026-02",
+		createdAt: "2026-02-01T00:00:00.000Z",
+		fakemon: [{
+			id: "11111111-1111-1111-1111-111111111111",
+			readKey: "legacy-fakemon",
+		}],
+		trainers: [{
+			readKey: "legacy-trainer",
+		}],
+	})], { type: "application/json" })
+
+	const migrateLegacy = vi.fn(async () => {
+		FakemonLocalStorage.add({
+			id: "22222222-2222-2222-2222-222222222222",
+			readKey: "restored-fakemon",
+		})
+		TrainerLocalStorage.addReadKey("restored-trainer")
+		return {
+			trainers: 1,
+			fakemon: 1,
+			failedTrainers: 0,
+			failedFakemon: 0,
+			warnings: 0,
+		}
+	})
+
+	await LiteBackup.restore(backup, migrateLegacy)
+
+	expect(fakemonGet).toHaveBeenCalledWith("restored-fakemon")
+	expect(trainerGet).toHaveBeenCalledWith("restored-trainer")
 })
 
 test("records and restores custom move edit keys", async () => {
