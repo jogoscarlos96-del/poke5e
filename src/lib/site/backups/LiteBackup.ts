@@ -116,6 +116,13 @@ function isKorniaBackup(backup: LiteBackup): boolean {
 	return typeof backup.$schema === "string" && backup.$schema.includes("/backups/schemas/2026-09")
 }
 
+async function refreshLiveStores(): Promise<void> {
+	await Promise.allSettled([
+		...FakemonLocalStorage.list().map((entry) => fakemonStore.get(entry.readKey)),
+		...TrainerLocalStorage.getReadKeys().map((readKey) => trainers.get(readKey)),
+	])
+}
+
 async function restoreBackup(blob: Blob, migrateLegacy: LegacyMigrationFunction = migrateLegacyPoke5eBackup): Promise<{
 	trainers: number,
 	fakemon: number,
@@ -182,12 +189,14 @@ async function restoreBackup(blob: Blob, migrateLegacy: LegacyMigrationFunction 
 				)
 			}
 
+			await refreshLiveStores()
 			return {
 				trainers: foundTrainers.length + migrated.trainers,
 				fakemon: foundFakemon.length + migrated.fakemon,
 			}
 		}
 
+		await refreshLiveStores()
 		return {
 			trainers: foundTrainers.length,
 			fakemon: foundFakemon.length,
