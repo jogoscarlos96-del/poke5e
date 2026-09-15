@@ -23,20 +23,36 @@ export function createStore(): FakemonStore {
 	const promises: Record<ReadKey, Promise<SingleFakemonStore | undefined>> = {}
 	let listPromise: Promise<FakemonListStore> = undefined
 
+	const cacheFakemon = (fakemon: Fakemon, loadEvolutions: boolean): SingleFakemonStore => {
+		if (loadEvolutions) {
+			evoProvider.get(fakemon.species.id).then((evos) => {
+				evos.forEach((evo) => {
+					if (evo.from.isFakemon()) {
+						getOne(evo.from.toFakemonReadKey())
+					}
+
+					if (evo.to.isFakemon()) {
+						getOne(evo.to.toFakemonReadKey())
+					}
+				})
+			})
+		}
+
+		const storedFakemon = createStoredFakemon(fakemon, fakemonStore)
+		fakemonStore.update((prev) => ({
+			...prev,
+			[fakemon.data.readKey]: storedFakemon,
+		}))
+
+		return createSingleFakemonStore(storedFakemon, fakemonStore)
+	}
+
 	const getOne = (key: ReadKey) => {
 		if (promises[key] != null) return
 
 		promises[key] = provider.getByReadKey(key).then((fakemon) => {
 			if (fakemon == null) return undefined
-
-			const store = createStoredFakemon(fakemon, fakemonStore)
-
-			fakemonStore.update((prev) => ({
-				...prev,
-				[fakemon.data.readKey]: store,
-			}))
-
-			return createSingleFakemonStore(store, fakemonStore)
+			return cacheFakemon(fakemon, false)
 		})
 	}
 
@@ -45,27 +61,7 @@ export function createStore(): FakemonStore {
 			if (promises[key] == null) {
 				promises[key] = provider.getByReadKey(key).then((fakemon) => {
 					if (fakemon == null) return undefined
-
-					evoProvider.get(fakemon.species.id).then((evos) => {
-						evos.forEach((evo) => {
-							if (evo.from.isFakemon()) {
-								getOne(evo.from.toFakemonReadKey())
-							}
-
-							if (evo.to.isFakemon()) {
-								getOne(evo.to.toFakemonReadKey())
-							}
-						})
-					})
-
-					const storedFakemon = createStoredFakemon(fakemon, fakemonStore)
-
-					fakemonStore.update((prev) => ({
-						...prev,
-						[fakemon.data.readKey]: storedFakemon,
-					}))
-
-					return createSingleFakemonStore(storedFakemon, fakemonStore)
+					return cacheFakemon(fakemon, true)
 				})
 			}
 
@@ -74,15 +70,8 @@ export function createStore(): FakemonStore {
 
 		new: async (fakemon: DraftFakemon): Promise<Fakemon> => {
 			return provider.add(fakemon).then((result) => {
-				const storedFakemon = createStoredFakemon(result, fakemonStore)
-				const singlePokemonStore = createSingleFakemonStore(storedFakemon, fakemonStore)
+				const singlePokemonStore = cacheFakemon(result, true)
 				promises[result.data.readKey] = Promise.resolve(singlePokemonStore)
-
-				fakemonStore.update((prev) => ({
-					...prev,
-					[result.data.readKey]: storedFakemon,
-				}))
-
 				return result
 			})
 		},
@@ -90,6 +79,13 @@ export function createStore(): FakemonStore {
 		all: async (): Promise<FakemonListStore> => {
 			if (listPromise == null) {
 				listPromise = provider.getAllKnown().then((fakemon) => {
+					for (const entry of fakemon) {
+						if (promises[entry.data.readKey] == null) {
+							const singlePokemonStore = cacheFakemon(entry, true)
+							promises[entry.data.readKey] = Promise.resolve(singlePokemonStore)
+						}
+					}
+
 					return createFakemonListStore(fakemon, fakemonStore)
 				})
 			}

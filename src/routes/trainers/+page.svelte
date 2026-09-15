@@ -9,6 +9,7 @@
 	import PokemonCard from "$lib/trainers/pokemon-details/Card.svelte"
 	import TrainerRoster from "$lib/trainers/trainer-details/Roster.svelte"
 	import { trainers, type TrainerListStore, type TrainerStore } from "$lib/trainers/trainers"
+	import { preloadKnownTrainers } from "$lib/trainers/preload"
 	import { PageAction } from "$lib/trainers/page-action"
 	import AddPokemonCard from "$lib/trainers/AddPokemonCard.svelte"
 	import TrainerNavigation from "$lib/trainers/TrainerNavigation.svelte"
@@ -58,6 +59,11 @@
 				deltas.lastTrainer = trainer
 			}
 
+			// A hard refresh on a trainer detail page bypasses the trainer-list branch below.
+			// Warm the other locally known trainers in the background so subsequent trainer
+			// navigation is just as smooth as entering the section through the list/home page.
+			void preloadKnownTrainers()
+
 			if (accessKey) {
 				trainer?.then((t) => {
 					return t?.verifyAccess(accessKey)
@@ -75,7 +81,10 @@
 				})
 			}
 		} else if (!trainerId && browser) {
-			trainerList = trainers.all()
+			trainerList = Promise.all([
+				trainers.all(),
+				preloadKnownTrainers(),
+			]).then(([list]) => list)
 			trainer = undefined
 		} else {
 			trainer = undefined

@@ -52,6 +52,7 @@ export const Url = {
 		home: () => localizeUrl(resolve("/backups")).pathname,
 		schemas: {
 			"202602": () => resolve("/backups/schemas/2026-02"),
+			"202609": () => resolve("/backups/schemas/2026-09"),
 		},
 	},
 	reference: {

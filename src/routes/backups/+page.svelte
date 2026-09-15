@@ -53,6 +53,7 @@
 		showSuccess(m["backups.downloadSuccessful"]())
 	}
 
+	let manualBackup = browser ? ManualBackup.create() : ""
 	let restoring = false
 	const onRestoreBackup = async (e: Event) => {
 		const file = (e.target as HTMLInputElement).files[0]
@@ -60,6 +61,7 @@
 			try {
 				restoring = true
 				const stats = await LiteBackup.restore(file)
+				manualBackup = ManualBackup.create()
 				showSuccess(m["backups.restoreSuccessful"](stats))
 				Analytics.createBackupRecoveryEvent("success")
 			} catch (e) {
@@ -70,8 +72,6 @@
 			}
 		}
 	}
-
-	const manualBackup = browser ? ManualBackup.create() : ""
 </script>
 
 <Title value="Backup and Restoration" />
