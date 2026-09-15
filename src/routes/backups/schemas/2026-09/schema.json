@@ -1,0 +1,79 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Kornia Poke5e Backup",
+	"description": "Backward-compatible Poke5e backup with Kornia custom move and Mega Evolution edit access",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"createdAt": {
+			"type": "string",
+			"format": "date-time"
+		},
+		"fakemon": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"readKey": {
+						"type": "string"
+					},
+					"writeKey": {
+						"type": "string"
+					}
+				},
+				"required": ["id", "readKey"]
+			}
+		},
+		"trainers": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"readKey": {
+						"type": "string"
+					},
+					"writeKey": {
+						"type": "string"
+					}
+				},
+				"required": ["readKey"]
+			}
+		},
+		"customMoves": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"writeKey": {
+						"type": "string"
+					}
+				},
+				"required": ["id", "writeKey"]
+			}
+		},
+		"megaEvolutions": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"writeKey": {
+						"type": "string"
+					}
+				},
+				"required": ["id", "writeKey"]
+			}
+		}
+	},
+	"required": ["$schema", "createdAt", "fakemon", "trainers", "customMoves", "megaEvolutions"]
+}
