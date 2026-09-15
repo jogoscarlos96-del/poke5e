@@ -9,6 +9,10 @@ import { Url } from "../url"
 import { BackupError } from "./BackupError"
 import { fakemonStore } from "$lib/fakemon/store"
 import { trainers } from "$lib/trainers/trainers"
+import {
+	migrateLegacyPoke5eBackup,
+	type LegacyPoke5eMigrationResult,
+} from "./LegacyPoke5eMigration"
 
 export type EditKeyBackup = {
 	id: string,
@@ -23,6 +27,11 @@ export type LiteBackup = {
 	customMoves?: EditKeyBackup[],
 	megaEvolutions?: EditKeyBackup[],
 }
+
+export type LegacyMigrationFunction = (data: {
+	trainers: LiteBackup["trainers"],
+	fakemon: LiteBackup["fakemon"],
+}) => Promise<LegacyPoke5eMigrationResult>
 
 async function createBackup(): Promise<Blob> {
 	const trainers = TrainerLocalStorage.getReadKeys().map((readKey) => {
@@ -103,7 +112,11 @@ function validate(json: object): json is LiteBackup {
 	return true
 }
 
-async function restoreBackup(blob: Blob): Promise<{
+function isKorniaBackup(backup: LiteBackup): boolean {
+	return typeof backup.$schema === "string" && backup.$schema.includes("/backups/schemas/2026-09")
+}
+
+async function restoreBackup(blob: Blob, migrateLegacy: LegacyMigrationFunction = migrateLegacyPoke5eBackup): Promise<{
 	trainers: number,
 	fakemon: number,
 }> {
@@ -135,16 +148,48 @@ async function restoreBackup(blob: Blob): Promise<{
 			MegaDefinitionLocalStorage.setWriteKey(it.id, it.writeKey)
 		})
 
-		const foundFakemon = (await Promise.all(backup.fakemon.map((it) => {
-			return fakemonStore.get(it.readKey)
-		}))).filter((it) => it != null)
+		const fakemonResults = await Promise.all(backup.fakemon.map(async (entry) => ({
+			entry,
+			found: await fakemonStore.get(entry.readKey),
+		})))
+		const trainerResults = await Promise.all(backup.trainers.map(async (entry) => ({
+			entry,
+			found: await trainers.get(entry.readKey),
+		})))
 
-		const foundtrainers = (await Promise.all(backup.trainers.map((it) => {
-			return trainers.get(it.readKey)
-		}))).filter((it) => it != null)
+		const foundFakemon = fakemonResults.filter((it) => it.found != null)
+		const foundTrainers = trainerResults.filter((it) => it.found != null)
+		const missingFakemon = fakemonResults.filter((it) => it.found == null).map((it) => it.entry)
+		const missingTrainers = trainerResults.filter((it) => it.found == null).map((it) => it.entry)
+
+		if (!isKorniaBackup(backup) && (missingFakemon.length > 0 || missingTrainers.length > 0)) {
+			// These keys belong to the original Poke5e database, not Kornia's.
+			// Remove the unusable source keys before creating new Kornia copies.
+			missingFakemon.forEach((entry) => FakemonLocalStorage.remove(entry.readKey))
+			missingTrainers.forEach((entry) => {
+				TrainerLocalStorage.removeWriteKey(entry.readKey)
+				TrainerLocalStorage.removeReadKey(entry.readKey)
+			})
+
+			const migrated = await migrateLegacy({
+				trainers: missingTrainers,
+				fakemon: missingFakemon,
+			})
+
+			if (migrated.failedTrainers > 0 || migrated.failedFakemon > 0) {
+				throw new BackupError(
+					`Could not migrate ${migrated.failedTrainers} trainer(s) and ${migrated.failedFakemon} fakémon from the original Poke5e service.`,
+				)
+			}
+
+			return {
+				trainers: foundTrainers.length + migrated.trainers,
+				fakemon: foundFakemon.length + migrated.fakemon,
+			}
+		}
 
 		return {
-			trainers: foundtrainers.length,
+			trainers: foundTrainers.length,
 			fakemon: foundFakemon.length,
 		}
 	}
