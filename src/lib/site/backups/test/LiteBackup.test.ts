@@ -1,5 +1,6 @@
 import { FakemonLocalStorage } from "$lib/fakemon/data/FakemonLocalStorage"
 import { CustomMoveLocalStorage } from "$lib/moves/custom/CustomMoveLocalStorage"
+import { MegaDefinitionLocalStorage } from "$lib/pokemon/mega/MegaDefinitionLocalStorage"
 import { TrainerLocalStorage } from "$lib/trainers/data/TrainerLocalStorage"
 import { test, expect, beforeEach, describe } from "vitest"
 import { LiteBackup } from "../LiteBackup"
@@ -64,7 +65,6 @@ test("records and restores custom move edit keys", async () => {
 		{ id: "11111111-1111-1111-1111-111111111111", writeKey: "move-write-1" },
 		{ id: "22222222-2222-2222-2222-222222222222", writeKey: "move-write-2" },
 	])
-	expect(json.megaEvolutions).toEqual([])
 
 	localStorage.clear()
 	expect(CustomMoveLocalStorage.getWriteKey("11111111-1111-1111-1111-111111111111")).toBeUndefined()
@@ -75,6 +75,28 @@ test("records and restores custom move edit keys", async () => {
 	expect(CustomMoveLocalStorage.getWriteKey("22222222-2222-2222-2222-222222222222")).toEqual("move-write-2")
 })
 
+test("records and restores Mega Evolution edit keys", async () => {
+	MegaDefinitionLocalStorage.setWriteKey("44444444-4444-4444-4444-444444444444", "mega-write-2")
+	MegaDefinitionLocalStorage.setWriteKey("33333333-3333-3333-3333-333333333333", "mega-write-1")
+
+	const backup = await LiteBackup.create()
+	const json = JSON.parse(await backup.text())
+
+	expect(json.$schema).toContain("/backups/schemas/2026-09")
+	expect(json.megaEvolutions).toEqual([
+		{ id: "33333333-3333-3333-3333-333333333333", writeKey: "mega-write-1" },
+		{ id: "44444444-4444-4444-4444-444444444444", writeKey: "mega-write-2" },
+	])
+
+	localStorage.clear()
+	expect(MegaDefinitionLocalStorage.getWriteKey("33333333-3333-3333-3333-333333333333")).toBeUndefined()
+
+	await LiteBackup.restore(backup)
+
+	expect(MegaDefinitionLocalStorage.getWriteKey("33333333-3333-3333-3333-333333333333")).toEqual("mega-write-1")
+	expect(MegaDefinitionLocalStorage.getWriteKey("44444444-4444-4444-4444-444444444444")).toEqual("mega-write-2")
+})
+
 test("nothing is in storage", async () => {
 	const backup = await LiteBackup.create()
 	await LiteBackup.restore(backup)
@@ -82,6 +104,7 @@ test("nothing is in storage", async () => {
 	expect(FakemonLocalStorage.list()).toEqual([])
 	expect(TrainerLocalStorage.getReadKeys()).toEqual([])
 	expect(CustomMoveLocalStorage.listWriteKeys()).toEqual([])
+	expect(MegaDefinitionLocalStorage.listWriteKeys()).toEqual([])
 })
 
 test("existing records are not overwritten", async () => {
@@ -177,6 +200,16 @@ describe("bad formats", () => {
 			trainers: [],
 			fakemon: [],
 			customMoves: [ { id: "move-id" } ],
+		})
+
+		await expect(LiteBackup.restore(backup)).rejects.toThrow(BackupError)
+	})
+
+	test("Mega Evolutions missing edit keys", async () => {
+		const backup = createBackup({
+			trainers: [],
+			fakemon: [],
+			megaEvolutions: [ { id: "mega-id" } ],
 		})
 
 		await expect(LiteBackup.restore(backup)).rejects.toThrow(BackupError)
