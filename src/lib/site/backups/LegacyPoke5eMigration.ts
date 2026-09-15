@@ -3,6 +3,8 @@ import type { FakemonDataProvider } from "$lib/fakemon/data/FakemonDataProvider"
 import { FakemonLocalStorage } from "$lib/fakemon/data/FakemonLocalStorage"
 import { provider as destinationFakemonProvider } from "$lib/fakemon/data"
 import { SpeciesStore, type PokemonSpecies, type SpeciesIdentifier } from "$lib/poke5e/species"
+import { SpeciesMedia, type UploadedMedia } from "$lib/poke5e/species/media"
+import type { ImageInputValue } from "$lib/ui/forms"
 import type { StorageResource, TrainerDataProvider } from "$lib/trainers/data"
 import { provider as destinationTrainerProvider } from "$lib/trainers/data"
 import { TrainerLocalStorage } from "$lib/trainers/data/TrainerLocalStorage"
@@ -113,22 +115,90 @@ async function withLegacyFakemonAccess<T>(entry: LegacyFakemonBackupEntry, actio
 	}
 }
 
+async function resourceToFile(resource: StorageResource | UploadedMedia): Promise<File> {
+	const response = await fetch(resource.href)
+	if (!response.ok) throw new Error("Could not download legacy media.")
+
+	const blob = await response.blob()
+	return new File([blob], resource.name || "legacy-image", {
+		type: blob.type || "image/png",
+	})
+}
+
+const missingFakemonMedia = (legacy: Fakemon, destination: Fakemon): boolean =>
+	SpeciesMedia.types.some((type) =>
+		legacy.species.media.data.values[type] != null
+		&& destination.species.media.data.values[type] == null,
+	)
+
+async function copyFakemonMedia(
+	legacy: Fakemon,
+	migrated: Fakemon,
+	writeKey: string,
+	dependencies: LegacyPoke5eMigrationDependencies,
+): Promise<{ fakemon: Fakemon, copied: boolean }> {
+	if (!dependencies.copyMedia || !missingFakemonMedia(legacy, migrated)) {
+		return { fakemon: migrated, copied: true }
+	}
+
+	try {
+		const entries = await Promise.all(SpeciesMedia.types.map(async (type) => {
+			const resource = legacy.species.media.data.values[type]
+			if (resource == null) return [type, undefined] as const
+
+			const file = await resourceToFile(resource)
+			const input: ImageInputValue = {
+				type: "new",
+				value: file,
+				href: resource.href,
+			}
+			return [type, input] as const
+		}))
+
+		const media = new SpeciesMedia<ImageInputValue>({
+			values: Object.fromEntries(entries),
+		})
+		await dependencies.destinationFakemon.updateMedia(writeKey, media)
+
+		const refreshed = await dependencies.destinationFakemon.getByReadKey(migrated.data.readKey)
+		return {
+			fakemon: refreshed ?? migrated,
+			copied: true,
+		}
+	} catch (e) {
+		console.warn("Could not migrate legacy Fakemon media.", e)
+		return { fakemon: migrated, copied: false }
+	}
+}
+
 async function reuseMappedFakemon(
 	entry: LegacyFakemonBackupEntry,
 	dependencies: LegacyPoke5eMigrationDependencies,
-): Promise<{ fakemon: Fakemon, owned: boolean } | undefined> {
+): Promise<{ fakemon: Fakemon, owned: boolean, warnings: number } | undefined> {
 	const mapping = LegacyPoke5eMigrationLocalStorage.getFakemon(entry.readKey)
 	if (mapping == null) return undefined
 
 	FakemonLocalStorage.add(mapping)
 	try {
-		const existing = await dependencies.destinationFakemon.getByReadKey(mapping.readKey)
+		let existing = await dependencies.destinationFakemon.getByReadKey(mapping.readKey)
 		if (existing != null) {
+			let warnings = 0
+			if (mapping.writeKey != null && dependencies.copyMedia) {
+				const legacy = await withLegacyFakemonAccess(entry, () =>
+					dependencies.legacyFakemon.getByReadKey(entry.readKey),
+				)
+				if (legacy != null && missingFakemonMedia(legacy, existing)) {
+					const mediaResult = await copyFakemonMedia(legacy, existing, mapping.writeKey, dependencies)
+					existing = mediaResult.fakemon
+					if (!mediaResult.copied) warnings += 1
+				}
+			}
+
 			if (mapping.writeKey == null) {
 				FakemonLocalStorage.remove(mapping.readKey)
 				FakemonLocalStorage.add({ id: mapping.id, readKey: mapping.readKey })
 			}
-			return { fakemon: existing, owned: mapping.writeKey != null }
+			return { fakemon: existing, owned: mapping.writeKey != null, warnings }
 		}
 	} catch (e) {
 		// A transient destination read error must not cause a duplicate migration.
@@ -170,20 +240,10 @@ async function reuseMappedTrainer(
 	return false
 }
 
-async function resourceToFile(resource: StorageResource): Promise<File> {
-	const response = await fetch(resource.href)
-	if (!response.ok) throw new Error("Could not download legacy media.")
-
-	const blob = await response.blob()
-	return new File([blob], resource.name || "legacy-image", {
-		type: blob.type || "image/png",
-	})
-}
-
 async function migrateOneFakemon(
 	entry: LegacyFakemonBackupEntry,
 	dependencies: LegacyPoke5eMigrationDependencies,
-): Promise<{ fakemon: Fakemon, owned: boolean } | undefined> {
+): Promise<{ fakemon: Fakemon, owned: boolean, warnings: number } | undefined> {
 	const reused = await reuseMappedFakemon(entry, dependencies)
 	if (reused != null) return reused
 
@@ -197,7 +257,7 @@ async function migrateOneFakemon(
 
 		const { id: _legacySpeciesId, ...draft } = legacy.data.species
 		const created = await dependencies.destinationFakemon.add(draft as DraftFakemon)
-		const migrated = new Fakemon({
+		let migrated = new Fakemon({
 			...created.data,
 			species: {
 				...legacy.data.species,
@@ -207,6 +267,13 @@ async function migrateOneFakemon(
 		})
 
 		await dependencies.destinationFakemon.update(migrated)
+
+		let warnings = 0
+		if (created.data.writeKey != null) {
+			const mediaResult = await copyFakemonMedia(legacy, migrated, created.data.writeKey, dependencies)
+			migrated = mediaResult.fakemon
+			if (!mediaResult.copied) warnings += 1
+		}
 
 		const mapping = {
 			id: created.data.id,
@@ -223,7 +290,7 @@ async function migrateOneFakemon(
 			})
 		}
 
-		return { fakemon: migrated, owned }
+		return { fakemon: migrated, owned, warnings }
 	})
 }
 
@@ -294,6 +361,7 @@ export async function migrateLegacyPoke5eBackup({
 			migratedFakemon.set(entry.readKey, result.fakemon)
 			if (countInBackup) migratedFakemonCount += 1
 			if (entry.writeKey != null && !result.owned) warnings += 1
+			warnings += result.warnings
 			return result.fakemon
 		} catch (e) {
 			console.error("Could not migrate a legacy fakemon.", e)
