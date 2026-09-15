@@ -14,7 +14,6 @@ jobs:
       PUBLIC_OFFLINE: false
       PUBLIC_ANALYTICS_ENABLED: false
       PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      PUBLIC_SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYXNlLWRlbW8iLCJyb2xlIjoiYW5vbiIsImV4cCI6MTk4MzgxMjk5Nn0.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
       PUBLIC_USER_ASSETS_BASE_URL: http://127.0.0.1:9000/user-assets
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +31,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
+      - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
+      - name: Start local services
+        run: pnpm services:start
+      - name: Export active local Supabase anon key
+        shell: bash
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+          echo "PUBLIC_SUPABASE_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+      - name: Reset local database and apply migrations
+        run: pnpm supabase db reset
       - name: Compile Paraglide translations
         run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/site/i18n/paraglide --strategy url,baseLocale --emit-ts-declarations
       - name: Svelte and TypeScript checks
@@ -54,11 +63,6 @@ jobs:
       - name: Fail on unit test failure
         if: steps.unit-tests.outcome == 'failure'
         run: exit 1
-      - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
-      - name: Start local services
-        run: pnpm services:start
-      - name: Reset local database and apply migrations
-        run: pnpm supabase db reset
       - name: Database migration tests
         run: pnpm test:db:quick
       - name: Edge Function tests
