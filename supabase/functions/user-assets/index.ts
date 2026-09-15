@@ -9,19 +9,24 @@ import { UserAssetsProvider } from "./UserAssetsProvider.ts"
 import { env } from "./env.ts"
 import { handleCors } from "./cors.ts"
 
-const supabase = initSupabase()
-const s3 = initS3()
+const createProviders = () => {
+	const supabase = initSupabase()
+	const s3 = initS3()
+	return {
+		dataProvider: new DataProvider(supabase),
+		userAssetsProvider: new UserAssetsProvider(s3, env.S3_BUCKET_NAME),
+	}
+}
 
-const dataProvider = new DataProvider(supabase)
-const userAssetsProvider = new UserAssetsProvider(s3, env.S3_BUCKET_NAME)
+type Providers = ReturnType<typeof createProviders>
 
 Deno.serve((req) => {
 	return handleCors(req, async (req) => {
 		try {
 			if (req.method === "POST")
-				return await POST(req)
+				return await POST(req, createProviders())
 			else if (req.method === "DELETE")
-				return await DELETE(req)
+				return await DELETE(req, createProviders())
 			else
 				return Responses.methodNotAllowed()
 		} catch (e) {
@@ -40,16 +45,16 @@ Deno.serve((req) => {
 	})
 })
 
-async function POST(req: Request): Promise<Response> {
+async function POST(req: Request, providers: Providers): Promise<Response> {
 	const body = await req.json()
-	const urlResult = await getUploadUrl({ dataProvider, userAssetsProvider }, body)
+	const urlResult = await getUploadUrl(providers, body)
 	const response = { values: urlResult }
 	return Responses.ok(response)
 }
 
-async function DELETE(req: Request): Promise<Response> {
+async function DELETE(req: Request, providers: Providers): Promise<Response> {
 	const body = await req.json()
-	await removeAsset({ dataProvider, userAssetsProvider }, body)
+	await removeAsset(providers, body)
 
 	// note: supabase invoke always requires a body to parse
 	return Responses.ok({})

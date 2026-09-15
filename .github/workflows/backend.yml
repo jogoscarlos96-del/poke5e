@@ -15,7 +15,13 @@ jobs:
       ENV: prod
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_REF }}
+      PUBLIC_OFFLINE: false
+      PUBLIC_ANALYTICS_ENABLED: false
+      PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      PUBLIC_SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      PUBLIC_USER_ASSETS_BASE_URL: http://127.0.0.1:9000/user-assets
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -37,15 +43,22 @@ jobs:
         run: pnpm test:db
       - name: Run function tests
         run: pnpm test:functions
-      - run: supabase link --project-ref $SUPABASE_PROJECT_ID
-      - run: supabase secrets set S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}
-      - run: supabase secrets set S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}
-      - run: supabase secrets set S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}
-      - run: supabase secrets set S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+      - name: Verify Supabase API access
+        run: supabase functions list --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Preview migrations
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --dry-run
       - name: Push migrations
-        run: supabase db push
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+      - name: Set S3 endpoint
+        run: supabase secrets set "S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}" --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Set S3 access key ID
+        run: supabase secrets set "S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}" --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Set S3 secret access key
+        run: supabase secrets set "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}" --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Set S3 bucket name
+        run: supabase secrets set "S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}" --project-ref "$SUPABASE_PROJECT_ID"
       - name: Push functions
-        run: supabase functions deploy
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID"
 
   smoke-test:
     needs: backend-deploy

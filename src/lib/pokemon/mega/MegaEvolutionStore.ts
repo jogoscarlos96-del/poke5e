@@ -1,7 +1,7 @@
 import { supabase } from "$lib/supabase"
 import type { PokemonId, ReadWriteKey } from "$lib/trainers/types"
 import { get, writable } from "svelte/store"
-import { MegaEvolution, type MegaEvolutionState, type StoredMegaForm } from "./MegaEvolution"
+import { MegaEvolution, type MegaEvolutionState } from "./MegaEvolution"
 
 type MegaRows = Record<PokemonId, MegaEvolutionState>
 
@@ -14,31 +14,27 @@ const setOne = (pokemonId: PokemonId, state: MegaEvolutionState) => {
 }
 
 const normalizeState = (state: MegaEvolutionState): MegaEvolutionState => ({
-	...state,
-	activeFormId: state.activeFormId && state.forms.some((form) => form.id === state.activeFormId)
-		? state.activeFormId
-		: null,
+	selectedMegaId: state.selectedMegaId || null,
 })
 
 const refresh = (pokemonId: PokemonId, readKey: ReadWriteKey): Promise<MegaEvolutionState> => {
 	const existing = pending.get(pokemonId)
 	if (existing) return existing
 
-	const request = supabase.rpc("get_pokemon_mega", {
-		_pokemon_id: parseInt(pokemonId),
-		_read_key: readKey,
-	}).maybeSingle<{ forms: StoredMegaForm[] | null, active_form_id: string | null }>()
-		.then(async ({ data, error }) => {
+	const request = (async () => {
+		try {
+			const { data, error } = await supabase.rpc("get_pokemon_mega", {
+				_pokemon_id: parseInt(pokemonId),
+				_read_key: readKey,
+			}).maybeSingle<{ selected_mega_id: string | null }>()
+
 			if (error) throw error
 			if (!data) return setOne(pokemonId, MegaEvolution.empty())
-
-			const forms = await MegaEvolution.fromStoredForms(data.forms)
-			return setOne(pokemonId, normalizeState({
-				forms,
-				activeFormId: data.active_form_id,
-			}))
-		})
-		.finally(() => pending.delete(pokemonId))
+			return setOne(pokemonId, normalizeState({ selectedMegaId: data.selected_mega_id }))
+		} finally {
+			pending.delete(pokemonId)
+		}
+	})()
 
 	pending.set(pokemonId, request)
 	return request
@@ -52,8 +48,7 @@ const save = async (pokemonId: PokemonId, writeKey: ReadWriteKey, state: MegaEvo
 	const { data, error } = await supabase.rpc("update_pokemon_mega", {
 		_write_key: writeKey,
 		_pokemon_id: parseInt(pokemonId),
-		_mega_forms: MegaEvolution.toStoredForms(normalized.forms),
-		_mega_active_form_id: normalized.activeFormId,
+		_selected_mega_id: normalized.selectedMegaId,
 	}).single<number>()
 
 	if (error || !data || data <= 0) {

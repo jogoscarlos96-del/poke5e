@@ -1,7 +1,6 @@
 <script lang="ts" context="module">
 	export type UpdateDetail = {
 		pokemon: TrainerPokemon,
-		megaForms: MegaForm[],
 		updateAvatar?: ImageInputValue,
 	}
 </script>
@@ -32,13 +31,11 @@
 	import { StabFieldset } from "$lib/pokemon/stab"
 	import { KnownAbilitiesFieldset } from "$lib/pokemon/ability"
 	import { TagList, TagListField } from "$lib/poke5e/tags"
-	import { MegaFormsFieldset, type MegaForm } from "$lib/pokemon/mega"
 
 	const dispatch = createEventDispatcher()
 
 	export let pokemon: TrainerPokemon
 	export let species: PokemonSpecies
-	export let megaForms: MegaForm[] = []
 	export let saving: boolean = false
 	export let pokemonTags: TagList
 	$: disabled = saving
@@ -69,11 +66,6 @@
 	let avatarToUpload: ImageInputValue | undefined = undefined
 	let isValid = true
 	let tags = TagList.copy(pokemon.tags)
-	let editableMegaForms = megaForms.map((form) => ({
-		...form,
-		type: form.type?.copy(),
-		ability: form.ability?.copy(),
-	}))
 
 	let moves = structuredClone(pokemon.moves)
 	let items = structuredClone(pokemon.items)
@@ -115,7 +107,6 @@
 				tags,
 				avatar: originalAvatar,
 			},
-			megaForms: editableMegaForms,
 			updateAvatar: avatarToUpload,
 		} as UpdateDetail)
 	}
@@ -132,7 +123,6 @@
 	<MovesFieldset bind:values={moves} {species} level={new Level(level)} {disabled} />
 	<FeatsFieldset feats={$DndAndPokemonFeats} bind:values={feats} {disabled} />
 	<HeldItemsFieldset bind:items {disabled} />
-	<MegaFormsFieldset bind:forms={editableMegaForms} {disabled} />
 	<Fieldset title="{m.general()}">
 		<MarkdownField label="{m.notes()}" bind:value={notes} placeholder="{m.generalNotesPlaceholder()}" {disabled} />
 		<TagListField label="{m.tags()}" bind:value={tags} possibleTags={pokemonTags} />

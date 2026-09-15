@@ -119,6 +119,18 @@
 		color: "blue",
 		icon: HitIcon,
 	}, {
+		id: "trainers",
+		href: Url.trainers(),
+		name: m["trainers.title"](),
+		color: "green",
+		icon: IdBadgeIcon,
+	}, {
+		id: "mega-evolutions",
+		href: Url.megaEvolutions(),
+		name: "Mega Evolutions",
+		color: "purple",
+		icon: GreatballIcon,
+	}, {
 		id: "tms",
 		href: Url.tms(),
 		name: m["tmsSection.title"](),
@@ -130,12 +142,6 @@
 		name: m["items.title"](),
 		color: "yellow",
 		icon: BackpackIcon,
-	}, {
-		id: "trainers",
-		href: Url.trainers(),
-		name: m["trainers.title"](),
-		color: "green",
-		icon: IdBadgeIcon,
 	}, {
 		id: "reference",
 		href: Url.reference.all(),

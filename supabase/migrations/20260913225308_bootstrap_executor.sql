@@ -1,0 +1,3 @@
+-- Historical production migration marker.
+-- Production was bootstrapped separately before the repository migration history was aligned.
+-- No SQL is required locally; this file preserves the remote migration timestamp for Supabase CLI history comparison.

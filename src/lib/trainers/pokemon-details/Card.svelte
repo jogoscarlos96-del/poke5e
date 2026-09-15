@@ -10,7 +10,7 @@
 	import { Url } from "$lib/site/url"
 	import { PageAction } from "../page-action"
 	import { EvolutionStore } from "$lib/pokemon/evolution"
-	import { MegaEvolution, MegaEvolutionControl, MegaEvolutionStore } from "$lib/pokemon/mega"
+	import { MegaDefinitionsStore, MegaEvolution, MegaEvolutionControl, MegaEvolutionStore } from "$lib/pokemon/mega"
 	import { onMount } from "svelte"
 
 	export let trainer: TrainerStore
@@ -22,12 +22,18 @@
 	$: pokemon = $trainer.pokemon.find((it) => it.id === id)
 	$: pokemonTags = $trainer.tags.getForPokemon()
 	$: megaState = pokemon ? ($MegaEvolutionStore[pokemon.id] ?? MegaEvolution.empty()) : MegaEvolution.empty()
+	$: availableMegaDefinitions = pokemon
+		? MegaDefinitionsStore.forSpecies($MegaDefinitionsStore.result, pokemon.pokemonId.data)
+		: []
+	$: selectedMegaDefinition = MegaEvolution.selectedDefinition(megaState, availableMegaDefinitions)
 	$: evolutionDataReady = $evolutions != null
 	$: isFinalEvolution = pokemon != null && evolutionDataReady && ($evolutions?.evolvesTo(pokemon.pokemonId).length ?? 0) === 0
 	$: megaEligible = pokemon != null && MegaEvolution.eligibility(pokemon, isFinalEvolution, evolutionDataReady).eligible
-	$: effectiveType = pokemon ? MegaEvolution.effectiveType(pokemon, megaState, megaEligible) : undefined
+	$: effectiveType = pokemon ? MegaEvolution.effectiveType(pokemon, selectedMegaDefinition, megaEligible) : undefined
+	$: showMegaControl = pokemon != null && MegaEvolution.hasMegaliteStone(pokemon) && availableMegaDefinitions.length > 0
 
 	onMount(() => {
+		void MegaDefinitionsStore.refresh().catch(() => {})
 		if (pokemon) {
 			MegaEvolutionStore.refresh(pokemon.id, $trainer.info.readKey).catch(() => {})
 		}
@@ -61,10 +67,10 @@
 		<WithSpecies let:species ids={[pokemon?.pokemonId]}>
 			<Card title={pokemon.nickname} dismissToHref="{Url.trainers($trainer.info.readKey, undefined, PageAction.fullList)}">
 				{#if effectiveType}<TypeTag slot="header-extra" type={effectiveType.data} />{/if}
-				{#if megaState.forms.length > 0}
-					<MegaEvolutionControl {pokemon} {species} {trainer} />
+				{#if showMegaControl}
+					<MegaEvolutionControl {pokemon} {species} {trainer} definitions={availableMegaDefinitions} />
 				{/if}
-				<Info trainer={$trainer.info} {pokemon} {species} editable={canEdit} {pokemonTags} {megaState} {megaEligible} on:update-health={onUpdateHealth} on:update-pp={onUpdatePp} on:update-bond={onUpdateBond} on:update-tags={onUpdateTags} />
+				<Info trainer={$trainer.info} {pokemon} {species} editable={canEdit} {pokemonTags} megaDefinition={selectedMegaDefinition} {megaEligible} on:update-health={onUpdateHealth} on:update-pp={onUpdatePp} on:update-bond={onUpdateBond} on:update-tags={onUpdateTags} />
 				{#if canEdit}
 					<TrainerPokemonActions {trainer} {species} {pokemon} />
 				{/if}

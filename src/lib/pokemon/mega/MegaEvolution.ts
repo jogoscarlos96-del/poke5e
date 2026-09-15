@@ -1,33 +1,10 @@
 import { Ability } from "$lib/pokemon/ability"
-import { PokemonType, type PokeType } from "$lib/pokemon/types"
+import { PokemonType } from "$lib/pokemon/types"
 import type { TrainerPokemon } from "$lib/trainers/types"
-
-export type MegaForm = {
-	id: string,
-	name: string,
-	type?: PokemonType,
-	ability?: Ability,
-	imageUrl?: string,
-}
+import type { MegaDefinition } from "./MegaDefinition"
 
 export type MegaEvolutionState = {
-	forms: MegaForm[],
-	activeFormId?: string | null,
-}
-
-type StoredMegaAbility = {
-	referenceId: string,
-} | {
-	name: string,
-	description: string,
-}
-
-export type StoredMegaForm = {
-	id: string,
-	name: string,
-	type?: PokeType[],
-	ability?: StoredMegaAbility,
-	imageUrl?: string,
+	selectedMegaId?: string | null,
 }
 
 export type MegaEligibility = {
@@ -37,24 +14,17 @@ export type MegaEligibility = {
 
 export const MEGALITE_STONE_ID = "megalite-stone"
 
-const makeId = () => globalThis.crypto?.randomUUID?.() ?? `mega-${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-const isReferenceAbility = (ability: StoredMegaAbility): ability is { referenceId: string } =>
-	"referenceId" in ability && ability.referenceId.length > 0
-
 export const MegaEvolution = {
-	empty: (): MegaEvolutionState => ({ forms: [], activeFormId: null }),
+	empty: (): MegaEvolutionState => ({ selectedMegaId: null }),
 
-	newForm: (name = "Mega Form"): MegaForm => ({
-		id: makeId(),
-		name,
-	}),
+	selectedDefinition: (state: MegaEvolutionState, definitions: MegaDefinition[]): MegaDefinition | undefined =>
+		definitions.find((definition) => definition.id === state.selectedMegaId),
 
-	activeForm: (state: MegaEvolutionState, allowed = true): MegaForm | undefined =>
-		allowed ? state.forms.find((form) => form.id === state.activeFormId) : undefined,
+	activeDefinition: (state: MegaEvolutionState, definitions: MegaDefinition[], allowed = true): MegaDefinition | undefined =>
+		allowed ? MegaEvolution.selectedDefinition(state, definitions) : undefined,
 
-	isActive: (state: MegaEvolutionState, allowed = true): boolean =>
-		MegaEvolution.activeForm(state, allowed) != null,
+	isActive: (definition: MegaDefinition | undefined, allowed = true): boolean =>
+		definition != null && allowed,
 
 	hasMegaliteStone: (pokemon: Pick<TrainerPokemon, "items">): boolean =>
 		pokemon.items.some((item) => item.type === "standard" && item.itemId === MEGALITE_STONE_ID),
@@ -79,42 +49,17 @@ export const MegaEvolution = {
 		return { eligible: true }
 	},
 
-	effectiveType: (pokemon: Pick<TrainerPokemon, "type">, state: MegaEvolutionState, allowed = true): PokemonType =>
-		MegaEvolution.activeForm(state, allowed)?.type ?? pokemon.type,
+	effectiveType: (pokemon: Pick<TrainerPokemon, "type">, definition: MegaDefinition | undefined, allowed = true): PokemonType =>
+		allowed ? definition?.type ?? pokemon.type : pokemon.type,
 
-	effectiveAbilities: (pokemon: Pick<TrainerPokemon, "abilities">, state: MegaEvolutionState, allowed = true): Ability[] => {
-		const megaAbility = MegaEvolution.activeForm(state, allowed)?.ability
+	effectiveAbilities: (pokemon: Pick<TrainerPokemon, "abilities">, definition: MegaDefinition | undefined, allowed = true): Ability[] => {
+		const megaAbility = allowed ? definition?.ability : undefined
 		return megaAbility ? [megaAbility] : pokemon.abilities
 	},
 
-	effectiveAc: (pokemon: Pick<TrainerPokemon, "ac">, state: MegaEvolutionState, allowed = true): number =>
-		pokemon.ac + (MegaEvolution.isActive(state, allowed) ? 2 : 0),
+	effectiveAc: (pokemon: Pick<TrainerPokemon, "ac">, definition: MegaDefinition | undefined, allowed = true): number =>
+		pokemon.ac + (MegaEvolution.isActive(definition, allowed) ? 2 : 0),
 
-	attributeModifierMultiplier: (state: MegaEvolutionState, allowed = true): number =>
-		MegaEvolution.isActive(state, allowed) ? 2 : 1,
-
-	toStoredForms: (forms: MegaForm[]): StoredMegaForm[] => forms.map((form) => ({
-		id: form.id,
-		name: form.name,
-		type: form.type?.data,
-		ability: form.ability
-			? form.ability.referenceId
-				? { referenceId: form.ability.referenceId }
-				: { name: form.ability.name, description: form.ability.description }
-			: undefined,
-		imageUrl: form.imageUrl?.trim() || undefined,
-	})),
-
-	fromStoredForms: async (forms: StoredMegaForm[] | null | undefined): Promise<MegaForm[]> =>
-		Promise.all((forms ?? []).map(async (form) => ({
-			id: form.id,
-			name: form.name,
-			type: form.type && form.type.length > 0 ? new PokemonType(form.type.filter(PokemonType.isPokeType)) : undefined,
-			ability: form.ability
-				? isReferenceAbility(form.ability)
-					? await Ability.resolve(form.ability.referenceId)
-					: new Ability({ name: form.ability.name, description: form.ability.description })
-				: undefined,
-			imageUrl: form.imageUrl,
-		}))),
+	attributeModifierMultiplier: (definition: MegaDefinition | undefined, allowed = true): number =>
+		MegaEvolution.isActive(definition, allowed) ? 2 : 1,
 }
