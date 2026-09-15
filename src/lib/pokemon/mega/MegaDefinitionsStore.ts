@@ -57,9 +57,17 @@ async function load(): Promise<MegaDefinition[]> {
 	return Promise.all((data as MegaDefinitionRow[]).map(MegaDefinitions.fromRow))
 }
 
+function currentDefinitions(): MegaDefinition[] {
+	let result: MegaDefinition[] = []
+	const unsubscribe = store.subscribe((value) => { result = value.result ?? [] })
+	unsubscribe()
+	return result
+}
+
 async function refresh(force = false): Promise<MegaDefinition[]> {
 	if (!browser) return []
 	if (inFlight != null && !force) return inFlight
+	if (loaded && !force) return currentDefinitions()
 
 	store.update((prev) => ({ ...prev, fetching: true, error: undefined }))
 	inFlight = load()
@@ -81,10 +89,7 @@ async function refresh(force = false): Promise<MegaDefinition[]> {
 
 async function ensureLoaded(): Promise<MegaDefinition[]> {
 	if (!loaded) return refresh()
-	let result: MegaDefinition[] = []
-	const unsubscribe = store.subscribe((value) => { result = value.result ?? [] })
-	unsubscribe()
-	return result
+	return currentDefinitions()
 }
 
 async function create(draft: DraftMegaDefinition): Promise<MegaDefinition> {
