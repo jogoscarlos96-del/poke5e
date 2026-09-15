@@ -59,6 +59,11 @@
 				deltas.lastTrainer = trainer
 			}
 
+			// A hard refresh on a trainer detail page bypasses the trainer-list branch below.
+			// Warm the other locally known trainers in the background so subsequent trainer
+			// navigation is just as smooth as entering the section through the list/home page.
+			void preloadKnownTrainers()
+
 			if (accessKey) {
 				trainer?.then((t) => {
 					return t?.verifyAccess(accessKey)
