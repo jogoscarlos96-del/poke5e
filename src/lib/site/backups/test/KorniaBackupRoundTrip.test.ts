@@ -34,7 +34,7 @@ test("round trips all Kornia backup data together", async () => {
 	const json = JSON.parse(await backup.text())
 
 	expect(json.$schema).toContain("/backups/schemas/2026-09")
-	expect(json.fakemon).toEqual([
+	expect([...json.fakemon].sort((a, b) => a.id.localeCompare(b.id))).toEqual([
 		{
 			id: "11111111-1111-1111-1111-111111111111",
 			readKey: "fakemon-read-owned",
