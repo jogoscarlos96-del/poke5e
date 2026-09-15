@@ -34,11 +34,23 @@ jobs:
       - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
       - name: Start local services
         run: pnpm services:start
-      - name: Export active local Supabase anon key
+      - name: Export active local Supabase public key
         shell: bash
         run: |
-          eval "$(pnpm exec supabase status -o env)"
-          echo "PUBLIC_SUPABASE_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+          set -euo pipefail
+          pnpm exec supabase status -o env > supabase-status.env
+          set -a
+          source supabase-status.env
+          set +a
+
+          public_key="${PUBLISHABLE_KEY:-${ANON_KEY:-}}"
+          if [ -z "$public_key" ]; then
+            echo "Supabase status did not expose a publishable or anon key. Available variables:"
+            cut -d= -f1 supabase-status.env
+            exit 1
+          fi
+
+          echo "PUBLIC_SUPABASE_KEY=$public_key" >> "$GITHUB_ENV"
       - name: Reset local database and apply migrations
         run: pnpm supabase db reset
       - name: Compile Paraglide translations
