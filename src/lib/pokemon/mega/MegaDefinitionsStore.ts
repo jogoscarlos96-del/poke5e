@@ -26,6 +26,21 @@ type UserAssetsResponse<T> = {
 	values: T,
 }
 
+async function readableFunctionError(error: unknown): Promise<Error> {
+	const context = error != null && typeof error === "object" && "context" in error
+		? (error as { context?: unknown }).context
+		: undefined
+	if (context instanceof Response) {
+		try {
+			const body = await context.clone().json() as { message?: unknown }
+			if (typeof body.message === "string" && body.message.length > 0) return new Error(body.message)
+		} catch {
+			// Fall through to the original Supabase Functions error.
+		}
+	}
+	return error instanceof Error ? error : new Error(String(error))
+}
+
 const initial: Fetched<MegaDefinition[]> = {
 	result: undefined,
 	fetching: true,
@@ -158,7 +173,7 @@ async function updateMedia(id: string, media: MegaMediaInput): Promise<boolean> 
 				},
 			},
 		})
-		if (error) throw error
+		if (error) throw await readableFunctionError(error)
 
 		const uploads = data?.values
 		await Promise.all([
@@ -177,7 +192,7 @@ async function updateMedia(id: string, media: MegaMediaInput): Promise<boolean> 
 				params: { id, key: writeKey, portrait: removePortrait, sprite: removeSprite },
 			},
 		})
-		if (removeError) throw removeError
+		if (removeError) throw await readableFunctionError(removeError)
 	}
 
 	await refresh(true)
