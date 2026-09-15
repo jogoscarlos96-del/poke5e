@@ -66,7 +66,7 @@
 	<RequirePokemon trainer={$trainer} {id}>
 		<WithSpecies let:species ids={[pokemon?.pokemonId]}>
 			<Card title={pokemon.nickname} dismissToHref="{Url.trainers($trainer.info.readKey, undefined, PageAction.fullList)}">
-				{#if effectiveType}<TypeTag slot="header-extra" type={effectiveType.data} />{/if}
+				<TypeTag slot="header-extra" type={(effectiveType ?? pokemon.type).data} />
 				{#if showMegaControl}
 					<MegaEvolutionControl {pokemon} {species} {trainer} definitions={availableMegaDefinitions} />
 				{/if}
