@@ -38,7 +38,23 @@ jobs:
       - run: pnpm exec playwright install
       - run: cp ./supabase/functions/.env.example ./supabase/functions/.env
       - run: pnpm services:start
-      - run: pnpm supabase db reset
+      - name: Reset local Supabase database
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "Supabase reset attempt ${attempt}/3"
+            if pnpm supabase db reset; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Supabase reset failed after 3 attempts."
+              exit 1
+            fi
+
+            echo "Supabase reset hit a transient failure; retrying in 5 seconds..."
+            sleep 5
+          done
       - name: Unit Tests
         run: pnpm test:unit
       - name: Database Migration Tests
