@@ -25,10 +25,12 @@ export type LiteBackup = {
 }
 
 async function createBackup(): Promise<Blob> {
-	const trainers = TrainerLocalStorage.getReadKeys().map((it) => ({
-		readKey: it,
-		writeKey: TrainerLocalStorage.getWriteKey(it),
-	}))
+	const trainers = TrainerLocalStorage.getReadKeys().map((readKey) => {
+		const writeKey = TrainerLocalStorage.getWriteKey(readKey)
+		return writeKey == null
+			? { readKey }
+			: { readKey, writeKey }
+	})
 
 	const fakemon = FakemonLocalStorage.list()
 	const customMoves = CustomMoveLocalStorage.listWriteKeys()
