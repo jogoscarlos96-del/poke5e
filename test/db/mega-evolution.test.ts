@@ -18,52 +18,63 @@ test("Mega Evolution state respects trainer read and write keys", async () => {
 	})
 
 	const initial = await call<{
-		forms: unknown[],
-		active_form_id: string | null,
+		selected_mega_id: string | null,
 	}>("get_pokemon_mega", {
 		_pokemon_id: pokemonId,
 		_read_key: readKey,
 	})
 
-	expect(initial.forms).toEqual([])
-	expect(initial.active_form_id).toBeNull()
+	expect(initial.selected_mega_id).toBeNull()
 
-	const forms = [{
-		id: "mega-x",
-		name: "Mega X",
-		type: ["bug", "dragon"],
-		ability: { referenceId: "tough-claws" },
-		imageUrl: "https://example.invalid/mega-x.png",
-	}]
+	const {
+		ret_id: vivillonMegaId,
+		ret_write_key: vivillonMegaWriteKey,
+	} = await call<{
+		ret_id: string,
+		ret_write_key: string,
+	}>("new_mega_evolution", {
+		_species_id: "vivillon",
+		_mega_data: {
+			name: "Mega Vivillon",
+			type: ["bug", "dragon"],
+			ability: { referenceId: "tough-claws" },
+			portraitUrl: "https://example.invalid/mega-vivillon.png",
+		},
+	})
 
 	const updated = await call<number>("update_pokemon_mega", {
 		_write_key: writeKey,
 		_pokemon_id: pokemonId,
-		_mega_forms: forms,
-		_mega_active_form_id: "mega-x",
+		_selected_mega_id: vivillonMegaId,
 	})
 
 	expect(updated).toEqual(1)
 
 	const stored = await call<{
-		forms: unknown[],
-		active_form_id: string | null,
+		selected_mega_id: string | null,
 	}>("get_pokemon_mega", {
 		_pokemon_id: pokemonId,
 		_read_key: readKey,
 	})
 
-	expect(stored.forms).toEqual(forms)
-	expect(stored.active_form_id).toEqual("mega-x")
+	expect(stored.selected_mega_id).toEqual(vivillonMegaId)
 
 	const denied = await call<number>("update_pokemon_mega", {
 		_write_key: "INCORRECTKEY",
 		_pokemon_id: pokemonId,
-		_mega_forms: [],
-		_mega_active_form_id: null,
+		_selected_mega_id: null,
 	})
 
 	expect(denied).toEqual(0)
+
+	const unchanged = await call<{
+		selected_mega_id: string | null,
+	}>("get_pokemon_mega", {
+		_pokemon_id: pokemonId,
+		_read_key: readKey,
+	})
+
+	expect(unchanged.selected_mega_id).toEqual(vivillonMegaId)
 
 	await call("get_pokemon_mega", {
 		_pokemon_id: pokemonId,
@@ -72,25 +83,45 @@ test("Mega Evolution state respects trainer read and write keys", async () => {
 		assertNull: true,
 	})
 
-	const invalidActive = await call<number>("update_pokemon_mega", {
-		_write_key: writeKey,
-		_pokemon_id: pokemonId,
-		_mega_forms: forms,
-		_mega_active_form_id: "not-a-real-form",
+	const {
+		ret_id: charizardMegaId,
+		ret_write_key: charizardMegaWriteKey,
+	} = await call<{
+		ret_id: string,
+		ret_write_key: string,
+	}>("new_mega_evolution", {
+		_species_id: "charizard",
+		_mega_data: {
+			name: "Mega Charizard X",
+		},
 	})
 
-	expect(invalidActive).toEqual(1)
+	const mismatched = await call<number>("update_pokemon_mega", {
+		_write_key: writeKey,
+		_pokemon_id: pokemonId,
+		_selected_mega_id: charizardMegaId,
+	})
+
+	expect(mismatched).toEqual(1)
 
 	const validated = await call<{
-		forms: unknown[],
-		active_form_id: string | null,
+		selected_mega_id: string | null,
 	}>("get_pokemon_mega", {
 		_pokemon_id: pokemonId,
 		_read_key: readKey,
 	})
 
-	expect(validated.forms).toEqual(forms)
-	expect(validated.active_form_id).toBeNull()
+	expect(validated.selected_mega_id).toBeNull()
+
+	expect(await call<number>("remove_mega_evolution", {
+		_id: vivillonMegaId,
+		_write_key: vivillonMegaWriteKey,
+	})).toEqual(1)
+
+	expect(await call<number>("remove_mega_evolution", {
+		_id: charizardMegaId,
+		_write_key: charizardMegaWriteKey,
+	})).toEqual(1)
 
 	await call("delete_trainer", {
 		_write_key: writeKey,
