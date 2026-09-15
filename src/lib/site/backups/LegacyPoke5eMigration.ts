@@ -8,6 +8,7 @@ import { provider as destinationTrainerProvider } from "$lib/trainers/data"
 import { TrainerLocalStorage } from "$lib/trainers/data/TrainerLocalStorage"
 import type { TrainerPokemon } from "$lib/trainers/types"
 import { createLegacyPoke5eProviders } from "./LegacyPoke5eSource"
+import { LegacyPoke5eMigrationLocalStorage } from "./LegacyPoke5eMigrationLocalStorage"
 
 export type LegacyTrainerBackupEntry = {
 	readKey: string,
@@ -58,7 +59,7 @@ const waitForSpecies = async (id: SpeciesIdentifier): Promise<PokemonSpecies | u
 			if (value?.value != null) finish(value.value)
 		})
 
-		window.setTimeout(() => finish(undefined), 10000)
+		setTimeout(() => finish(undefined), 10000)
 	})
 }
 
@@ -112,6 +113,63 @@ async function withLegacyFakemonAccess<T>(entry: LegacyFakemonBackupEntry, actio
 	}
 }
 
+async function reuseMappedFakemon(
+	entry: LegacyFakemonBackupEntry,
+	dependencies: LegacyPoke5eMigrationDependencies,
+): Promise<{ fakemon: Fakemon, owned: boolean } | undefined> {
+	const mapping = LegacyPoke5eMigrationLocalStorage.getFakemon(entry.readKey)
+	if (mapping == null) return undefined
+
+	FakemonLocalStorage.add(mapping)
+	try {
+		const existing = await dependencies.destinationFakemon.getByReadKey(mapping.readKey)
+		if (existing != null) {
+			if (mapping.writeKey == null) {
+				FakemonLocalStorage.remove(mapping.readKey)
+				FakemonLocalStorage.add({ id: mapping.id, readKey: mapping.readKey })
+			}
+			return { fakemon: existing, owned: mapping.writeKey != null }
+		}
+	} catch (e) {
+		// A transient destination read error must not cause a duplicate migration.
+		console.warn("Could not verify an existing legacy Fakemon migration mapping.", e)
+		throw e
+	}
+
+	FakemonLocalStorage.remove(mapping.readKey)
+	LegacyPoke5eMigrationLocalStorage.removeFakemon(entry.readKey)
+	return undefined
+}
+
+async function reuseMappedTrainer(
+	entry: LegacyTrainerBackupEntry,
+	dependencies: LegacyPoke5eMigrationDependencies,
+): Promise<boolean> {
+	const mapping = LegacyPoke5eMigrationLocalStorage.getTrainer(entry.readKey)
+	if (mapping == null) return false
+
+	TrainerLocalStorage.addReadKey(mapping.readKey)
+	if (mapping.writeKey != null) {
+		TrainerLocalStorage.addWriteKey(mapping.readKey, mapping.writeKey)
+	} else {
+		TrainerLocalStorage.removeWriteKey(mapping.readKey)
+	}
+
+	try {
+		const existing = await dependencies.destinationTrainers.getTrainer(mapping.readKey)
+		if (existing != null) return true
+	} catch (e) {
+		// A transient destination read error must not cause a duplicate migration.
+		console.warn("Could not verify an existing legacy trainer migration mapping.", e)
+		throw e
+	}
+
+	TrainerLocalStorage.removeWriteKey(mapping.readKey)
+	TrainerLocalStorage.removeReadKey(mapping.readKey)
+	LegacyPoke5eMigrationLocalStorage.removeTrainer(entry.readKey)
+	return false
+}
+
 async function resourceToFile(resource: StorageResource): Promise<File> {
 	const response = await fetch(resource.href)
 	if (!response.ok) throw new Error("Could not download legacy media.")
@@ -126,6 +184,9 @@ async function migrateOneFakemon(
 	entry: LegacyFakemonBackupEntry,
 	dependencies: LegacyPoke5eMigrationDependencies,
 ): Promise<{ fakemon: Fakemon, owned: boolean } | undefined> {
+	const reused = await reuseMappedFakemon(entry, dependencies)
+	if (reused != null) return reused
+
 	return withLegacyFakemonAccess(entry, async () => {
 		const legacy = await dependencies.legacyFakemon.getByReadKey(entry.readKey)
 		if (legacy == null) return undefined
@@ -146,6 +207,13 @@ async function migrateOneFakemon(
 		})
 
 		await dependencies.destinationFakemon.update(migrated)
+
+		const mapping = {
+			id: created.data.id,
+			readKey: created.data.readKey,
+			...(owned && created.data.writeKey != null ? { writeKey: created.data.writeKey } : {}),
+		}
+		LegacyPoke5eMigrationLocalStorage.setFakemon(entry.readKey, mapping)
 
 		if (!owned) {
 			FakemonLocalStorage.remove(created.data.readKey)
@@ -218,7 +286,10 @@ export async function migrateLegacyPoke5eBackup({
 
 		try {
 			const result = await migrateOneFakemon(entry, dependencies)
-			if (result == null) return undefined
+			if (result == null) {
+				if (countInBackup) failedFakemon += 1
+				return undefined
+			}
 
 			migratedFakemon.set(entry.readKey, result.fakemon)
 			if (countInBackup) migratedFakemonCount += 1
@@ -248,6 +319,11 @@ export async function migrateLegacyPoke5eBackup({
 	for (const entry of trainers) {
 		let createdTrainer: Awaited<ReturnType<TrainerDataProvider["newTrainer"]>> | undefined
 		try {
+			if (await reuseMappedTrainer(entry, dependencies)) {
+				migratedTrainerCount += 1
+				continue
+			}
+
 			const legacy = await withLegacyTrainerAccess(entry, async () => {
 				const data = await dependencies.legacyTrainers.getTrainer(entry.readKey)
 				if (data == null) return undefined
@@ -306,6 +382,11 @@ export async function migrateLegacyPoke5eBackup({
 			}
 
 			await dependencies.destinationTrainers.reorderPokemonTeam(writeKey, readKey, migratedPokemon)
+
+			LegacyPoke5eMigrationLocalStorage.setTrainer(entry.readKey, {
+				readKey,
+				...(legacy.owned ? { writeKey } : {}),
+			})
 
 			if (!legacy.owned) {
 				TrainerLocalStorage.removeWriteKey(readKey)
