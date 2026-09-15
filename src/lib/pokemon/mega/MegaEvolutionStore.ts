@@ -7,6 +7,7 @@ type MegaRows = Record<PokemonId, MegaEvolutionState>
 
 const store = writable<MegaRows>({})
 const pending = new Map<PokemonId, Promise<MegaEvolutionState>>()
+const loaded = new Set<PokemonId>()
 
 const setOne = (pokemonId: PokemonId, state: MegaEvolutionState) => {
 	store.update((current) => ({ ...current, [pokemonId]: state }))
@@ -17,9 +18,13 @@ const normalizeState = (state: MegaEvolutionState): MegaEvolutionState => ({
 	selectedMegaId: state.selectedMegaId || null,
 })
 
-const refresh = (pokemonId: PokemonId, readKey: ReadWriteKey): Promise<MegaEvolutionState> => {
+const refresh = (pokemonId: PokemonId, readKey: ReadWriteKey, force = false): Promise<MegaEvolutionState> => {
+	if (!force && loaded.has(pokemonId)) {
+		return Promise.resolve(get(store)[pokemonId] ?? MegaEvolution.empty())
+	}
+
 	const existing = pending.get(pokemonId)
-	if (existing) return existing
+	if (existing && !force) return existing
 
 	const request = (async () => {
 		try {
@@ -29,8 +34,11 @@ const refresh = (pokemonId: PokemonId, readKey: ReadWriteKey): Promise<MegaEvolu
 			}).maybeSingle<{ selected_mega_id: string | null }>()
 
 			if (error) throw error
-			if (!data) return setOne(pokemonId, MegaEvolution.empty())
-			return setOne(pokemonId, normalizeState({ selectedMegaId: data.selected_mega_id }))
+			const state = !data
+				? MegaEvolution.empty()
+				: normalizeState({ selectedMegaId: data.selected_mega_id })
+			loaded.add(pokemonId)
+			return setOne(pokemonId, state)
 		} finally {
 			pending.delete(pokemonId)
 		}
@@ -56,6 +64,7 @@ const save = async (pokemonId: PokemonId, writeKey: ReadWriteKey, state: MegaEvo
 		throw error ?? new Error("Mega Evolution state could not be saved.")
 	}
 
+	loaded.add(pokemonId)
 	return normalized
 }
 
