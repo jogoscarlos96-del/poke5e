@@ -9,6 +9,7 @@
 	import PokemonCard from "$lib/trainers/pokemon-details/Card.svelte"
 	import TrainerRoster from "$lib/trainers/trainer-details/Roster.svelte"
 	import { trainers, type TrainerListStore, type TrainerStore } from "$lib/trainers/trainers"
+	import { preloadKnownTrainers } from "$lib/trainers/preload"
 	import { PageAction } from "$lib/trainers/page-action"
 	import AddPokemonCard from "$lib/trainers/AddPokemonCard.svelte"
 	import TrainerNavigation from "$lib/trainers/TrainerNavigation.svelte"
@@ -75,7 +76,10 @@
 				})
 			}
 		} else if (!trainerId && browser) {
-			trainerList = trainers.all()
+			trainerList = Promise.all([
+				trainers.all(),
+				preloadKnownTrainers(),
+			]).then(([list]) => list)
 			trainer = undefined
 		} else {
 			trainer = undefined
