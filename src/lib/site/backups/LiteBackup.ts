@@ -8,11 +8,18 @@ import { BackupError } from "./BackupError"
 import { fakemonStore } from "$lib/fakemon/store"
 import { trainers } from "$lib/trainers/trainers"
 
+export type EditKeyBackup = {
+	id: string,
+	writeKey: string,
+}
+
 export type LiteBackup = {
 	$schema: string,
 	createdAt: string,
 	fakemon: Pick<Data<Fakemon>, "id" | "readKey" | "writeKey">[],
 	trainers: Pick<Trainer & Partial<WithWriteKey>, "readKey" | "writeKey">[],
+	customMoves?: EditKeyBackup[],
+	megaEvolutions?: EditKeyBackup[],
 }
 
 async function createBackup(): Promise<Blob> {
@@ -31,6 +38,15 @@ async function createBackup(): Promise<Blob> {
 	}
 
 	return new Blob([JSON.stringify(backup)], { type: "application/json" })
+}
+
+function isEditKeyBackup(value: unknown): value is EditKeyBackup {
+	return typeof value === "object"
+		&& value != null
+		&& "id" in value
+		&& typeof value.id === "string"
+		&& "writeKey" in value
+		&& typeof value.writeKey === "string"
 }
 
 function validate(json: object): json is LiteBackup {
@@ -54,6 +70,22 @@ function validate(json: object): json is LiteBackup {
 		}
 	} else {
 		errors.push("trainers is required")
+	}
+
+	if ("customMoves" in json) {
+		if (!Array.isArray(json.customMoves)) {
+			errors.push("customMoves is not an array")
+		} else if (json.customMoves.some((it) => !isEditKeyBackup(it))) {
+			errors.push("customMoves require id and writeKey")
+		}
+	}
+
+	if ("megaEvolutions" in json) {
+		if (!Array.isArray(json.megaEvolutions)) {
+			errors.push("megaEvolutions is not an array")
+		} else if (json.megaEvolutions.some((it) => !isEditKeyBackup(it))) {
+			errors.push("megaEvolutions require id and writeKey")
+		}
 	}
 
 	if (errors.length > 0) {
