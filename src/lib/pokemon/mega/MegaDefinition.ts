@@ -55,6 +55,9 @@ const mediaResource = (filename?: string | null, fallbackUrl?: string): MegaMedi
 	return href ? { name: href, href } : undefined
 }
 
+const fallbackMediaUrl = (resource?: MegaMediaResource): string | undefined =>
+	resource != null && resource.name === resource.href ? resource.href : undefined
+
 export const MegaDefinitions = {
 	fromRow: async (row: MegaDefinitionRow): Promise<MegaDefinition> => {
 		const data = row.mega_data ?? { name: "Mega Form" }
@@ -84,7 +87,7 @@ export const MegaDefinitions = {
 				? { referenceId: definition.ability.referenceId }
 				: { name: definition.ability.name, description: definition.ability.description }
 			: undefined,
-		portraitUrl: definition.portrait?.name === definition.portrait?.href ? definition.portrait.href : undefined,
-		spriteUrl: definition.sprite?.name === definition.sprite?.href ? definition.sprite.href : undefined,
+		portraitUrl: fallbackMediaUrl(definition.portrait),
+		spriteUrl: fallbackMediaUrl(definition.sprite),
 	}),
 } as const

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte"
-	import { SelectField } from "$lib/ui/forms"
+	import { SelectField, ToggleSwitchField } from "$lib/ui/forms"
 	import { EvolutionStore } from "$lib/pokemon/evolution"
 	import type { PokemonSpecies } from "$lib/poke5e/species"
 	import type { TrainerStore } from "$lib/trainers/trainers"
@@ -8,10 +8,6 @@
 	import { MegaEvolution, MegaEvolutionStore, type MegaDefinition } from "."
 
 	const evolutions = EvolutionStore.all()
-	const megaToggleOptions = [
-		{ name: "No", value: "no" },
-		{ name: "Yes", value: "yes" },
-	]
 
 	export let pokemon: TrainerPokemon
 	export let species: PokemonSpecies
@@ -20,7 +16,7 @@
 
 	let saving = false
 	let error: string | undefined
-	let megaChoice = "no"
+	let megaEnabled = false
 	let selectedDefinitionId = ""
 	let lastSyncedId: string | null | undefined = undefined
 
@@ -30,7 +26,7 @@
 
 	$: if ((state.selectedMegaId ?? null) !== lastSyncedId) {
 		lastSyncedId = state.selectedMegaId ?? null
-		megaChoice = state.selectedMegaId ? "yes" : "no"
+		megaEnabled = state.selectedMegaId != null
 		selectedDefinitionId = state.selectedMegaId ?? definitions[0]?.id ?? ""
 	}
 
@@ -63,12 +59,12 @@
 	}
 
 	const restoreChoiceFromState = () => {
-		megaChoice = state.selectedMegaId ? "yes" : "no"
+		megaEnabled = state.selectedMegaId != null
 		selectedDefinitionId = state.selectedMegaId ?? definitions[0]?.id ?? ""
 	}
 
 	const onChoiceChange = async () => {
-		if (megaChoice === "no") {
+		if (!megaEnabled) {
 			await saveSelection(null)
 			return
 		}
@@ -91,7 +87,7 @@
 	}
 
 	const onDefinitionChange = async () => {
-		if (megaChoice !== "yes" || !canSelectMega || !selectedDefinitionId) return
+		if (!megaEnabled || !canSelectMega || !selectedDefinitionId) return
 		await saveSelection(selectedDefinitionId)
 	}
 </script>
@@ -103,9 +99,9 @@
 	</div>
 
 	<div class="choose-form">
-		<SelectField label="Mega Evolution" options={megaToggleOptions} bind:value={megaChoice} on:change={onChoiceChange} disabled={saving || !canEdit} />
+		<ToggleSwitchField label="Mega Evolution" bind:value={megaEnabled} on:change={onChoiceChange} disabled={saving || !canEdit} />
 
-		{#if megaChoice === "yes"}
+		{#if megaEnabled}
 			{#if definitions.length > 1}
 				<SelectField label="Mega Form" options={formOptions} bind:value={selectedDefinitionId} on:change={onDefinitionChange} disabled={saving || !canSelectMega} />
 			{:else if definitions.length === 1}
@@ -121,7 +117,7 @@
 		<p class="rules"><strong>{selectedDefinition?.name}</strong> · +2 AC · doubled ability modifiers for attacks, damage, saving throws, and save DCs{#if selectedDefinition?.type} · {selectedDefinition.type.toString()} type{/if}</p>
 	{:else if selectedDefinition != null && !eligibility.eligible}
 		<p class="warning">The selected Mega Evolution is stored but not currently applied: {eligibility.reason}</p>
-	{:else if megaChoice === "yes" && !eligibility.eligible}
+	{:else if megaEnabled && !eligibility.eligible}
 		<p class="hint">{eligibility.reason}</p>
 	{/if}
 
