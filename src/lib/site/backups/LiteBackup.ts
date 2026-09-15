@@ -2,6 +2,7 @@ import type { Data } from "$lib/DataClass"
 import type { Fakemon } from "$lib/fakemon"
 import { FakemonLocalStorage } from "$lib/fakemon/data/FakemonLocalStorage"
 import { CustomMoveLocalStorage } from "$lib/moves/custom/CustomMoveLocalStorage"
+import { MegaDefinitionLocalStorage } from "$lib/pokemon/mega/MegaDefinitionLocalStorage"
 import { TrainerLocalStorage } from "$lib/trainers/data/TrainerLocalStorage"
 import type { Trainer, WithWriteKey } from "$lib/trainers/types"
 import { Url } from "../url"
@@ -31,6 +32,7 @@ async function createBackup(): Promise<Blob> {
 
 	const fakemon = FakemonLocalStorage.list()
 	const customMoves = CustomMoveLocalStorage.listWriteKeys()
+	const megaEvolutions = MegaDefinitionLocalStorage.listWriteKeys()
 
 	const backup: LiteBackup = {
 		$schema: Url.backups.schemas["202609"](),
@@ -38,7 +40,7 @@ async function createBackup(): Promise<Blob> {
 		fakemon,
 		trainers,
 		customMoves,
-		megaEvolutions: [],
+		megaEvolutions,
 	}
 
 	return new Blob([JSON.stringify(backup)], { type: "application/json" })
@@ -125,6 +127,10 @@ async function restoreBackup(blob: Blob): Promise<{
 
 		backup.customMoves?.map((it) => {
 			CustomMoveLocalStorage.setWriteKey(it.id, it.writeKey)
+		})
+
+		backup.megaEvolutions?.map((it) => {
+			MegaDefinitionLocalStorage.setWriteKey(it.id, it.writeKey)
 		})
 
 		const foundFakemon = (await Promise.all(backup.fakemon.map((it) => {
