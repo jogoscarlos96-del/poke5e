@@ -181,13 +181,22 @@
 		max-height: calc(100vh - 2rem);
 		max-height: calc(100dvh - 2rem);
 		overflow-y: auto;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
 		box-sizing: border-box;
 		padding: 1.25em;
 		border: none;
 		background: var(--skin-content);
+		background-clip: padding-box;
 		color: var(--skin-content-text);
 		border-radius: 1rem;
 		box-shadow: var(--elev-cirrus);
+	}
+
+	.drawer::-webkit-scrollbar {
+		display: none;
+		width: 0;
+		height: 0;
 	}
 
 	.drawer::backdrop {
