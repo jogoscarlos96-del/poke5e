@@ -307,7 +307,7 @@
 
 	.volatile-rules h3 {
 		margin: 0 0 0.35em;
-		font-size: var(--font-sz-earth);
+		font-size: var(--font-sz-mars);
 	}
 
 	.volatile-rules :global(p:first-child) {
