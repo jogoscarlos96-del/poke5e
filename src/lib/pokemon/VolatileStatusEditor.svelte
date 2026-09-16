@@ -1,4 +1,6 @@
 <script lang="ts" context="module">
+	import type { AnyVolatileStatus } from "$lib/pokemon/status"
+
 	export type ChangeDetail = {
 		value: AnyVolatileStatus | null
 	}
