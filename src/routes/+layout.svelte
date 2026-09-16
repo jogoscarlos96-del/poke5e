@@ -123,11 +123,11 @@
 		color: "green",
 		icon: IdBadgeIcon,
 	}, {
-		id: "mega-evolutions",
-		href: Url.megaEvolutions(),
-		name: "Mega Evolutions",
-		color: "purple",
-		icon: GreatballIcon,
+		id: "encounter-tool",
+		href: Url.encounterTool(),
+		name: m["encounterTool.title"](),
+		color: "forest",
+		icon: VsIcon,
 	}, {
 		id: "tms",
 		href: Url.tms(),
@@ -159,11 +159,11 @@
 		color: "pink",
 		icon: GreatballIcon,
 	}, {
-		id: "encounter-tool",
-		href: Url.encounterTool(),
-		name: m["encounterTool.title"](),
-		color: "forest",
-		icon: VsIcon,
+		id: "mega-evolutions",
+		href: Url.megaEvolutions(),
+		name: "Mega Evolutions",
+		color: "purple",
+		icon: GreatballIcon,
 	}, {
 		id: "backups",
 		href: Url.backups.home(),
