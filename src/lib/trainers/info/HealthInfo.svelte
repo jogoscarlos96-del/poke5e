@@ -8,7 +8,7 @@
 </script>
 
 <script lang="ts">
-	import { createEventDispatcher, onMount } from "svelte"
+	import { createEventDispatcher } from "svelte"
 	import { VisuallyHidden, ResourceBar } from "$lib/ui/elements"
 	import {
 		NumericResourceField,
@@ -55,6 +55,7 @@
 	let volatileStatusCur: AnyVolatileStatus | null = null
 	let volatileStatusLoaded = false
 	let volatileStatusSaving = false
+	let volatileLoadKey = ""
 
 	$: currentVolatileList = $currentEdition === "2018"
 		? Object.values(VolatileStatus2018)
@@ -65,20 +66,27 @@
 			?? Object.values(VolatileStatus2018).find((it) => it.id === volatileStatusCur)
 			?? Object.values(VolatileStatus).find((it) => it.id === volatileStatusCur)
 
-	onMount(async () => {
-		if (pokemonId == null || trainerReadKey == null) {
-			volatileStatusLoaded = true
-			return
-		}
+	const loadVolatileStatus = async (readKey: string, id: string, key: string) => {
+		volatileLoadKey = key
+		volatileStatusLoaded = false
+		volatileStatusCur = null
 
 		try {
-			volatileStatusCur = await PokemonVolatileStatus.get(trainerReadKey, pokemonId)
+			const result = await PokemonVolatileStatus.get(readKey, id)
+			if (volatileLoadKey === key) volatileStatusCur = result
 		} catch (e) {
 			console.error("Could not load volatile condition.", e)
 		} finally {
-			volatileStatusLoaded = true
+			if (volatileLoadKey === key) volatileStatusLoaded = true
 		}
-	})
+	}
+
+	$: if (pokemonId != null && trainerReadKey != null) {
+		const key = `${trainerReadKey}:${pokemonId}`
+		if (key !== volatileLoadKey) void loadVolatileStatus(trainerReadKey, pokemonId, key)
+	} else {
+		volatileStatusLoaded = true
+	}
 
 	const onChangeHp = (e: CustomEvent<NumericChangeDetail>) => {
 		dispatch("update", {
