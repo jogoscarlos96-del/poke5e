@@ -71,6 +71,18 @@
 		} as TrainerPokemon)
 	}
 
+	const onApplyHealing = (e: CustomEvent<{ healing: number }>) => {
+		const healing = Math.max(0, Math.floor(e.detail.healing))
+		const currentHp = Math.min(pokemon.hp.max, pokemon.hp.current + healing)
+		dispatch("update-health", {
+			...pokemon,
+			hp: {
+				...pokemon.hp,
+				current: currentHp,
+			},
+		} as TrainerPokemon)
+	}
+
 	const onUpdatePp = (e: CustomEvent<LearnedMove>) => {
 		dispatch("update-pp", e.detail)
 	}
@@ -162,7 +174,14 @@
 	</section>
 {/if}
 <section>
-	<MovesInfo {pokemon} {editable} pokemonType={effectiveType} attributeModifierMultiplier={abilityModifierMultiplier} on:update={onUpdatePp} />
+	<MovesInfo
+		{pokemon}
+		{editable}
+		pokemonType={effectiveType}
+		attributeModifierMultiplier={abilityModifierMultiplier}
+		on:update={onUpdatePp}
+		on:apply-healing={onApplyHealing}
+	/>
 </section>
 {#if pokemon.notes?.length > 0}
 	<hr />
