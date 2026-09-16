@@ -71,8 +71,8 @@
 	<button class="backdrop" type="button" aria-label="Close damage calculator" on:click={close}></button>
 	<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="damage-calculator-title">
 		<header>
-			<div>
-				<h2 id="damage-calculator-title">Damage Calculator</h2>
+			<div class="title-group">
+				<h2 id="damage-calculator-title" class="drawer-title">Damage Calculator</h2>
 				<p class="target">{targetName}</p>
 			</div>
 			<Button variant="ghost" on:click={close}>Close</Button>
@@ -105,7 +105,9 @@
 
 		<section class="target-type">
 			<h3>Target Effective Typing</h3>
-			<TypeTag type={defenderType.data} />
+			<span class="target-type-tag">
+				<TypeTag type={defenderType.data} />
+			</span>
 		</section>
 
 		<div class="effectiveness-row">
@@ -164,16 +166,20 @@
 
 	.drawer {
 		position: fixed;
-		top: 0;
-		right: 0;
+		top: 1rem;
+		bottom: 1rem;
+		left: 1rem;
 		z-index: 91;
-		width: min(28rem, 92vw);
-		height: 100vh;
+		width: min(28rem, calc(100vw - 2rem));
+		height: auto;
+		max-height: calc(100vh - 2rem);
+		max-height: calc(100dvh - 2rem);
 		overflow-y: auto;
 		box-sizing: border-box;
 		padding: 1.25em;
 		background: var(--skin-content);
 		color: var(--skin-content-text);
+		border-radius: 1rem;
 		box-shadow: var(--elev-cirrus);
 	}
 
@@ -185,12 +191,32 @@
 		margin-block-end: 1em;
 	}
 
+	.title-group {
+		min-width: 0;
+	}
+
 	h2, h3, p, dl {
 		margin-block-start: 0;
 	}
 
-	h2 {
+	.drawer-title {
+		display: inline-block;
+		width: fit-content;
+		max-width: 100%;
+		box-sizing: border-box;
 		margin-block-end: 0.125em;
+		padding: 0.2em 0.65em;
+		background: var(--skin-bg-dark);
+		color: var(--skin-bg-text);
+		border-radius: 0.35em;
+		clip-path: none;
+		white-space: nowrap;
+	}
+
+	.drawer-title::before,
+	.drawer-title::after {
+		content: none;
+		display: none;
 	}
 
 	h3 {
@@ -253,6 +279,12 @@
 		margin-block-end: 0;
 	}
 
+	.target-type-tag {
+		display: inline-flex;
+		flex: 0 0 auto;
+		white-space: nowrap;
+	}
+
 	.rule-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -282,6 +314,19 @@
 	dd {
 		margin: 0;
 		text-align: right;
+	}
+
+	@media (max-width: 32rem) {
+		.drawer {
+			top: 0.5rem;
+			bottom: 0.5rem;
+			left: 0.5rem;
+			width: calc(100vw - 1rem);
+			max-height: calc(100vh - 1rem);
+			max-height: calc(100dvh - 1rem);
+			padding: 1em;
+			border-radius: 0.75rem;
+		}
 	}
 
 	@media (max-width: 28rem) {

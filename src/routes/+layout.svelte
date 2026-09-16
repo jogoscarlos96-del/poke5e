@@ -20,7 +20,6 @@
 	} from "$lib/trainers/store"
 	import { filterValue as referenceFilter } from "./reference/store"
 	import { ErrorDialog } from "$lib/site/errors"
-	import { currentHighlight, currentVersion } from "./version-history/versions"
 	import { browser } from "$app/environment"
 	import {
 		BackpackIcon,
@@ -40,7 +39,6 @@
 	import {
 		Container,
 		MainNavigation,
-		SiteFooter,
 		SkipLinks,
 		MAIN_CONTENT_ID,
 		MAIN_SEARCH_ID,
@@ -197,7 +195,6 @@
 			{/snippet}
 		</svelte:boundary>
 	</div>
-	<SiteFooter {currentVersion} versionHighlight={currentHighlight} />
 	<ErrorDialog />
 </div>
 
