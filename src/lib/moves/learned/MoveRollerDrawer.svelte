@@ -2,17 +2,22 @@
 	import { tick } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
+	import MoveDamageRoll from "./MoveDamageRoll.svelte"
 
 	export let open = false
 	export let moveName: string
 	export let moveType: string
 	export let stats: MoveStats
 
+	type SaveOutcome = "failed" | "succeeded"
+
 	let dialog: HTMLDialogElement | undefined = undefined
 	let wasOpen = false
 	let attackDie: number | undefined = undefined
 	let attackTotal: number | undefined = undefined
 	let hitConfirmed = false
+	let saveOutcome: SaveOutcome | undefined = undefined
+	let rollAfterSuccessfulSave = false
 
 	$: resolution = stats.toHit != null
 		? "attack"
@@ -42,6 +47,8 @@
 		attackDie = undefined
 		attackTotal = undefined
 		hitConfirmed = false
+		saveOutcome = undefined
+		rollAfterSuccessfulSave = false
 	}
 
 	const close = () => {
@@ -64,6 +71,11 @@
 		close()
 	}
 
+	const selectSaveOutcome = (outcome: SaveOutcome) => {
+		saveOutcome = outcome
+		rollAfterSuccessfulSave = false
+	}
+
 	const onCancel = (e: Event) => {
 		e.preventDefault()
 		close()
@@ -71,7 +83,6 @@
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 	const saveAttribute = () => stats.save?.attribute.map((it) => it.toUpperCase()).join("/") ?? "—"
-	const damageLabel = () => stats.damage?.isHealing ? "Healing" : "Damage"
 </script>
 
 {#if open}
@@ -127,15 +138,13 @@
 						<Button variant="subtle" width="full" on:click={confirmMiss}>Miss</Button>
 						<Button variant="success" width="full" on:click={confirmHit}>Hit</Button>
 					</div>
+				{:else if stats.damage != null}
+					<div class="confirmed"><strong>Hit confirmed.</strong></div>
+					<MoveDamageRoll damage={stats.damage} onconfirm={close} />
 				{:else}
 					<div class="confirmed">
 						<strong>Hit confirmed.</strong>
-						{#if stats.damage != null}
-							<p>{damageLabel()} roll prepared: <strong>{stats.damage.dice} {signed(stats.damage.mod)}</strong></p>
-							<p class="future-note">Rolling damage/healing is the next Move Roller checkpoint.</p>
-						{:else}
-							<p>This move has no structured damage or healing roll.</p>
-						{/if}
+						<p>This move has no structured damage or healing roll.</p>
 					</div>
 					<Button variant="solid" width="full" on:click={close}>Confirm</Button>
 				{/if}
@@ -147,21 +156,45 @@
 					<span>{saveAttribute()} Save</span>
 					<strong>DC {stats.save?.dc}</strong>
 				</div>
-				<p class="instruction">The target resolves this saving throw. Damage and save-result handling will be added in the next roller checkpoint.</p>
-				{#if stats.damage != null}
-					<div class="next-roll">{damageLabel()} roll: <strong>{stats.damage.dice} {signed(stats.damage.mod)}</strong></div>
+
+				{#if saveOutcome == null}
+					<p class="instruction">The target resolves this saving throw, then choose the result.</p>
+					<div class="decision-grid">
+						<Button variant="subtle" width="full" on:click={() => selectSaveOutcome("succeeded")}>Save Succeeded</Button>
+						<Button variant="success" width="full" on:click={() => selectSaveOutcome("failed")}>Save Failed</Button>
+					</div>
+				{:else if saveOutcome === "failed" && stats.damage != null}
+					<div class="confirmed"><strong>Save failed.</strong></div>
+					<MoveDamageRoll damage={stats.damage} onconfirm={close} />
+				{:else if saveOutcome === "failed"}
+					<div class="confirmed">
+						<strong>Save failed.</strong>
+						<p>This move has no structured damage or healing roll.</p>
+					</div>
+					<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+				{:else if rollAfterSuccessfulSave && stats.damage != null}
+					<div class="confirmed"><strong>Save succeeded.</strong></div>
+					<MoveDamageRoll damage={stats.damage} onconfirm={close} />
+				{:else}
+					<div class="confirmed">
+						<strong>Save succeeded.</strong>
+						<p>Resolve any successful-save effects from the move description.</p>
+					</div>
+					{#if stats.damage != null}
+						<p class="instruction">If this move still deals damage or healing on a successful save, you can roll its normal expression.</p>
+						<div class="decision-grid">
+							<Button variant="subtle" width="full" on:click={close}>Confirm</Button>
+							<Button variant="solid" width="full" on:click={() => rollAfterSuccessfulSave = true}>Roll Anyway</Button>
+						</div>
+					{:else}
+						<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+					{/if}
 				{/if}
-				<Button variant="solid" width="full" on:click={close}>Confirm</Button>
 			</section>
-		{:else if resolution === "direct"}
+		{:else if resolution === "direct" && stats.damage != null}
 			<section>
-				<h3>{damageLabel()} Roll</h3>
-				<div class="save-summary">
-					<span>No attack or save roll</span>
-					<strong>{stats.damage?.dice} {signed(stats.damage?.mod ?? 0)}</strong>
-				</div>
-				<p class="instruction">This move goes directly to its {damageLabel().toLowerCase()} roll. Dice execution will be added in the next roller checkpoint.</p>
-				<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+				<div class="direct-note">No attack or save roll is required.</div>
+				<MoveDamageRoll damage={stats.damage} onconfirm={close} />
 			</section>
 		{:else}
 			<section>
@@ -255,8 +288,7 @@
 	}
 
 	.spent-note,
-	.instruction,
-	.future-note {
+	.instruction {
 		font-size: var(--font-sz-venus);
 	}
 
@@ -271,8 +303,8 @@
 
 	.roll-formula,
 	.save-summary,
-	.next-roll,
-	.confirmed {
+	.confirmed,
+	.direct-note {
 		margin-block-end: 1em;
 		padding: 0.8em;
 		background: var(--skin-input-bg);
@@ -328,6 +360,10 @@
 
 	.confirmed p:last-child {
 		margin-block-end: 0;
+	}
+
+	.direct-note {
+		font-size: var(--font-sz-venus);
 	}
 
 	@media (max-width: 32rem) {
