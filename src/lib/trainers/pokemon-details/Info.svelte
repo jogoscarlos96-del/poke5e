@@ -60,6 +60,16 @@
 		} as TrainerPokemon)
 	}
 
+	const onApplyDamage = (e: CustomEvent<{ currentHp: number, damage: number }>) => {
+		dispatch("update-health", {
+			...pokemon,
+			hp: {
+				...pokemon.hp,
+				current: e.detail.currentHp,
+			},
+		} as TrainerPokemon)
+	}
+
 	const onUpdatePp = (e: CustomEvent<LearnedMove>) => {
 		dispatch("update-pp", e.detail)
 	}
@@ -107,6 +117,8 @@
 				maxHp={pokemon.hp.max}
 				defenderType={effectiveType}
 				defenderProficiencyBonus={pokemon.level.proficiencyBonus}
+				{editable}
+				on:apply-damage={onApplyDamage}
 			/>
 		{/key}
 	</div>
