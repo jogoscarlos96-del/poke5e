@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from "svelte"
+	import { createEventDispatcher, tick } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import { IntField } from "$lib/ui/forms"
 	import { PokemonType, TypeTag, type PokeType } from "$lib/pokemon/types"
@@ -9,11 +9,16 @@
 		type TypeEffectivenessTier,
 	} from "$lib/pokemon/damage"
 
+	const dispatch = createEventDispatcher<{
+		"apply-damage": { currentHp: number, damage: number }
+	}>()
+
 	export let targetName: string
 	export let currentHp: number
 	export let maxHp: number
 	export let defenderType: PokemonType
 	export let defenderProficiencyBonus: number
+	export let editable: boolean
 
 	let open = false
 	let dialog: HTMLDialogElement | undefined = undefined
@@ -66,6 +71,14 @@
 
 	const selectType = (type: PokeType) => attackType = type
 	const selectSpecialRule = (rule: DamageSpecialRule) => specialRule = rule
+
+	const applyDamage = () => {
+		if (!editable || result == null || hpAfterDamage == null) return
+		dispatch("apply-damage", {
+			currentHp: hpAfterDamage,
+			damage: result.finalDamage,
+		})
+	}
 
 	const effectivenessLabel = (value: TypeEffectivenessTier | undefined) =>
 		value == null ? "Select an attack type" : EFFECTIVENESS_LABELS[value]
@@ -162,6 +175,14 @@
 				<dd>{hpAfterDamage ?? "—"}</dd>
 			</div>
 		</dl>
+
+		{#if editable}
+			<div class="apply-action">
+				<Button variant="success" width="full" disabled={result == null} on:click={applyDamage}>
+					Apply Damage
+				</Button>
+			</div>
+		{/if}
 	</dialog>
 {/if}
 
@@ -325,6 +346,10 @@
 		padding: 0.75em;
 		background: var(--skin-input-bg);
 		border-radius: 0.75em;
+	}
+
+	.apply-action {
+		margin-block-start: 1em;
 	}
 
 	dt {
