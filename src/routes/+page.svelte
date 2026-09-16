@@ -51,19 +51,9 @@
 			<span class="icon"><CogIcon /></span>
 		</li>
 	</ul>
-	<address>
-		<p>Homebrew by the community. Website by <a href="{Url.external.auroratide()}">Auroratide</a>.<br /> Source code on <a href="{Url.external.github()}">Github</a>. Chill with us on <a href="{Url.external.discord()}">Discord</a>.</p>
-	</address>
 </StaticPage>
 
 <style>
-	address {
-		font-style: normal;
-		text-align: center;
-		font-size: var(--font-sz-venus);
-		margin: 0;
-	}
-
 	ul {
 		list-style: none;
 		margin: 0 auto 4em;
