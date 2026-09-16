@@ -8,6 +8,9 @@
 	export let moveName: string
 	export let moveType: string
 	export let stats: MoveStats
+	export let currentHp: number | undefined = undefined
+	export let maxHp: number | undefined = undefined
+	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	type SaveOutcome = "failed" | "succeeded"
 
@@ -74,6 +77,11 @@
 	const selectSaveOutcome = (outcome: SaveOutcome) => {
 		saveOutcome = outcome
 		rollAfterSuccessfulSave = false
+	}
+
+	const applyDirectHealing = (value: number) => {
+		onapplyhealing?.(value)
+		close()
 	}
 
 	const onCancel = (e: Event) => {
@@ -194,7 +202,13 @@
 		{:else if resolution === "direct" && stats.damage != null}
 			<section>
 				<div class="direct-note">No attack or save roll is required.</div>
-				<MoveDamageRoll damage={stats.damage} onconfirm={close} />
+				<MoveDamageRoll
+					damage={stats.damage}
+					onconfirm={close}
+					currentHp={stats.damage.isHealing ? currentHp : undefined}
+					maxHp={stats.damage.isHealing ? maxHp : undefined}
+					onapplyhealing={stats.damage.isHealing && onapplyhealing != null ? applyDirectHealing : undefined}
+				/>
 			</section>
 		{:else}
 			<section>
