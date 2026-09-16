@@ -178,7 +178,7 @@
 		position: fixed;
 		inset: 1rem 1rem 1rem auto;
 		margin: 0;
-		width: min(28rem, calc(100vw - 2rem));
+		width: min(20rem, calc(100vw - 2rem));
 		height: auto;
 		max-height: calc(100vh - 2rem);
 		max-height: calc(100dvh - 2rem);
