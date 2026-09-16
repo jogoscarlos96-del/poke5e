@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import { IntField } from "$lib/ui/forms"
 	import { PokemonType, TypeTag, type PokeType } from "$lib/pokemon/types"
@@ -15,6 +16,7 @@
 	export let defenderProficiencyBonus: number
 
 	let open = false
+	let dialog: HTMLDialogElement | undefined = undefined
 	let incomingDamage = 0
 	let attackType: PokeType | undefined = undefined
 	let specialRule: DamageSpecialRule = "automatic"
@@ -48,7 +50,19 @@
 		? undefined
 		: Math.max(0, currentHp - result.finalDamage)
 
-	const close = () => open = false
+	const openDrawer = async () => {
+		open = true
+		await tick()
+		if (dialog != null && !dialog.open) dialog.showModal()
+	}
+
+	const close = () => {
+		if (dialog?.open) {
+			dialog.close()
+		} else {
+			open = false
+		}
+	}
 
 	const selectType = (type: PokeType) => attackType = type
 	const selectSpecialRule = (rule: DamageSpecialRule) => specialRule = rule
@@ -56,20 +70,24 @@
 	const effectivenessLabel = (value: TypeEffectivenessTier | undefined) =>
 		value == null ? "Select an attack type" : EFFECTIVENESS_LABELS[value]
 
-	const onKeydown = (e: KeyboardEvent) => {
-		if (open && e.key === "Escape") close()
+	const onCancel = (e: Event) => {
+		e.preventDefault()
+		close()
 	}
 </script>
 
-<svelte:window on:keydown={onKeydown} />
-
 <div class="trigger">
-	<Button variant="subtle" on:click={() => open = true}>Damage Calculator</Button>
+	<Button variant="subtle" on:click={openDrawer}>Damage Calculator</Button>
 </div>
 
 {#if open}
-	<button class="backdrop" type="button" aria-label="Close damage calculator" on:click={close}></button>
-	<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="damage-calculator-title">
+	<dialog
+		bind:this={dialog}
+		class="drawer"
+		aria-labelledby="damage-calculator-title"
+		on:close={() => open = false}
+		on:cancel={onCancel}
+	>
 		<header>
 			<div class="title-group">
 				<h2 id="damage-calculator-title" class="drawer-title">Damage Calculator</h2>
@@ -144,7 +162,7 @@
 				<dd>{hpAfterDamage ?? "—"}</dd>
 			</div>
 		</dl>
-	</aside>
+	</dialog>
 {/if}
 
 <style>
@@ -154,22 +172,10 @@
 		margin-block-start: 0.375em;
 	}
 
-	.backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 90;
-		border: none;
-		padding: 0;
-		background: rgb(0 0 0 / 0.35);
-		cursor: default;
-	}
-
 	.drawer {
 		position: fixed;
-		top: 1rem;
-		bottom: 1rem;
-		left: 1rem;
-		z-index: 91;
+		inset: 1rem auto 1rem 1rem;
+		margin: 0;
 		width: min(28rem, calc(100vw - 2rem));
 		height: auto;
 		max-height: calc(100vh - 2rem);
@@ -177,10 +183,15 @@
 		overflow-y: auto;
 		box-sizing: border-box;
 		padding: 1.25em;
+		border: none;
 		background: var(--skin-content);
 		color: var(--skin-content-text);
 		border-radius: 1rem;
 		box-shadow: var(--elev-cirrus);
+	}
+
+	.drawer::backdrop {
+		background: rgb(0 0 0 / 0.35);
 	}
 
 	header {
@@ -318,9 +329,7 @@
 
 	@media (max-width: 32rem) {
 		.drawer {
-			top: 0.5rem;
-			bottom: 0.5rem;
-			left: 0.5rem;
+			inset: 0.5rem auto 0.5rem 0.5rem;
 			width: calc(100vw - 1rem);
 			max-height: calc(100vh - 1rem);
 			max-height: calc(100dvh - 1rem);
