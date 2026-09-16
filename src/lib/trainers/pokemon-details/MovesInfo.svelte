@@ -16,12 +16,23 @@
 	const onUpdate = (move: LearnedMove) => {
 		dispatch("update", { ...move } as LearnedMove)
 	}
+
+	const onApplyHealing = (value: number) => {
+		dispatch("apply-healing", { healing: value })
+	}
 </script>
 
 {#if pokemon.moves.length > 0}
 	{#if $MovesStore.result}
 		<h2>Moves</h2>
-		<LearnedMovesListInfo {pokemon} {editable} {pokemonType} {attributeModifierMultiplier} onupdate={onUpdate} />
+		<LearnedMovesListInfo
+			{pokemon}
+			{editable}
+			{pokemonType}
+			{attributeModifierMultiplier}
+			onupdate={onUpdate}
+			onapplyhealing={onApplyHealing}
+		/>
 	{:else}
 		<Loader />
 	{/if}
