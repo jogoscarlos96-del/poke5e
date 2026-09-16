@@ -1,0 +1,296 @@
+<script lang="ts">
+	import { Button } from "$lib/ui/elements"
+	import { IntField } from "$lib/ui/forms"
+	import { PokemonType, TypeTag, type PokeType } from "$lib/pokemon/types"
+	import {
+		calculateTypeDamage,
+		type DamageSpecialRule,
+		type TypeEffectivenessTier,
+	} from "$lib/pokemon/damage"
+
+	export let targetName: string
+	export let currentHp: number
+	export let maxHp: number
+	export let defenderType: PokemonType
+	export let defenderProficiencyBonus: number
+
+	let open = false
+	let incomingDamage = 0
+	let attackType: PokeType | undefined = undefined
+	let specialRule: DamageSpecialRule = "automatic"
+
+	const SPECIAL_RULES: { value: DamageSpecialRule, label: string }[] = [
+		{ value: "automatic", label: "Automatic" },
+		{ value: "neutral", label: "Neutral" },
+		{ value: "effectiveness-up", label: "Effectiveness +1" },
+		{ value: "resistance-up", label: "Resistance +1" },
+	]
+
+	const EFFECTIVENESS_LABELS: Record<TypeEffectivenessTier, string> = {
+		"double-resistance": "Double Resistance",
+		"resistance": "Resistance",
+		"neutral": "Neutral",
+		"weakness": "Weakness",
+		"double-weakness": "Double Weakness",
+		"immunity": "Immunity",
+	}
+
+	$: result = attackType == null
+		? undefined
+		: calculateTypeDamage({
+			incomingDamage,
+			attackType,
+			defenderType,
+			defenderProficiencyBonus,
+			specialRule,
+		})
+	$: hpAfterDamage = result == null
+		? undefined
+		: Math.max(0, currentHp - result.finalDamage)
+
+	const close = () => open = false
+
+	const selectType = (type: PokeType) => attackType = type
+	const selectSpecialRule = (rule: DamageSpecialRule) => specialRule = rule
+
+	const effectivenessLabel = (value: TypeEffectivenessTier | undefined) =>
+		value == null ? "Select an attack type" : EFFECTIVENESS_LABELS[value]
+
+	const onKeydown = (e: KeyboardEvent) => {
+		if (open && e.key === "Escape") close()
+	}
+</script>
+
+<svelte:window on:keydown={onKeydown} />
+
+<div class="trigger">
+	<Button variant="subtle" on:click={() => open = true}>Damage Calculator</Button>
+</div>
+
+{#if open}
+	<button class="backdrop" type="button" aria-label="Close damage calculator" on:click={close}></button>
+	<aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="damage-calculator-title">
+		<header>
+			<div>
+				<h2 id="damage-calculator-title">Damage Calculator</h2>
+				<p class="target">{targetName}</p>
+			</div>
+			<Button variant="ghost" on:click={close}>Close</Button>
+		</header>
+
+		<div class="hp-summary">
+			<span>Current HP</span>
+			<strong>{currentHp} / {maxHp}</strong>
+		</div>
+
+		<IntField label="Incoming Damage" bind:value={incomingDamage} min={0} />
+
+		<section>
+			<h3>Attack Type</h3>
+			<div class="type-grid">
+				{#each PokemonType.list as type}
+					<button
+						type="button"
+						class="type-button"
+						class:selected={attackType === type}
+						style:--type-bg="var(--skin-{type}-bg)"
+						aria-pressed={attackType === type}
+						on:click={() => selectType(type)}
+					>
+						{PokemonType.name(type)}
+					</button>
+				{/each}
+			</div>
+		</section>
+
+		<section class="target-type">
+			<h3>Target Effective Typing</h3>
+			<TypeTag type={defenderType.data} />
+		</section>
+
+		<div class="effectiveness-row">
+			<span>Base Effectiveness</span>
+			<strong>{effectivenessLabel(result?.baseEffectiveness)}</strong>
+		</div>
+
+		<section>
+			<h3>Special Rule</h3>
+			<div class="rule-grid">
+				{#each SPECIAL_RULES as rule}
+					<Button
+						variant={specialRule === rule.value ? "solid" : "subtle"}
+						width="full"
+						on:click={() => selectSpecialRule(rule.value)}
+					>
+						{rule.label}
+					</Button>
+				{/each}
+			</div>
+		</section>
+
+		<dl class="preview">
+			<div>
+				<dt>Final Effectiveness</dt>
+				<dd>{effectivenessLabel(result?.effectiveness)}</dd>
+			</div>
+			<div>
+				<dt>Final Damage</dt>
+				<dd>{result?.finalDamage ?? "—"}</dd>
+			</div>
+			<div>
+				<dt>HP After Damage</dt>
+				<dd>{hpAfterDamage ?? "—"}</dd>
+			</div>
+		</dl>
+	</aside>
+{/if}
+
+<style>
+	.trigger {
+		display: flex;
+		justify-content: flex-end;
+		margin-block-start: 0.375em;
+	}
+
+	.backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 90;
+		border: none;
+		padding: 0;
+		background: rgb(0 0 0 / 0.35);
+		cursor: default;
+	}
+
+	.drawer {
+		position: fixed;
+		top: 0;
+		right: 0;
+		z-index: 91;
+		width: min(28rem, 92vw);
+		height: 100vh;
+		overflow-y: auto;
+		box-sizing: border-box;
+		padding: 1.25em;
+		background: var(--skin-content);
+		color: var(--skin-content-text);
+		box-shadow: var(--elev-cirrus);
+	}
+
+	header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1em;
+		margin-block-end: 1em;
+	}
+
+	h2, h3, p, dl {
+		margin-block-start: 0;
+	}
+
+	h2 {
+		margin-block-end: 0.125em;
+	}
+
+	h3 {
+		font-size: var(--font-sz-mars);
+		margin-block-end: 0.5em;
+	}
+
+	.target {
+		margin-block-end: 0;
+		font-weight: bold;
+	}
+
+	.hp-summary, .effectiveness-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1em;
+		margin-block-end: 1em;
+		padding: 0.75em;
+		background: var(--skin-input-bg);
+		border-radius: 0.75em;
+	}
+
+	section {
+		margin-block-start: 1.25em;
+	}
+
+	.type-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.5em;
+	}
+
+	.type-button {
+		border: 0.15em solid transparent;
+		border-radius: 1em;
+		padding: 0.4em 0.5em;
+		background: var(--type-bg);
+		color: var(--skin-bg-text);
+		filter: var(--elev-stratus-filter);
+		cursor: pointer;
+		font: inherit;
+		font-size: var(--font-sz-venus);
+	}
+
+	.type-button.selected {
+		border-color: var(--skin-bg-text);
+		outline: 0.15em solid var(--skin-content-text);
+		outline-offset: 0.05em;
+	}
+
+	.target-type {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1em;
+	}
+
+	.target-type h3 {
+		margin-block-end: 0;
+	}
+
+	.rule-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5em;
+	}
+
+	.preview {
+		display: grid;
+		gap: 0.5em;
+		margin-block-start: 1.25em;
+	}
+
+	.preview div {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1em;
+		padding: 0.75em;
+		background: var(--skin-input-bg);
+		border-radius: 0.75em;
+	}
+
+	dt {
+		font-weight: bold;
+	}
+
+	dd {
+		margin: 0;
+		text-align: right;
+	}
+
+	@media (max-width: 28rem) {
+		.type-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.rule-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
