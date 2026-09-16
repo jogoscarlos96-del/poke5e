@@ -16,6 +16,7 @@
 	import { MovesStore } from "../store"
 	import { MoveTime } from "../time"
 	import type { LearnedMove } from "./LearnedMove"
+	import MoveRollerDrawer from "./MoveRollerDrawer.svelte"
 
 	// needed because svelte strips away ending spaces
 	const COMMA_SPACE = ", "
@@ -40,6 +41,8 @@
 		onupdatepp: (value: number) => void,
 	} = $props()
 
+	let rollerOpen = $state(false)
+
 	const move = $derived($MovesStore.result?.find((it) => it.id === value.moveId))
 	const moveHref = $derived(CustomMove.isCustom(value.moveId) ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
 	const currentPp = $derived(value.pp.current)
@@ -55,7 +58,17 @@
 	const bestPowers = $derived(move?.power.bestAttribute(attributes))
 
 	const onChangePp = (e: CustomEvent<NumericChangeDetail>) => {
+		const previousPp = currentPp
 		onupdatepp(e.detail.value)
+
+		if (
+			editable
+			&& e.detail.source === "decrement"
+			&& previousPp > 0
+			&& e.detail.value < previousPp
+		) {
+			rollerOpen = true
+		}
 	}
 </script>
 
@@ -105,6 +118,7 @@
 								<span>{attribute}</span>{#if needComma}<span>{COMMA_SPACE}</span>{/if}
 							{/if}
 						{/each}
+						{/if}
 					{/if}
 				</dd>
 				<dt>Range</dt>
@@ -122,6 +136,13 @@
 			<div class="space-inner smaller-font notes"><Markdown value={value.notes} /></div>
 		{/if}
 	</div>
+
+	<MoveRollerDrawer
+		bind:open={rollerOpen}
+		moveName={move.name}
+		moveType={move.type}
+		stats={moveStats}
+	/>
 {:else}
 	<LoaderInline />
 {/if}
