@@ -29,7 +29,10 @@
 		attributes,
 		attributeModifierMultiplier = 1,
 		editable = false,
+		currentHp,
+		maxHp,
 		onupdatepp,
+		onapplyhealing,
 	}: {
 		value: LearnedMove,
 		level: Level,
@@ -38,7 +41,10 @@
 		attributes: Attributes,
 		attributeModifierMultiplier?: number,
 		editable?: boolean,
+		currentHp?: number,
+		maxHp?: number,
 		onupdatepp: (value: number) => void,
+		onapplyhealing?: (value: number) => void,
 	} = $props()
 
 	let rollerOpen = $state(false)
@@ -141,6 +147,9 @@
 		moveName={move.name}
 		moveType={move.type}
 		stats={moveStats}
+		{currentHp}
+		{maxHp}
+		{onapplyhealing}
 	/>
 {:else}
 	<LoaderInline />
