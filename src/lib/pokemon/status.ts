@@ -101,3 +101,9 @@ export const VolatileStatus2018 = {
 	Confused: Confused2018,
 	Flinched: Flinched,
 } satisfies Record<string, StatusDescription>
+export type VolatileStatus2018 = keyof typeof VolatileStatus2018
+
+export type AnyVolatileStatus = VolatileStatus | VolatileStatus2018
+
+export const isAnyVolatileStatus = (value: unknown): value is AnyVolatileStatus =>
+	typeof value === "string" && (value in VolatileStatus || value in VolatileStatus2018)

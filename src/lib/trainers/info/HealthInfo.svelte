@@ -14,15 +14,25 @@
 		NumericResourceField,
 		type NumericChangeDetail,
 	} from "$lib/ui/forms"
-	import type { NonVolatileStatus } from "$lib/pokemon/status"
+	import {
+		VolatileStatus,
+		VolatileStatus2018,
+		type AnyVolatileStatus,
+		type NonVolatileStatus,
+	} from "$lib/pokemon/status"
 	import StatusEditor, { type ChangeDetail as StatusChangeDetail } from "$lib/pokemon/StatusEditor.svelte"
+	import VolatileStatusEditor, { type ChangeDetail as VolatileStatusChangeDetail } from "$lib/pokemon/VolatileStatusEditor.svelte"
 	import StatusTag from "$lib/pokemon/StatusTag.svelte"
+	import { PokemonVolatileStatus } from "$lib/pokemon/volatile-status"
 	import { experienceNeededAtLevel, experienceNeededUntilLevelUp, formatExp } from "$lib/poke5e/experience"
 	import { Popover } from "$lib/ui/elements"
 	import { HelpIcon } from "$lib/ui/icons"
 	import type { Level } from "$lib/dnd/level"
 	import type { HitDice } from "$lib/dnd/hit-dice"
 	import type { Resource } from "$lib/poke5e/resource"
+	import { currentEdition } from "$lib/site/edition"
+	import { error as siteError } from "$lib/site/errors"
+	import { Markdown } from "$lib/ui/rendering"
 
 	const dispatch = createEventDispatcher()
 
@@ -34,10 +44,49 @@
 	export let status: NonVolatileStatus | null
 	export let hasStatusAndExp: boolean = false
 	export let editable: boolean
+	export let pokemonId: string | undefined = undefined
+	export let trainerReadKey: string | undefined = undefined
+	export let writeKey: string | undefined = undefined
 
 	$: hpCur = hp.current
 	$: hitDiceCur = hitDice.current
 	$: statusCur = status
+
+	let volatileStatusCur: AnyVolatileStatus | null = null
+	let volatileStatusLoaded = false
+	let volatileStatusSaving = false
+	let volatileLoadKey = ""
+
+	$: currentVolatileList = $currentEdition === "2018"
+		? Object.values(VolatileStatus2018)
+		: Object.values(VolatileStatus)
+	$: volatileDescription = volatileStatusCur == null
+		? undefined
+		: currentVolatileList.find((it) => it.id === volatileStatusCur)
+			?? Object.values(VolatileStatus2018).find((it) => it.id === volatileStatusCur)
+			?? Object.values(VolatileStatus).find((it) => it.id === volatileStatusCur)
+
+	const loadVolatileStatus = async (readKey: string, id: string, key: string) => {
+		volatileLoadKey = key
+		volatileStatusLoaded = false
+		volatileStatusCur = null
+
+		try {
+			const result = await PokemonVolatileStatus.get(readKey, id)
+			if (volatileLoadKey === key) volatileStatusCur = result
+		} catch (e) {
+			console.error("Could not load volatile condition.", e)
+		} finally {
+			if (volatileLoadKey === key) volatileStatusLoaded = true
+		}
+	}
+
+	$: if (pokemonId != null && trainerReadKey != null) {
+		const key = `${trainerReadKey}:${pokemonId}`
+		if (key !== volatileLoadKey) void loadVolatileStatus(trainerReadKey, pokemonId, key)
+	} else {
+		volatileStatusLoaded = true
+	}
 
 	const onChangeHp = (e: CustomEvent<NumericChangeDetail>) => {
 		dispatch("update", {
@@ -64,6 +113,23 @@
 			currentStatus: e.detail.value,
 			exp: exp,
 		} as UpdateDetail)
+	}
+
+	const onChangeVolatileStatus = async (e: CustomEvent<VolatileStatusChangeDetail>) => {
+		if (pokemonId == null || writeKey == null) return
+
+		const previous = volatileStatusCur
+		volatileStatusCur = e.detail.value
+		volatileStatusSaving = true
+
+		try {
+			await PokemonVolatileStatus.set(writeKey, pokemonId, volatileStatusCur)
+		} catch (e) {
+			volatileStatusCur = previous
+			siteError.show("updatePokemonVolatileStatus", e)
+		} finally {
+			volatileStatusSaving = false
+		}
 	}
 
 	const onChangeExp = (e: CustomEvent<NumericChangeDetail>) => {
@@ -108,13 +174,26 @@
 		</span>
 	</span>
 	{#if hasStatusAndExp}
-		<span>
+		<span class="conditions">
 			<span class="row">
 				{#if status != null}
 					<StatusTag value={status} />
 				{/if}
 				{#if editable}
 					<StatusEditor id="current-status" value={statusCur} on:change={onChangeStatus} />
+				{/if}
+			</span>
+			<span class="row volatile-row">
+				{#if volatileDescription != null}
+					<span class="volatile-tag" title={volatileDescription.effect}>{volatileDescription.name}</span>
+				{/if}
+				{#if editable && volatileStatusLoaded}
+					<VolatileStatusEditor
+						id="current-volatile-status"
+						value={volatileStatusCur}
+						disabled={volatileStatusSaving}
+						on:change={onChangeVolatileStatus}
+					/>
 				{/if}
 			</span>
 		</span>
@@ -135,6 +214,15 @@
 				</span>
 			</span>
 		</span>
+		{#if volatileDescription != null}
+			<div class="volatile-rules">
+				<h3>{volatileDescription.name}</h3>
+				<Markdown value={volatileDescription.effect} />
+				{#if volatileDescription.immunity}
+					<p>{volatileDescription.immunity}</p>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 </div>
 
@@ -164,7 +252,9 @@
 		display: flex;
 		flex-direction: column;
 		font-size: var(--font-sz-mars);
-	} .exp {
+	}
+
+	.exp {
 		place-self: start stretch;
 	}
 
@@ -187,11 +277,52 @@
 		gap: 0.25em;
 	}
 
+	.conditions {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.35em 0.6em;
+		margin-block: 0.5em;
+	}
+
 	.row {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 		gap: 0.25em;
-		margin-block: 0.5em;
+	}
+
+	.volatile-tag {
+		display: inline-block;
+		padding: 0.0625em 0.45em;
+		border-radius: 1em;
+		background: var(--skin-bg-dark);
+		color: var(--skin-bg-text);
+		box-shadow: var(--elev-stratus);
+		font-size: var(--font-sz-venus);
+		font-weight: bold;
+	}
+
+	.volatile-rules {
+		grid-column: span 2;
+		margin-block: 0.35em 0.65em;
+		padding: 0.75em 1em;
+		background: var(--skin-input-bg);
+		border-radius: 0.75em;
+		font-size: var(--font-sz-venus);
+		line-height: 1.35;
+	}
+
+	.volatile-rules h3 {
+		margin: 0 0 0.35em;
+		font-size: var(--font-sz-mars);
+	}
+
+	.volatile-rules :global(p:first-child) {
+		margin-block-start: 0;
+	}
+
+	.volatile-rules :global(p:last-child) {
+		margin-block-end: 0;
 	}
 </style>
