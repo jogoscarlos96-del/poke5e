@@ -10,12 +10,14 @@
 		pokemonType = pokemon.type,
 		attributeModifierMultiplier = 1,
 		onupdate,
+		onapplyhealing,
 	}: {
 		pokemon: TrainerPokemon
 		editable?: boolean,
 		pokemonType?: PokemonType,
 		attributeModifierMultiplier?: number,
-		onupdate?: (value: LearnedMove) => void
+		onupdate?: (value: LearnedMove) => void,
+		onapplyhealing?: (value: number) => void,
 	} = $props()
 
 	const onUpdatePp = (move: LearnedMove) => (pp: number) => {
@@ -32,7 +34,19 @@
 <ul>
 	{#each pokemon.moves as move}
 		<li>
-			<LearnedMoveInfo value={move} {editable} level={pokemon.level} attributes={pokemon.attributes} {pokemonType} stab={pokemon.stab} {attributeModifierMultiplier} onupdatepp={onUpdatePp(move)} />
+			<LearnedMoveInfo
+				value={move}
+				{editable}
+				level={pokemon.level}
+				attributes={pokemon.attributes}
+				{pokemonType}
+				stab={pokemon.stab}
+				{attributeModifierMultiplier}
+				currentHp={pokemon.hp.current}
+				maxHp={pokemon.hp.max}
+				onupdatepp={onUpdatePp(move)}
+				{onapplyhealing}
+			/>
 		</li>
 	{/each}
 </ul>
