@@ -4,6 +4,9 @@
 
 	export let damage: NonNullable<MoveStats["damage"]>
 	export let onconfirm: () => void
+	export let currentHp: number | undefined = undefined
+	export let maxHp: number | undefined = undefined
+	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	let diceRolls: number[] = []
 	let total: number | undefined = undefined
@@ -11,6 +14,10 @@
 
 	$: label = damage.isHealing ? "Healing" : "Damage"
 	$: expression = `${damage.dice} ${signed(damage.mod)}`
+	$: canApplyHealing = damage.isHealing && onapplyhealing != null
+	$: healingPreview = canApplyHealing && total != null && currentHp != null && maxHp != null
+		? Math.min(maxHp, currentHp + Math.max(0, total))
+		: undefined
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 
@@ -35,6 +42,14 @@
 		diceRolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1)
 		total = diceRolls.reduce((sum, value) => sum + value, 0) + damage.mod
 		error = undefined
+	}
+
+	const confirm = () => {
+		if (canApplyHealing && total != null) {
+			onapplyhealing?.(Math.max(0, total))
+			return
+		}
+		onconfirm()
 	}
 </script>
 
@@ -61,10 +76,20 @@
 				<dt>Total {label}</dt>
 				<dd>{total}</dd>
 			</div>
+			{#if healingPreview != null && currentHp != null && maxHp != null}
+				<div>
+					<dt>Current HP</dt>
+					<dd>{currentHp} / {maxHp}</dd>
+				</div>
+				<div class="total-row">
+					<dt>HP After Healing</dt>
+					<dd>{healingPreview} / {maxHp}</dd>
+				</div>
+			{/if}
 		</dl>
 		<div class="actions">
 			<Button variant="subtle" width="full" on:click={roll}>Roll Again</Button>
-			<Button variant="success" width="full" on:click={onconfirm}>Confirm</Button>
+			<Button variant="success" width="full" on:click={confirm}>{canApplyHealing ? "Apply Healing" : "Confirm"}</Button>
 		</div>
 	{/if}
 
