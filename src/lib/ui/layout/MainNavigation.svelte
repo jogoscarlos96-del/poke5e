@@ -9,6 +9,7 @@
 	import { Edition } from "$lib/srd/editions"
 
 	const NUMBER_OF_UNMENUED_ITEMS = 6
+	const TOP_NAV_IDS = ["pokemon", "moves", "custom-moves", "trainers", "items", "tms"]
 
 	let {
 		items,
@@ -24,7 +25,10 @@
 		active: string,
 	} = $props()
 
-	const firstFewItems = $derived(items.slice(0, NUMBER_OF_UNMENUED_ITEMS))
+	const firstFewItems = $derived(TOP_NAV_IDS
+		.map((id) => items.find((item) => item.id === id))
+		.filter((item) => item != null)
+		.slice(0, NUMBER_OF_UNMENUED_ITEMS))
 	const exceedsUnmenued = $derived(items.length > NUMBER_OF_UNMENUED_ITEMS)
 	const edition = $derived($currentEdition)
 
