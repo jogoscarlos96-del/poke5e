@@ -24,6 +24,7 @@
 	import DmInfo from "./DmInfo.svelte"
 	import { TagList, TagListInfo } from "$lib/poke5e/tags"
 	import { MegaEvolution, type MegaDefinition } from "$lib/pokemon/mega"
+	import DamageCalculator from "./DamageCalculator.svelte"
 
 	const dispatch = createEventDispatcher()
 
@@ -56,6 +57,16 @@
 			},
 			status: e.detail.currentStatus,
 			exp: e.detail.exp,
+		} as TrainerPokemon)
+	}
+
+	const onApplyDamage = (e: CustomEvent<{ currentHp: number, damage: number }>) => {
+		dispatch("update-health", {
+			...pokemon,
+			hp: {
+				...pokemon.hp,
+				current: e.detail.currentHp,
+			},
 		} as TrainerPokemon)
 	}
 
@@ -99,6 +110,17 @@
 			{editable}
 			on:update={onUpdateHealth}
 		/>
+		{#key pokemon.id}
+			<DamageCalculator
+				targetName={pokemon.nickname || species.data.name}
+				currentHp={pokemon.hp.current}
+				maxHp={pokemon.hp.max}
+				defenderType={effectiveType}
+				defenderProficiencyBonus={pokemon.level.proficiencyBonus}
+				{editable}
+				on:apply-damage={onApplyDamage}
+			/>
+		{/key}
 	</div>
 	<StatsInfo {pokemon} {species} acOverride={effectiveAc} />
 	{#if !hasImage}
