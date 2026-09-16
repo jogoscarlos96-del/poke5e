@@ -70,7 +70,20 @@
 				{#if showMegaControl}
 					<MegaEvolutionControl {pokemon} {species} {trainer} definitions={availableMegaDefinitions} />
 				{/if}
-				<Info trainer={$trainer.info} {pokemon} {species} editable={canEdit} {pokemonTags} megaDefinition={selectedMegaDefinition} {megaEligible} on:update-health={onUpdateHealth} on:update-pp={onUpdatePp} on:update-bond={onUpdateBond} on:update-tags={onUpdateTags} />
+				<Info
+					trainer={$trainer.info}
+					{pokemon}
+					{species}
+					editable={canEdit}
+					{pokemonTags}
+					writeKey={$trainer.writeKey}
+					megaDefinition={selectedMegaDefinition}
+					{megaEligible}
+					on:update-health={onUpdateHealth}
+					on:update-pp={onUpdatePp}
+					on:update-bond={onUpdateBond}
+					on:update-tags={onUpdateTags}
+				/>
 				{#if canEdit}
 					<TrainerPokemonActions {trainer} {species} {pokemon} />
 				{/if}
