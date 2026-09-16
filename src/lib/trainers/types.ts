@@ -1,7 +1,7 @@
 import type { Attribute, Attributes } from "$lib/dnd/attributes"
 import type { CreatureSize } from "$lib/dnd/CreatureSize"
 import type { Pokemon } from "../poke5e/legacy-types"
-import type { AnyVolatileStatus, NonVolatileStatus } from "$lib/pokemon/status"
+import type { NonVolatileStatus } from "$lib/pokemon/status"
 import type { StorageResource } from "./data"
 import type { Specializations } from "./specializations"
 import type { ChosenTrainerPath } from "./paths/ChosenTrainerPath"
@@ -78,7 +78,6 @@ export type TrainerPokemon = {
 	notes: string,
 	teraType?: PokemonTeraType,
 	status: NonVolatileStatus | null,
-	volatileStatus?: AnyVolatileStatus | null,
 	isShiny: boolean,
 	feats: ChosenFeat[],
 	customSize?: CreatureSize,
