@@ -118,7 +118,6 @@
 								<span>{attribute}</span>{#if needComma}<span>{COMMA_SPACE}</span>{/if}
 							{/if}
 						{/each}
-						{/if}
 					{/if}
 				</dd>
 				<dt>Range</dt>
