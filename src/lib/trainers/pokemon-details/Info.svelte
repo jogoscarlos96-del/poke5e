@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { LearnedMove, Trainer, TrainerPokemon } from "../types"
+	import type { LearnedMove, ReadWriteKey, Trainer, TrainerPokemon } from "../types"
 	import { createEventDispatcher } from "svelte"
 	import BasicInfo from "./BasicInfo.svelte"
 	import HealthInfo, { type UpdateDetail as HealthUpdateDetail } from "../info/HealthInfo.svelte"
@@ -33,6 +33,7 @@
 	export let species: PokemonSpecies
 	export let editable: boolean
 	export let pokemonTags: TagList
+	export let writeKey: ReadWriteKey | undefined = undefined
 	export let megaDefinition: MegaDefinition | undefined = undefined
 	export let megaEligible = false
 
@@ -106,6 +107,9 @@
 			exp={pokemon.exp}
 			dieSize={pokemon.customHitDiceSize ?? species.hitDice}
 			status={pokemon.status}
+			pokemonId={pokemon.id}
+			trainerReadKey={trainer.readKey}
+			{writeKey}
 			hasStatusAndExp
 			{editable}
 			on:update={onUpdateHealth}
