@@ -78,6 +78,7 @@
 			currentHp: hpAfterDamage,
 			damage: result.finalDamage,
 		})
+		close()
 	}
 
 	const effectivenessLabel = (value: TypeEffectivenessTier | undefined) =>
