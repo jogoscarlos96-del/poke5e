@@ -176,10 +176,10 @@
 <style>
 	.drawer {
 		position: fixed;
-		inset: 1rem 1rem 1rem auto;
+		inset: 1rem 1rem auto auto;
 		margin: 0;
 		width: min(20rem, calc(100vw - 2rem));
-		height: auto;
+		height: fit-content;
 		max-height: calc(100vh - 2rem);
 		max-height: calc(100dvh - 2rem);
 		overflow-y: auto;
@@ -331,8 +331,8 @@
 
 	@media (max-width: 32rem) {
 		.drawer {
-			inset: 0.5rem 0.5rem 0.5rem auto;
-			width: calc(100vw - 1rem);
+			inset: 0.5rem 0.5rem auto auto;
+			width: min(20rem, calc(100vw - 1rem));
 			max-height: calc(100vh - 1rem);
 			max-height: calc(100dvh - 1rem);
 			padding: 0.8em 1em 1em;
