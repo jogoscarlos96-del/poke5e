@@ -5,6 +5,7 @@
 	import { SpeciesStore, type PokemonSpecies } from "$lib/poke5e/species"
 	import MegaDefinitionEditor from "$lib/pokemon/mega/MegaDefinitionEditor.svelte"
 	import { MegaDefinitionsStore, type DraftMegaDefinition, type MegaDefinition } from "$lib/pokemon/mega"
+	import { CampaignCreationAccess } from "$lib/site/CampaignCreationAccess"
 	import { Url } from "$lib/site/url"
 	import { Button, Loader } from "$lib/ui/elements"
 	import { TextField, type ImageInputValue } from "$lib/ui/forms"
@@ -31,6 +32,9 @@
 	let copied: "view" | "edit" | undefined
 	let search = ""
 	let speciesNames = new Map<string, string>()
+	let creationUnlocked = browser && CampaignCreationAccess.isUnlocked()
+	let creationPassword = ""
+	let creationAccessError: string | undefined
 
 	$: selectedId = browser ? ($page.url.searchParams.get("id") ?? "") : ""
 	$: action = browser ? ($page.url.searchParams.get("action") ?? "") : ""
@@ -68,6 +72,7 @@
 	$: editUrl = selected && localWriteKey ? absoluteUrl(Url.megaEvolutions(selected.id, "edit", localWriteKey)) : ""
 
 	onMount(() => {
+		creationUnlocked = CampaignCreationAccess.isUnlocked()
 		void (async () => {
 			try {
 				await MegaDefinitionsStore.refresh()
@@ -89,9 +94,26 @@
 		return () => speciesUnsubscribe?.()
 	})
 
+	const unlockCreation = async () => {
+		creationAccessError = undefined
+		const valid = await CampaignCreationAccess.unlock(creationPassword)
+		if (valid) {
+			creationUnlocked = true
+			creationPassword = ""
+		} else {
+			creationAccessError = "Incorrect campaign creation password."
+		}
+	}
+
 	const hasMediaChange = (event: SaveEvent) => event.detail.portrait != null || event.detail.sprite != null
 
 	const saveNew = async (event: SaveEvent) => {
+		if (!CampaignCreationAccess.isUnlocked()) {
+			creationUnlocked = false
+			error = "Creation access is locked."
+			return
+		}
+
 		saving = true
 		error = undefined
 		try {
@@ -202,11 +224,26 @@
 	{#if isNew}
 		<section>
 			<h1>Create Mega Evolution</h1>
-			<p>Create the form once and link it to a base species. Every eligible Trainer Pokémon of that species can then select it.</p>
-			{#if allSpecies.length === 0}
-				<Loader />
+			{#if !creationUnlocked}
+				<div class="access-box creation-gate">
+					<h2>Creation Access Required</h2>
+					<p>Enter the campaign creation password to create Custom Moves or Mega Evolutions. This browser will stay unlocked after a successful entry.</p>
+					<form class="access-row" on:submit|preventDefault={unlockCreation}>
+						<div class="password-field">
+							<label for="mega-creation-password">Campaign Password</label>
+							<input id="mega-creation-password" type="password" bind:value={creationPassword} autocomplete="current-password" />
+						</div>
+						<Button type="submit">Unlock Creation</Button>
+					</form>
+					{#if creationAccessError}<p class="error">{creationAccessError}</p>{/if}
+				</div>
 			{:else}
-				<MegaDefinitionEditor {allSpecies} disabled={saving} submitLabel={saving ? "Saving…" : "Create Mega Evolution"} on:save={saveNew} />
+				<p>Create the form once and link it to a base species. Every eligible Trainer Pokémon of that species can then select it.</p>
+				{#if allSpecies.length === 0}
+					<Loader />
+				{:else}
+					<MegaDefinitionEditor {allSpecies} disabled={saving} submitLabel={saving ? "Saving…" : "Create Mega Evolution"} on:save={saveNew} />
+				{/if}
 			{/if}
 		</section>
 	{:else if selected}
@@ -307,6 +344,10 @@
 	dt { font-weight: bold; }
 	dd { margin: 0; }
 	.access-box, .share-box { margin-block: 1rem; }
+	.creation-gate { max-width: 36rem; }
+	.password-field { flex: 1; display: flex; flex-direction: column; gap: 0.125rem; }
+	.password-field label { font-weight: bold; font-size: var(--font-sz-venus); letter-spacing: -0.04em; }
+	.password-field input { inline-size: 100%; }
 	.share-row { margin-block: 0.5rem; align-items: flex-start; }
 	.share-row code { flex: 1; overflow-wrap: anywhere; padding: 0.5rem; background: var(--skin-input-bg); }
 	.warning, .error { color: var(--skin-danger-text, currentColor); font-weight: bold; }
