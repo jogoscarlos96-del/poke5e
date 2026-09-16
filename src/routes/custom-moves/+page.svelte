@@ -6,6 +6,7 @@
 	import PokeMove from "$lib/moves/PokeMove.svelte"
 	import { CustomMove, CustomMoveLocalStorage, CustomMovesStore } from "$lib/moves/custom"
 	import CustomMoveEditor from "$lib/moves/custom/CustomMoveEditor.svelte"
+	import { CampaignCreationAccess } from "$lib/site/CampaignCreationAccess"
 	import { Url } from "$lib/site/url"
 	import { Button, Loader } from "$lib/ui/elements"
 	import { TextField } from "$lib/ui/forms"
@@ -22,6 +23,9 @@
 	let accessError: string | undefined
 	let canEdit = false
 	let copied: "view" | "edit" | undefined
+	let creationUnlocked = browser && CampaignCreationAccess.isUnlocked()
+	let creationPassword = ""
+	let creationAccessError: string | undefined
 
 	$: selectedParam = browser ? ($page.url.searchParams.get("id") ?? "") : ""
 	$: selectedId = selectedParam ? CustomMove.id(CustomMove.uuid(selectedParam)) : ""
@@ -32,7 +36,13 @@
 	$: isNew = action === "new"
 	$: isEditing = isNew || action === "edit"
 
-	$: if (isNew && draftFor !== "new") {
+	$: if (isNew && !creationUnlocked) {
+		draft = undefined
+		draftFor = ""
+		canEdit = false
+	}
+
+	$: if (isNew && creationUnlocked && draftFor !== "new") {
 		draft = new Move({ id: "custom:new", ...CustomMove.blank() })
 		draftFor = "new"
 		canEdit = true
@@ -57,6 +67,7 @@
 	$: editUrl = selected && localWriteKey ? absoluteUrl(Url.customMoves(selected.id, "edit", localWriteKey)) : ""
 
 	onMount(async () => {
+		creationUnlocked = CampaignCreationAccess.isUnlocked()
 		try {
 			await CustomMovesStore.refresh()
 			const keyFromUrl = $page.url.searchParams.get("access_key")
@@ -70,7 +81,24 @@
 		}
 	})
 
+	const unlockCreation = async () => {
+		creationAccessError = undefined
+		const valid = await CampaignCreationAccess.unlock(creationPassword)
+		if (valid) {
+			creationUnlocked = true
+			creationPassword = ""
+		} else {
+			creationAccessError = "Incorrect campaign creation password."
+		}
+	}
+
 	const saveNew = async (event: CustomEvent<{ value: Move }>) => {
+		if (!CampaignCreationAccess.isUnlocked()) {
+			creationUnlocked = false
+			error = "Creation access is locked."
+			return
+		}
+
 		saving = true
 		error = undefined
 		try {
@@ -159,11 +187,26 @@
 		<p class="error">{error}</p>
 	{/if}
 
-	{#if isNew && draft}
+	{#if isNew}
 		<section>
 			<h1>Create Custom Move</h1>
-			<p>Once saved, the move becomes available in Fakémon move pools and Trainer Pokémon move selectors.</p>
-			<CustomMoveEditor value={draft} disabled={saving} submitLabel={saving ? "Saving…" : "Create Move"} on:save={saveNew} />
+			{#if creationUnlocked && draft}
+				<p>Once saved, the move becomes available in Fakémon move pools and Trainer Pokémon move selectors.</p>
+				<CustomMoveEditor value={draft} disabled={saving} submitLabel={saving ? "Saving…" : "Create Move"} on:save={saveNew} />
+			{:else}
+				<div class="access-box creation-gate">
+					<h2>Creation Access Required</h2>
+					<p>Enter the campaign creation password to create Custom Moves or Mega Evolutions. This browser will stay unlocked after a successful entry.</p>
+					<form class="access-row" on:submit|preventDefault={unlockCreation}>
+						<div class="password-field">
+							<label for="custom-move-creation-password">Campaign Password</label>
+							<input id="custom-move-creation-password" type="password" bind:value={creationPassword} autocomplete="current-password" />
+						</div>
+						<Button type="submit">Unlock Creation</Button>
+					</form>
+					{#if creationAccessError}<p class="error">{creationAccessError}</p>{/if}
+				</div>
+			{/if}
 		</section>
 	{:else if selected && draft}
 		<section>
@@ -234,6 +277,10 @@
 	.view-actions { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
 	.move-id { font-size: var(--font-sz-mars); opacity: 0.65; margin-top: -0.5rem; }
 	.access-box, .share-box { background: var(--skin-content); padding: 1rem; border-radius: 0.5rem; margin-block: 1rem; }
+	.creation-gate { max-width: 36rem; }
+	.password-field { flex: 1; display: flex; flex-direction: column; gap: 0.125rem; }
+	.password-field label { font-weight: bold; font-size: var(--font-sz-venus); letter-spacing: -0.04em; }
+	.password-field input { inline-size: 100%; }
 	.share-row { margin-block: 0.5rem; align-items: flex-start; }
 	.share-row code { flex: 1; overflow-wrap: anywhere; padding: 0.5rem; background: var(--skin-input-bg); }
 	.warning, .error { color: var(--skin-danger-text, currentColor); font-weight: bold; }
