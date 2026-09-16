@@ -89,11 +89,11 @@
 		on:cancel={onCancel}
 	>
 		<header>
-			<div class="title-group">
+			<div class="header-row">
 				<h2 id="damage-calculator-title" class="drawer-title">Damage Calculator</h2>
-				<p class="target">{targetName}</p>
+				<Button variant="ghost" on:click={close}>Close</Button>
 			</div>
-			<Button variant="ghost" on:click={close}>Close</Button>
+			<p class="target">{targetName}</p>
 		</header>
 
 		<div class="hp-summary">
@@ -184,7 +184,7 @@
 		scrollbar-width: none;
 		-ms-overflow-style: none;
 		box-sizing: border-box;
-		padding: 1.25em;
+		padding: 0.9em 1.25em 1.25em;
 		border: none;
 		background: var(--skin-content);
 		background-clip: padding-box;
@@ -204,15 +204,15 @@
 	}
 
 	header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 1em;
 		margin-block-end: 1em;
 	}
 
-	.title-group {
-		min-width: 0;
+	.header-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1em;
+		margin-block-end: 0.125em;
 	}
 
 	h2, h3, p, dl {
@@ -224,7 +224,7 @@
 		width: fit-content;
 		max-width: 100%;
 		box-sizing: border-box;
-		margin-block-end: 0.125em;
+		margin: 0;
 		padding: 0.2em 0.65em;
 		background: var(--skin-bg-dark);
 		color: var(--skin-bg-text);
@@ -245,7 +245,7 @@
 	}
 
 	.target {
-		margin-block-end: 0;
+		margin: 0;
 		font-weight: bold;
 	}
 
@@ -342,7 +342,7 @@
 			width: calc(100vw - 1rem);
 			max-height: calc(100vh - 1rem);
 			max-height: calc(100dvh - 1rem);
-			padding: 1em;
+			padding: 0.8em 1em 1em;
 			border-radius: 0.75rem;
 		}
 	}
