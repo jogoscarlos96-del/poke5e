@@ -6,6 +6,7 @@
 	export let onconfirm: () => void
 	export let critical = false
 	export let criticalDiceMultiplier = 2
+	export let moveType: string | undefined = undefined
 	export let currentHp: number | undefined = undefined
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
@@ -23,6 +24,7 @@
 		? Math.min(maxHp, currentHp + Math.max(0, total))
 		: undefined
 	$: effectiveCriticalMultiplier = Math.max(2, Math.floor(criticalDiceMultiplier))
+	$: moveTypeBackground = moveType != null ? `var(--skin-${moveType}-bg)` : "var(--skin-bg-dark)"
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 
@@ -69,7 +71,7 @@
 	}
 </script>
 
-<section class="damage-roll">
+<section class="damage-roll" style:--move-type-bg={moveTypeBackground}>
 	<h3>{critical && !damage.isHealing ? "Critical Damage Roll" : `${label} Roll`}</h3>
 	<div class="formula">
 		<span>{damage.dice}</span>
@@ -92,15 +94,15 @@
 				<dd>{signed(damage.mod)}</dd>
 			</div>
 			{#if critical && !damage.isHealing && normalTotal != null && criticalBonus != null}
-				<div>
+				<div class="normal-damage-row">
 					<dt>Normal Damage</dt>
 					<dd>{normalTotal}</dd>
 				</div>
-				<div class="critical-result-row">
+				<div class="critical-result-row critical-bonus-row">
 					<dt>Critical Bonus Dice</dt>
 					<dd>{criticalDiceRolls.join(", ")}</dd>
 				</div>
-				<div class="critical-result-row">
+				<div class="critical-result-row critical-bonus-row">
 					<dt>Critical Bonus</dt>
 					<dd>{criticalBonus}</dd>
 				</div>
@@ -168,18 +170,29 @@
 		margin-block: 1em;
 	}
 
+	.result div.normal-damage-row,
+	.result div.critical-total-row {
+		background-color: var(--move-type-bg);
+		color: var(--skin-bg-text);
+	}
+
 	.result div.critical-result-row {
-		border: 2px solid transparent;
-		background:
-			linear-gradient(var(--skin-input-bg), var(--skin-input-bg)) padding-box,
-			linear-gradient(110deg, #ff6b8a, #ffbd6d, #f4e77a, #72df9d, #63c8ff, #9b7cff, #ff74c8, #ff6b8a) border-box;
-		background-size: auto, 260% 260%;
-		animation: critical-border-shimmer 6s linear infinite;
+		border: none;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.result div.critical-bonus-row {
+		background-color: var(--skin-input-bg);
+		background-image: linear-gradient(125deg, transparent 26%, rgb(255 255 255 / 0.04) 36%, rgb(255 255 255 / 0.5) 48%, rgb(255 255 255 / 0.08) 60%, transparent 70%);
+		background-size: 280% 280%;
+		animation: critical-row-shimmer 3.5s ease-in-out infinite;
 	}
 
 	.result div.critical-total-row {
-		border-width: 3px;
-		box-shadow: 0 0 0.7em rgb(149 111 255 / 0.24), 0 0 1.2em rgb(255 116 200 / 0.12);
+		background-image: linear-gradient(125deg, transparent 26%, rgb(255 255 255 / 0.08) 36%, rgb(255 255 255 / 0.72) 48%, rgb(255 255 255 / 0.14) 60%, transparent 70%);
+		background-size: 280% 280%;
+		animation: critical-row-shimmer 3.2s ease-in-out infinite;
 	}
 
 	.total-row {
@@ -221,15 +234,16 @@
 		margin-block: 0 1em;
 	}
 
-	@keyframes critical-border-shimmer {
-		0% { background-position: 0 0, 0% 50%; }
-		100% { background-position: 0 0, 260% 50%; }
+	@keyframes critical-row-shimmer {
+		0% { background-position: 170% 170%; }
+		55%, 100% { background-position: -90% -90%; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.result div.critical-result-row {
+		.result div.critical-bonus-row,
+		.result div.critical-total-row {
 			animation: none;
-			background-position: 0 0, 50% 50%;
+			background-image: none;
 		}
 	}
 </style>
