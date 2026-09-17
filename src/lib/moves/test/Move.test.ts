@@ -215,6 +215,7 @@ describe("calculateMoveStats", () => {
 				mod: 2,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -247,6 +248,7 @@ describe("calculateMoveStats", () => {
 				mod: 0,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 0,
 			},
 		})
 	})
@@ -279,6 +281,7 @@ describe("calculateMoveStats", () => {
 				mod: 4,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 4,
 			},
 		})
 	})
@@ -305,6 +308,7 @@ describe("calculateMoveStats", () => {
 				mod: 0,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 0,
 			},
 		})
 	})
@@ -331,6 +335,7 @@ describe("calculateMoveStats", () => {
 				mod: 0,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 0,
 			},
 		})
 	})
@@ -363,6 +368,7 @@ describe("calculateMoveStats", () => {
 				mod: 4,
 				isHealing: false,
 				stabApplied: true,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -395,6 +401,7 @@ describe("calculateMoveStats", () => {
 				mod: 3,
 				isHealing: false,
 				stabApplied: true,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -427,6 +434,7 @@ describe("calculateMoveStats", () => {
 				mod: 2,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -451,6 +459,7 @@ describe("calculateMoveStats", () => {
 				mod: 2,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -477,6 +486,7 @@ describe("calculateMoveStats", () => {
 				mod: 0,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -503,6 +513,7 @@ describe("calculateMoveStats", () => {
 				mod: 6, // 2 from attribute, 4 from modifier
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -529,6 +540,7 @@ describe("calculateMoveStats", () => {
 				mod: 4, // 2 from attribute, 2 from stab
 				isHealing: false,
 				stabApplied: true,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -555,6 +567,7 @@ describe("calculateMoveStats", () => {
 				mod: 12,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -587,6 +600,7 @@ describe("calculateMoveStats", () => {
 				mod: 4,
 				isHealing: false,
 				stabApplied: true,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -617,6 +631,7 @@ describe("calculateMoveStats", () => {
 				mod: 2,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -644,6 +659,7 @@ describe("calculateMoveStats", () => {
 				mod: 2,
 				isHealing: false,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -701,6 +717,7 @@ describe("calculateMoveStats", () => {
 				mod: 2, // no STAB
 				isHealing: true,
 				stabApplied: false,
+				moveModifier: 2,
 			},
 		})
 	})
@@ -733,6 +750,7 @@ describe("calculateMoveStats", () => {
 				mod: 9,
 				isHealing: false,
 				stabApplied: true,
+				moveModifier: 2,
 			},
 		})
 	})
