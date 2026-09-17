@@ -2,6 +2,7 @@
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
 	import MoveDamageRoll from "./MoveDamageRoll.svelte"
+	import MoveCompactDamageRoll from "./MoveCompactDamageRoll.svelte"
 	import type { AttackRollMode, AutomatedMultiHitProfile, ComboMultiHitProfile, RepeatedMultiHitProfile } from "./MultiHit"
 
 	export let profile: AutomatedMultiHitProfile
@@ -318,13 +319,23 @@
 					</div>
 
 					{#key currentCriticalSelected}
-						<MoveDamageRoll
-							damage={currentRepeatedDamage}
-							critical={currentCriticalSelected}
-							{criticalDiceMultiplier}
-							{moveType}
-							onconfirm={confirmRepeatedDamage}
-						/>
+						{#if repeatedProfile.repeatDiceCount != null}
+							<MoveCompactDamageRoll
+								damage={currentRepeatedDamage}
+								critical={currentCriticalSelected}
+								{criticalDiceMultiplier}
+								{moveType}
+								onconfirm={confirmRepeatedDamage}
+							/>
+						{:else}
+							<MoveDamageRoll
+								damage={currentRepeatedDamage}
+								critical={currentCriticalSelected}
+								{criticalDiceMultiplier}
+								{moveType}
+								onconfirm={confirmRepeatedDamage}
+							/>
+						{/if}
 					{/key}
 				{/if}
 			</div>
