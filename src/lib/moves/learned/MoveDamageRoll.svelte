@@ -197,13 +197,15 @@
 	:global(.critical-toggle-special.active .button)::after {
 		content: "";
 		position: absolute;
-		top: -60%;
-		bottom: -60%;
-		left: -50%;
-		width: 32%;
+		top: -65%;
+		bottom: -65%;
+		left: -52%;
+		width: 36%;
 		pointer-events: none;
-		background: linear-gradient(115deg, transparent 10%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 34%, var(--shimmer-peak, rgb(255 255 255 / 0.7)) 50%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 66%, transparent 90%);
-		animation: critical-shimmer-sweep 5s linear infinite;
+		background: linear-gradient(115deg, transparent 0%, rgb(255 255 255 / 0.015) 18%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 34%, var(--shimmer-peak, rgb(255 255 255 / 0.7)) 50%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 66%, rgb(255 255 255 / 0.015) 82%, transparent 100%);
+		filter: blur(2px);
+		will-change: transform;
+		animation: critical-shimmer-sweep 4s linear infinite;
 	}
 
 	:global(.critical-toggle-special.active .button) {
@@ -255,9 +257,9 @@
 	}
 
 	@keyframes critical-shimmer-sweep {
-		0% { transform: translateX(0); }
-		60% { transform: translateX(500%); }
-		60.001%, 100% { transform: translateX(500%); }
+		0% { transform: translate3d(0, 0, 0); }
+		50% { transform: translate3d(500%, 0, 0); }
+		50.001%, 100% { transform: translate3d(500%, 0, 0); }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
