@@ -13,6 +13,11 @@ describe("ability interactions", () => {
 		expect(criticalDiceCount(2, true, 3)).toBe(6)
 	})
 
+	test("uses the same critical multiplier for optional damage dice", () => {
+		expect(criticalDiceCount(1, true, 2)).toBe(2)
+		expect(criticalDiceCount(1, true, 3)).toBe(3)
+	})
+
 	test("detects Hustle when any attack in the sequence crits", () => {
 		expect(hasHustleCritical(false, [false, false])).toBe(false)
 		expect(hasHustleCritical(true, [])).toBe(true)

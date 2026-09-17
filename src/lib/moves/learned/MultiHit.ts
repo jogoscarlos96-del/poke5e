@@ -35,6 +35,13 @@ export type AutomatedMultiHitProfile = ComboMultiHitProfile | RepeatedMultiHitPr
 
 const normalizeMoveName = (name: string) => name.trim().toLowerCase().replace(/[-\s]+/g, " ")
 
+const ONCE_PER_MOVE_ROLL_NOTE = "Manual Temporary Damage Bonus and Extra Damage Dice controls apply to the current damage roll only. If an effect says it applies once per move, add it to only one qualifying hit."
+const COMBO_MODIFIER_NOTE = "The initial damage roll carries the move's MOVE/STAB modifiers. Additional combo hits use only the move's current scaled damage dice. Apply any manual once-per-move bonus on the initial damage roll before continuing the combo."
+
+const withOncePerMoveNote = (note?: string) => note == null
+	? ONCE_PER_MOVE_ROLL_NOTE
+	: `${note} ${ONCE_PER_MOVE_ROLL_NOTE}`
+
 const STANDARD_COMBO_MOVES = new Set([
 	"arm thrust",
 	"bone rush",
@@ -62,7 +69,7 @@ const repeated = (
 	repeatModifier: options.repeatModifier ?? "move",
 	repeatFlatBonus: options.repeatFlatBonus ?? 0,
 	repeatDiceCount: options.repeatDiceCount,
-	note: options.note,
+	note: withOncePerMoveNote(options.note),
 	naturalReminder: options.naturalReminder,
 })
 
@@ -115,6 +122,7 @@ export const getStandardMultiHitProfile = (moveName: string): MultiHitProfile | 
 			source: "standard",
 			additionalDice: "1d4",
 			maxAdditionalHits: 4,
+			note: COMBO_MODIFIER_NOTE,
 		}
 	}
 
@@ -124,7 +132,7 @@ export const getStandardMultiHitProfile = (moveName: string): MultiHitProfile | 
 			source: "standard",
 			additionalDice: "1d10",
 			maxAdditionalHits: 2,
-			note: "After Thrash finishes, remember to resolve its Confused effect manually.",
+			note: `After Thrash finishes, remember to resolve its Confused effect manually. ${COMBO_MODIFIER_NOTE}`,
 		}
 	}
 

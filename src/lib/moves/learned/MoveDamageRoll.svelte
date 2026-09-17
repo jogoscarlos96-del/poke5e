@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
+	import { criticalDiceCount } from "./AbilityInteractions"
 
 	export let damage: NonNullable<MoveStats["damage"]>
 	export let onconfirm: (value?: number) => void
@@ -16,6 +17,7 @@
 	let diceRolls: number[] = []
 	let extraDiceRolls: number[] = []
 	let criticalDiceRolls: number[] = []
+	let criticalExtraDiceRolls: number[] = []
 	let normalTotal: number | undefined = undefined
 	let criticalBonus: number | undefined = undefined
 	let total: number | undefined = undefined
@@ -36,6 +38,7 @@
 		diceRolls = []
 		extraDiceRolls = []
 		criticalDiceRolls = []
+		criticalExtraDiceRolls = []
 		normalTotal = undefined
 		criticalBonus = undefined
 		total = undefined
@@ -88,11 +91,16 @@
 		const extraDiceTotal = extraDiceRolls.reduce((sum, value) => sum + value, 0)
 		normalTotal = baseDiceTotal + extraDiceTotal + effectiveModifier
 
-		const criticalExtraDiceCount = critical && !damage.isHealing
-			? baseDice.count * (effectiveCriticalMultiplier - 1)
+		const isCriticalDamage = critical && !damage.isHealing
+		const criticalBaseDiceCount = criticalDiceCount(baseDice.count, isCriticalDamage, effectiveCriticalMultiplier) - baseDice.count
+		const criticalAddedDiceCount = parsedExtraDice != null
+			? criticalDiceCount(parsedExtraDice.count, isCriticalDamage, effectiveCriticalMultiplier) - parsedExtraDice.count
 			: 0
-		criticalDiceRolls = rollDice(criticalExtraDiceCount, baseDice.sides)
-		criticalBonus = criticalDiceRolls.reduce((sum, value) => sum + value, 0)
+		criticalDiceRolls = rollDice(criticalBaseDiceCount, baseDice.sides)
+		criticalExtraDiceRolls = parsedExtraDice != null
+			? rollDice(criticalAddedDiceCount, parsedExtraDice.sides)
+			: []
+		criticalBonus = [...criticalDiceRolls, ...criticalExtraDiceRolls].reduce((sum, value) => sum + value, 0)
 		total = normalTotal + criticalBonus
 		error = undefined
 	}
@@ -116,7 +124,7 @@
 	<div class="temporary-bonus-control">
 		<div>
 			<strong>Temporary {label} Bonus</strong>
-			<span>Current {signed(transientDamageBonus)}</span>
+			<span>This roll · Current {signed(transientDamageBonus)}</span>
 		</div>
 		<div class="bonus-stepper">
 			<Button variant="subtle" on:click={() => changeTransientDamageBonus(-1)}>−</Button>
@@ -135,11 +143,11 @@
 			bind:value={extraDice}
 			on:input={onExtraDiceInput}
 		/>
-		<span>Optional; rolled once and added to the normal result.</span>
+		<span>Optional; applies to this damage roll only. If the attack is critical, these dice use the same critical multiplier.</span>
 	</div>
 
 	{#if critical && !damage.isHealing}
-		<p class="critical-rule">Critical hit: roll {effectiveCriticalMultiplier}× the move's normal damage dice; apply the flat modifier once. Optional extra dice are rolled once.</p>
+		<p class="critical-rule">Critical hit: roll {effectiveCriticalMultiplier}× all damage dice involved in this attack; apply flat modifiers once.</p>
 	{/if}
 
 	{#if total == null}
@@ -175,6 +183,12 @@
 					<dt>Critical Bonus Dice</dt>
 					<dd>{criticalDiceRolls.join(", ")}</dd>
 				</div>
+				{#if criticalExtraDiceRolls.length > 0}
+					<div class="critical-result-row critical-bonus-row">
+						<dt>Extra Dice Critical Bonus</dt>
+						<dd>{criticalExtraDiceRolls.join(", ")}</dd>
+					</div>
+				{/if}
 				<div class="critical-result-row critical-bonus-row">
 					<dt>Critical Bonus</dt>
 					<dd>{criticalBonus}</dd>

@@ -82,4 +82,13 @@ describe("getSpecialMultiHitProfile", () => {
 			},
 		})
 	})
+
+	test.each(["Barrage", "Beat Up", "Population Bomb", "Tachyon Cutter", "Hyperspace Fury"])(
+		"documents once-per-move manual modifier scope for %s",
+		(moveName) => {
+			const profile = getSpecialMultiHitProfile(moveName, 10)
+			expect(profile?.note).toContain("current damage roll only")
+			expect(profile?.note).toContain("once per move")
+		},
+	)
 })

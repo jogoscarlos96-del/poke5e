@@ -49,6 +49,9 @@ export type SpecialMultiHitProfile =
 
 const normalizeMoveName = (name: string) => name.trim().toLowerCase().replace(/[-\s]+/g, " ")
 
+const ONCE_PER_MOVE_ROLL_NOTE = "Manual Temporary Damage Bonus and Extra Damage Dice controls apply to the current damage roll only. If an effect says it applies once per move, add it to only one qualifying hit or projectile."
+const withOncePerMoveNote = (note: string) => `${note} ${ONCE_PER_MOVE_ROLL_NOTE}`
+
 const hyperspaceFuryProjectiles = (level: number) => {
 	if (level >= 17) return 6
 	if (level >= 10) return 5
@@ -69,7 +72,7 @@ export const getSpecialMultiHitProfile = (moveName: string, level: number): Spec
 				source: "stats",
 				applyMoveModifier: false,
 			},
-			note: "One ranged attack determines whether the barrage lands. On a hit, roll 1d4 for the number of projectiles; each projectile uses the move's current level-scaled damage dice.",
+			note: withOncePerMoveNote("One ranged attack determines whether the barrage lands. On a hit, roll 1d4 for the number of projectiles; each projectile uses the move's current level-scaled damage dice."),
 		}
 	}
 
@@ -87,7 +90,7 @@ export const getSpecialMultiHitProfile = (moveName: string, level: number): Spec
 				dice: "2d6",
 				applyMoveModifier: false,
 			},
-			note: "Make one attack, plus one additional attack for each other conscious creature currently carried by the trainer.",
+			note: withOncePerMoveNote("Make one attack, plus one additional attack for each other conscious creature currently carried by the trainer."),
 		}
 	}
 
@@ -104,7 +107,7 @@ export const getSpecialMultiHitProfile = (moveName: string, level: number): Spec
 				base: 1,
 				applyMoveModifier: true,
 			},
-			note: "Make 10 separate melee attack rolls. Each hit deals 1 + MOVE normal damage. Critical hits do not add dice because this damage expression contains no dice.",
+			note: withOncePerMoveNote("Make 10 separate melee attack rolls. Each hit deals 1 + MOVE normal damage. Critical hits do not add dice because this damage expression contains no dice."),
 		}
 	}
 
@@ -119,7 +122,7 @@ export const getSpecialMultiHitProfile = (moveName: string, level: number): Spec
 				applyMoveModifier: true,
 			},
 			canSplitTargets: false,
-			note: "Both hits are guaranteed unless the target is in an invulnerable stage such as Fly, Dig, Bounce, or Dive.",
+			note: withOncePerMoveNote("Both hits are guaranteed unless the target is in an invulnerable stage such as Fly, Dig, Bounce, or Dive."),
 		}
 	}
 
@@ -135,7 +138,7 @@ export const getSpecialMultiHitProfile = (moveName: string, level: number): Spec
 				applyMoveModifier: false,
 			},
 			canSplitTargets: true,
-			note: "Each projectile automatically deals damage. Protect/Detect-style reactions cannot negate this damage. After use, attacks against the user have advantage until the beginning of its next turn.",
+			note: withOncePerMoveNote("Each projectile automatically deals damage. Protect/Detect-style reactions cannot negate this damage. After use, attacks against the user have advantage until the beginning of its next turn."),
 		}
 	}
 

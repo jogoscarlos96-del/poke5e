@@ -39,6 +39,22 @@ describe("getStandardMultiHitProfile", () => {
 		})
 	})
 
+	test("documents one-time modifier scope for combo and repeated families", () => {
+		const bulletSeed = getStandardMultiHitProfile("Bullet Seed")
+		const doubleHit = getStandardMultiHitProfile("Double Hit")
+
+		expect(bulletSeed).toMatchObject({ kind: "combo" })
+		expect(doubleHit).toMatchObject({ kind: "repeated" })
+		if (bulletSeed?.kind !== "combo" || doubleHit?.kind !== "repeated") {
+			throw new Error("Expected combo and repeated profiles")
+		}
+
+		expect(bulletSeed.note).toContain("initial damage roll")
+		expect(bulletSeed.note).toContain("once-per-move")
+		expect(doubleHit.note).toContain("current damage roll only")
+		expect(doubleHit.note).toContain("once per move")
+	})
+
 	test("keeps natural-roll effects available for the repeated sequence", () => {
 		expect(getStandardMultiHitProfile("Double Iron Bash")).toMatchObject({
 			kind: "repeated",
