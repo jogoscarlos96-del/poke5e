@@ -96,15 +96,15 @@
 					<dt>Normal Damage</dt>
 					<dd>{normalTotal}</dd>
 				</div>
-				<div>
+				<div class="critical-result-row">
 					<dt>Critical Bonus Dice</dt>
 					<dd>{criticalDiceRolls.join(", ")}</dd>
 				</div>
-				<div>
+				<div class="critical-result-row">
 					<dt>Critical Bonus</dt>
 					<dd>{criticalBonus}</dd>
 				</div>
-				<div class="total-row">
+				<div class="total-row critical-result-row critical-total-row">
 					<dt>Critical Total</dt>
 					<dd>{total}</dd>
 				</div>
@@ -168,8 +168,27 @@
 		margin-block: 1em;
 	}
 
+	.result div.critical-result-row {
+		border: 2px solid transparent;
+		background:
+			linear-gradient(var(--skin-input-bg), var(--skin-input-bg)) padding-box,
+			linear-gradient(110deg, #ff6b8a, #ffbd6d, #f4e77a, #72df9d, #63c8ff, #9b7cff, #ff74c8, #ff6b8a) border-box;
+		background-size: auto, 260% 260%;
+		animation: critical-border-shimmer 6s linear infinite;
+	}
+
+	.result div.critical-total-row {
+		border-width: 3px;
+		box-shadow: 0 0 0.7em rgb(149 111 255 / 0.24), 0 0 1.2em rgb(255 116 200 / 0.12);
+	}
+
 	.total-row {
 		font-size: var(--font-sz-neptune);
+	}
+
+	.critical-total-row dt,
+	.critical-total-row dd {
+		font-weight: 800;
 	}
 
 	dt {
@@ -200,5 +219,17 @@
 
 	.critical-immunity-note {
 		margin-block: 0 1em;
+	}
+
+	@keyframes critical-border-shimmer {
+		0% { background-position: 0 0, 0% 50%; }
+		100% { background-position: 0 0, 260% 50%; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.result div.critical-result-row {
+			animation: none;
+			background-position: 0 0, 50% 50%;
+		}
 	}
 </style>
