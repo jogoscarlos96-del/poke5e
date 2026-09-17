@@ -253,7 +253,7 @@
 					{/if}
 				{:else}
 					<div class="attack-summary" class:critical-summary={automaticCritical}>
-						<strong>{automaticCritical ? "Critical Hit" : "Attack — Hit"}</strong>
+						<strong>{automaticCritical ? "Critical Hit" : "Attack"}</strong>
 						<span>Natural {attackDie} · Total {attackTotal}</span>
 					</div>
 
