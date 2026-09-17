@@ -57,5 +57,36 @@ jobs:
           done
       - name: Unit Tests
         run: pnpm test:unit
+      - name: Move Roller integrated browser test
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm dev --host 127.0.0.1 --port 3000 > /tmp/poke5e-dev.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/ >/dev/null; then
+              ready=true
+              break
+            fi
+
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Development server exited before becoming ready."
+              cat /tmp/poke5e-dev.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          if [ "$ready" != true ]; then
+            echo "Development server did not become ready."
+            cat /tmp/poke5e-dev.log
+            exit 1
+          fi
+
+          BASE_URL=http://127.0.0.1:3000 pnpm exec playwright test test/smoke/move-roller.test.ts --project=smoke
       - name: Database Migration Tests
         run: pnpm test:db:quick
