@@ -361,14 +361,16 @@
 <style>
 	.multi-hit-continuation {
 		display: grid;
-		gap: 0.75em;
+		gap: 0.6em;
 	}
 
 	.sequence-heading,
 	.sequence-total,
 	.resolved-current,
-	.critical-control {
-		padding: 0.8em;
+	.critical-control,
+	.current-attack-heading,
+	.attack-result-line {
+		padding: 0.7em 0.8em;
 		background: var(--skin-input-bg);
 		border-radius: 0.75em;
 	}
@@ -415,7 +417,7 @@
 	}
 
 	.effect-note {
-		padding: 0.65em 0.75em;
+		padding: 0.6em 0.7em;
 		background: var(--skin-bg-dark);
 		color: var(--skin-bg-text);
 		border-radius: 0.65em;
@@ -440,35 +442,28 @@
 
 	.current-attack-card {
 		display: grid;
-		gap: 0.65em;
-		padding: 0.8em;
-		background: var(--skin-content);
-		border: 1px solid var(--skin-border, currentColor);
-		border-radius: 0.8em;
+		gap: 0.5em;
+		padding: 0;
+		background: transparent;
+		border: none;
+		border-radius: 0;
 	}
 
 	.current-attack-heading {
-		padding-block-end: 0.55em;
-		border-block-end: 1px solid var(--skin-border, currentColor);
+		padding-block: 0.65em;
 	}
 
 	.attack-result-line,
 	.resolved-current,
 	.critical-control,
 	.damage-step-card {
-		border: 1px solid var(--skin-border, currentColor);
-	}
-
-	.attack-result-line {
-		padding: 0.65em 0.75em;
-		background: var(--skin-input-bg);
-		border-radius: 0.6em;
+		border: none;
 	}
 
 	.damage-step-card {
-		padding: 0.65em;
-		background: var(--skin-input-bg);
-		border-radius: 0.7em;
+		padding: 0;
+		background: transparent;
+		border-radius: 0;
 	}
 
 	.decision-grid {
@@ -479,7 +474,7 @@
 
 	.critical-control {
 		display: grid;
-		gap: 0.65em;
+		gap: 0.55em;
 	}
 
 	.critical-toggle-option {
@@ -508,6 +503,47 @@
 		color: var(--skin-bg-text);
 		font-weight: 800;
 		text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+	}
+
+	.damage-step-card :global(.damage-roll) {
+		display: grid;
+		gap: 0.45em;
+	}
+
+	.damage-step-card :global(.damage-roll h3) {
+		margin: 0;
+		padding: 0.6em 0.7em;
+		background: var(--skin-input-bg);
+		border-radius: 0.7em;
+	}
+
+	.damage-step-card :global(.damage-roll .formula),
+	.damage-step-card :global(.damage-roll .temporary-bonus-control),
+	.damage-step-card :global(.damage-roll .extra-dice-control) {
+		margin-block-end: 0;
+		padding: 0.6em 0.7em;
+	}
+
+	.damage-step-card :global(.damage-roll .extra-dice-control) {
+		margin-block-end: 0;
+	}
+
+	.damage-step-card :global(.damage-roll .result) {
+		gap: 0.35em;
+		margin-block: 0;
+	}
+
+	.damage-step-card :global(.damage-roll .result > div) {
+		padding: 0.55em 0.7em;
+	}
+
+	.damage-step-card :global(.damage-roll .critical-rule),
+	.damage-step-card :global(.damage-roll .critical-immunity-note) {
+		margin-block: 0;
+	}
+
+	.damage-step-card :global(.compact-damage-roll) {
+		gap: 0.4em;
 	}
 
 	.sequence-total {
