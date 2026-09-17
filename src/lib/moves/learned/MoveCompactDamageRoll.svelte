@@ -110,6 +110,7 @@
 	.compact-damage-roll {
 		display: grid;
 		gap: 0.55em;
+		min-width: 0;
 	}
 
 	.compact-heading {
@@ -117,6 +118,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75em;
+		min-width: 0;
 		padding: 0.65em 0.75em;
 		background: var(--skin-content);
 		border-radius: 0.65em;
@@ -125,6 +127,7 @@
 	.compact-heading > div {
 		display: grid;
 		gap: 0.05em;
+		min-width: 0;
 	}
 
 	.compact-heading span,
@@ -134,12 +137,14 @@
 	}
 
 	.damage-total {
+		flex: 0 0 auto;
 		font-size: var(--font-sz-neptune);
 	}
 
 	.compact-result {
 		display: grid;
 		gap: 0.3em;
+		min-width: 0;
 	}
 
 	.compact-result > div {
@@ -147,9 +152,20 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75em;
+		min-width: 0;
 		padding: 0.5em 0.7em;
 		background: var(--skin-input-bg);
 		border-radius: 0.55em;
+	}
+
+	.compact-result > div > span {
+		min-width: 0;
+	}
+
+	.compact-result > div > strong {
+		min-width: 0;
+		text-align: right;
+		overflow-wrap: anywhere;
 	}
 
 	.compact-result > .compact-total {
@@ -171,5 +187,11 @@
 
 	.error {
 		margin: 0;
+	}
+
+	@media (max-width: 22rem) {
+		.actions {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
