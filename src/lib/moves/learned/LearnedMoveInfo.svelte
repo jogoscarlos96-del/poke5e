@@ -29,6 +29,7 @@
 		attributes,
 		attributeModifierMultiplier = 1,
 		abilityNames = [],
+		featNames = [],
 		editable = false,
 		currentHp,
 		maxHp,
@@ -42,6 +43,7 @@
 		attributes: Attributes,
 		attributeModifierMultiplier?: number,
 		abilityNames?: string[],
+		featNames?: string[],
 		editable?: boolean,
 		currentHp?: number,
 		maxHp?: number,
@@ -52,7 +54,8 @@
 	let rollerOpen = $state(false)
 
 	const move = $derived($MovesStore.result?.find((it) => it.id === value.moveId))
-	const moveHref = $derived(CustomMove.isCustom(value.moveId) ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
+	const isCustomMove = $derived(CustomMove.isCustom(value.moveId))
+	const moveHref = $derived(isCustomMove ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
 	const currentPp = $derived(value.pp.current)
 	const moveStats = $derived(move?.calculateMoveStats($currentEdition, {
 		attributes: attributes,
@@ -150,6 +153,8 @@
 		moveType={move.type}
 		stats={moveStats}
 		{abilityNames}
+		{featNames}
+		isCustom={isCustomMove}
 		{currentHp}
 		{maxHp}
 		{onapplyhealing}

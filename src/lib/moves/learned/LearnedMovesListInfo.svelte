@@ -22,6 +22,8 @@
 		onapplyhealing?: (value: number) => void,
 	} = $props()
 
+	const featNames = $derived(pokemon.feats.map((feat) => feat.name))
+
 	const onUpdatePp = (move: LearnedMove) => (pp: number) => {
 		onupdate?.({
 			...move,
@@ -45,6 +47,7 @@
 				stab={pokemon.stab}
 				{attributeModifierMultiplier}
 				{abilityNames}
+				{featNames}
 				currentHp={pokemon.hp.current}
 				maxHp={pokemon.hp.max}
 				onupdatepp={onUpdatePp(move)}

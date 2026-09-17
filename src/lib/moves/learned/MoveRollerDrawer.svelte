@@ -3,18 +3,28 @@
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
 	import MoveDamageRoll from "./MoveDamageRoll.svelte"
+	import MoveMultiHitContinuation from "./MoveMultiHitContinuation.svelte"
+	import {
+		getStandardMultiHitProfile,
+		type AttackRollMode,
+		type AutomatedMultiHitProfile,
+		type MultiHitProfile,
+	} from "./MultiHit"
 
 	export let open = false
 	export let moveName: string
 	export let moveType: string
 	export let stats: MoveStats
 	export let abilityNames: string[] = []
+	export let featNames: string[] = []
+	export let isCustom = false
 	export let currentHp: number | undefined = undefined
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	type SaveOutcome = "failed" | "succeeded"
-	type AttackRollMode = "advantage" | "normal" | "disadvantage"
+	type AttackOutcome = "hit" | "miss"
+	type CustomMultiHitMode = "none" | "combo" | "repeated"
 
 	const CRITICAL_THRESHOLDS = Array.from({ length: 19 }, (_, index) => 20 - index)
 
@@ -26,10 +36,22 @@
 	let attackDie: number | undefined = undefined
 	let attackTotal: number | undefined = undefined
 	let hitConfirmed = false
+	let initialAttackOutcome: AttackOutcome | undefined = undefined
 	let saveOutcome: SaveOutcome | undefined = undefined
 	let rollAfterSuccessfulSave = false
 	let criticalThreshold = 20
 	let criticalSelected = false
+	let continuationActive = false
+	let initialDamageTotal = 0
+	let initialDamageKnown = true
+
+	let customMultiHitMode: CustomMultiHitMode = "none"
+	let customComboDice = "1d4"
+	let customComboMaxAdditionalHits = 4
+	let customRepeatedAttacks = 2
+	let customRepeatedStopOnMiss = false
+	let customRepeatedModifier: "move" | "none" = "move"
+	let customRepeatedFlatBonus = 0
 
 	$: resolution = stats.toHit != null
 		? "attack"
@@ -39,12 +61,29 @@
 				? "direct"
 				: "none"
 	$: normalizedAbilityNames = abilityNames.map((name) => name.trim().toLowerCase())
+	$: normalizedFeatNames = featNames.map((name) => name.trim().toLowerCase())
 	$: hasSuperLuck = normalizedAbilityNames.includes("super luck")
 	$: hasSniper = normalizedAbilityNames.includes("sniper")
 	$: hasHustle = normalizedAbilityNames.includes("hustle")
+	$: hasSkillLink = normalizedAbilityNames.includes("skill link")
+	$: hasComboMaster = normalizedFeatNames.includes("combo master")
+	$: hasParentalBond = normalizedAbilityNames.includes("parental bond")
 	$: criticalDiceMultiplier = hasSniper ? 3 : 2
 	$: automaticCritical = attackDie != null && attackDie >= criticalThreshold
 	$: effectiveAttackModifier = (stats.toHit ?? 0) + transientAttackBonus
+	$: comboGuaranteeSource = hasSkillLink && hasComboMaster
+		? "Skill Link / Combo Master"
+		: hasSkillLink
+			? "Skill Link"
+			: hasComboMaster
+				? "Combo Master"
+				: undefined
+	$: standardMultiHitProfile = isCustom ? undefined : getStandardMultiHitProfile(moveName)
+	$: customMultiHitProfile = isCustom ? buildCustomMultiHitProfile() : undefined
+	$: multiHitProfile = isCustom ? customMultiHitProfile : standardMultiHitProfile
+	$: automatedMultiHitProfile = multiHitProfile != null && (multiHitProfile.kind === "combo" || multiHitProfile.kind === "repeated")
+		? multiHitProfile as AutomatedMultiHitProfile
+		: undefined
 
 	$: if (open && !wasOpen) {
 		wasOpen = true
@@ -62,6 +101,30 @@
 		if (dialog != null && !dialog.open) dialog.showModal()
 	}
 
+	function buildCustomMultiHitProfile(): AutomatedMultiHitProfile | undefined {
+		if (customMultiHitMode === "combo") {
+			return {
+				kind: "combo",
+				source: "custom",
+				additionalDice: customComboDice.trim() || "1d4",
+				maxAdditionalHits: Math.max(1, Math.min(9, Math.floor(customComboMaxAdditionalHits || 1))),
+			}
+		}
+
+		if (customMultiHitMode === "repeated") {
+			return {
+				kind: "repeated",
+				source: "custom",
+				totalAttacks: Math.max(2, Math.min(10, Math.floor(customRepeatedAttacks || 2))),
+				stopOnMiss: customRepeatedStopOnMiss,
+				repeatModifier: customRepeatedModifier,
+				repeatFlatBonus: Number.isFinite(customRepeatedFlatBonus) ? customRepeatedFlatBonus : 0,
+			}
+		}
+
+		return undefined
+	}
+
 	const resetResolution = () => {
 		attackRollMode = "normal"
 		transientAttackBonus = 0
@@ -69,10 +132,21 @@
 		attackDie = undefined
 		attackTotal = undefined
 		hitConfirmed = false
+		initialAttackOutcome = undefined
 		saveOutcome = undefined
 		rollAfterSuccessfulSave = false
 		criticalThreshold = abilityNames.some((name) => name.trim().toLowerCase() === "super luck") ? 19 : 20
 		criticalSelected = false
+		continuationActive = false
+		initialDamageTotal = 0
+		initialDamageKnown = true
+		customMultiHitMode = "none"
+		customComboDice = "1d4"
+		customComboMaxAdditionalHits = 4
+		customRepeatedAttacks = 2
+		customRepeatedStopOnMiss = false
+		customRepeatedModifier = "move"
+		customRepeatedFlatBonus = 0
 	}
 
 	const close = () => {
@@ -86,7 +160,9 @@
 		attackDie = undefined
 		attackTotal = undefined
 		hitConfirmed = false
+		initialAttackOutcome = undefined
 		criticalSelected = false
+		continuationActive = false
 	}
 
 	const changeTransientAttackBonus = (amount: number) => {
@@ -95,7 +171,9 @@
 		attackDie = undefined
 		attackTotal = undefined
 		hitConfirmed = false
+		initialAttackOutcome = undefined
 		criticalSelected = false
+		continuationActive = false
 	}
 
 	const rollD20 = () => {
@@ -115,15 +193,37 @@
 
 		attackTotal = (attackDie ?? 0) + effectiveAttackModifier
 		hitConfirmed = false
+		initialAttackOutcome = undefined
 		criticalSelected = false
+		continuationActive = false
 	}
 
 	const confirmHit = () => {
 		hitConfirmed = true
+		initialAttackOutcome = "hit"
 		criticalSelected = automaticCritical
 	}
 
 	const confirmMiss = () => {
+		if (automatedMultiHitProfile?.kind === "repeated" && !automatedMultiHitProfile.stopOnMiss && stats.damage != null) {
+			hitConfirmed = true
+			initialAttackOutcome = "miss"
+			criticalSelected = false
+			initialDamageTotal = 0
+			initialDamageKnown = true
+			continuationActive = true
+			return
+		}
+		close()
+	}
+
+	const confirmInitialDamage = (value?: number) => {
+		if (automatedMultiHitProfile != null && stats.damage != null && !stats.damage.isHealing) {
+			initialDamageTotal = value ?? 0
+			initialDamageKnown = value != null
+			continuationActive = true
+			return
+		}
 		close()
 	}
 
@@ -144,6 +244,13 @@
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 	const saveAttribute = () => stats.save?.attribute.map((it) => it.toUpperCase()).join("/") ?? "—"
+	const initialAttackLabel = () => {
+		if (automatedMultiHitProfile?.kind === "repeated") {
+			if (initialAttackOutcome === "miss") return "Attack 1 — Miss"
+			return `Attack 1 — ${automaticCritical ? "Critical Hit" : "Hit"}`
+		}
+		return automaticCritical ? "Critical Hit" : "Attack"
+	}
 </script>
 
 {#if open}
@@ -171,7 +278,26 @@
 
 		{#if resolution === "attack"}
 			<section>
-				{#if !hitConfirmed}
+				{#if continuationActive && automatedMultiHitProfile != null && stats.damage != null}
+					<div class="attack-summary" class:critical-summary={automaticCritical && initialAttackOutcome === "hit"}>
+						<strong>{initialAttackLabel()}</strong>
+						<span>Natural {attackDie} · Total {attackTotal}</span>
+					</div>
+					<MoveMultiHitContinuation
+						profile={automatedMultiHitProfile}
+						damage={stats.damage}
+						attackModifier={effectiveAttackModifier}
+						{attackRollMode}
+						{criticalThreshold}
+						{criticalDiceMultiplier}
+						{moveType}
+						{comboGuaranteeSource}
+						initialHit={initialAttackOutcome === "hit"}
+						{initialDamageTotal}
+						{initialDamageKnown}
+						onconfirm={close}
+					/>
+				{:else if !hitConfirmed}
 					<h3>Attack Roll</h3>
 					<div class="roll-formula">
 						<span>d20</span>
@@ -208,6 +334,60 @@
 					</div>
 					{#if hasSuperLuck}
 						<p class="ability-note">Super Luck sets the default critical range to 19+.</p>
+					{/if}
+
+					{#if isCustom && attackDie == null}
+						<div class="custom-multi-hit-control">
+							<div class="custom-control-row">
+								<label for="move-roller-custom-multi-hit">Multi-Hit</label>
+								<select id="move-roller-custom-multi-hit" bind:value={customMultiHitMode}>
+									<option value="none">None</option>
+									<option value="combo">Combo Hits</option>
+									<option value="repeated">Repeated Attacks</option>
+								</select>
+							</div>
+							{#if customMultiHitMode === "combo"}
+								<div class="custom-fields">
+									<label for="move-roller-custom-combo-dice">Extra-hit dice</label>
+									<input id="move-roller-custom-combo-dice" type="text" bind:value={customComboDice} placeholder="1d4" />
+									<label for="move-roller-custom-combo-max">Max extra hits</label>
+									<input id="move-roller-custom-combo-max" type="number" min="1" max="9" bind:value={customComboMaxAdditionalHits} />
+								</div>
+							{:else if customMultiHitMode === "repeated"}
+								<div class="custom-fields">
+									<label for="move-roller-custom-repeat-count">Total attacks</label>
+									<input id="move-roller-custom-repeat-count" type="number" min="2" max="10" bind:value={customRepeatedAttacks} />
+									<label for="move-roller-custom-repeat-mod">Later-hit modifier</label>
+									<select id="move-roller-custom-repeat-mod" bind:value={customRepeatedModifier}>
+										<option value="move">MOVE</option>
+										<option value="none">No MOVE</option>
+									</select>
+									<label for="move-roller-custom-repeat-flat">Later-hit flat bonus</label>
+									<input id="move-roller-custom-repeat-flat" type="number" bind:value={customRepeatedFlatBonus} />
+									<label class="checkbox-row" for="move-roller-custom-stop-on-miss">
+										<input id="move-roller-custom-stop-on-miss" type="checkbox" bind:checked={customRepeatedStopOnMiss} />
+										Stop sequence on a miss
+									</label>
+								</div>
+							{/if}
+						</div>
+					{:else if multiHitProfile != null}
+						<div class="multi-hit-profile" class:unsupported={multiHitProfile.kind === "unsupported"}>
+							{#if multiHitProfile.kind === "combo"}
+								<strong>Combo Hits</strong>
+								<span>Up to {multiHitProfile.maxAdditionalHits} additional hits · {multiHitProfile.additionalDice} each</span>
+							{:else if multiHitProfile.kind === "repeated"}
+								<strong>Multi-Hit</strong>
+								<span>{multiHitProfile.totalAttacks} separate attacks{multiHitProfile.stopOnMiss ? " · stops on miss" : ""}</span>
+							{:else}
+								<strong>Special Multi-Hit</strong>
+								<span>{multiHitProfile.reason}</span>
+							{/if}
+						</div>
+					{/if}
+
+					{#if hasParentalBond}
+						<p class="ability-note parental-bond-note"><strong>Parental Bond:</strong> its bonus-action second execution is separate from this move's multi-hit sequence and should be resolved after this move.</p>
 					{/if}
 
 					{#if attackDie == null || attackTotal == null}
@@ -252,12 +432,19 @@
 						</div>
 					{/if}
 				{:else}
-					<div class="attack-summary" class:critical-summary={automaticCritical}>
-						<strong>{automaticCritical ? "Critical Hit" : "Attack"}</strong>
+					<div class="attack-summary" class:critical-summary={automaticCritical && initialAttackOutcome === "hit"}>
+						<strong>{initialAttackLabel()}</strong>
 						<span>Natural {attackDie} · Total {attackTotal}</span>
 					</div>
 
-					{#if stats.damage != null}
+					{#if multiHitProfile?.kind === "unsupported"}
+						<div class="unsupported-multi-hit">
+							<strong>Resolve this special multi-hit move manually</strong>
+							<p>{multiHitProfile.reason}</p>
+							<p>The roller is intentionally stopping here rather than calculating an incorrect damage sequence.</p>
+						</div>
+						<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+					{:else if initialAttackOutcome === "hit" && stats.damage != null}
 						{#if !stats.damage.isHealing}
 							<div class="critical-control">
 								<div class="critical-control-heading">
@@ -286,10 +473,10 @@
 								critical={criticalSelected && !stats.damage.isHealing}
 								{criticalDiceMultiplier}
 								{moveType}
-								onconfirm={close}
+								onconfirm={confirmInitialDamage}
 							/>
 						{/key}
-					{:else}
+					{:else if initialAttackOutcome === "hit"}
 						<div class="confirmed">
 							<strong>Hit confirmed.</strong>
 							<p>This move has no structured damage or healing roll.</p>
@@ -466,7 +653,10 @@
 	.critical-control,
 	.attack-mode-control,
 	.temporary-bonus-control,
-	.attack-summary {
+	.attack-summary,
+	.custom-multi-hit-control,
+	.multi-hit-profile,
+	.unsupported-multi-hit {
 		margin-block-end: 1em;
 		padding: 0.8em;
 		background: var(--skin-input-bg);
@@ -493,7 +683,8 @@
 	.critical-range label,
 	.critical-detected strong,
 	.critical-control-heading strong,
-	.temporary-bonus-control strong {
+	.temporary-bonus-control strong,
+	.custom-multi-hit-control label {
 		font-weight: bold;
 	}
 
@@ -588,9 +779,75 @@
 		color: var(--skin-bg-text);
 	}
 
+	.critical-range select,
+	.custom-multi-hit-control select,
+	.custom-multi-hit-control input {
+		box-sizing: border-box;
+		min-width: 0;
+		padding: 0.3em 0.4em;
+		border: 1px solid var(--skin-border, currentColor);
+		border-radius: 0.4em;
+		background: var(--skin-content);
+		color: var(--skin-content-text);
+		font: inherit;
+	}
+
 	.critical-range select {
 		min-width: 4.5em;
 		padding: 0.25em 0.4em;
+	}
+
+	.custom-multi-hit-control {
+		display: grid;
+		gap: 0.65em;
+	}
+
+	.custom-control-row,
+	.custom-fields {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(5.5em, 0.8fr);
+		align-items: center;
+		gap: 0.45em 0.65em;
+	}
+
+	.custom-multi-hit-control label,
+	.custom-multi-hit-control select,
+	.custom-multi-hit-control input {
+		font-size: 0.78rem;
+	}
+
+	.checkbox-row {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		gap: 0.45em;
+	}
+
+	.checkbox-row input {
+		width: auto;
+	}
+
+	.multi-hit-profile {
+		display: grid;
+		gap: 0.1em;
+	}
+
+	.multi-hit-profile span,
+	.unsupported-multi-hit p {
+		font-size: 0.78rem;
+	}
+
+	.multi-hit-profile.unsupported,
+	.unsupported-multi-hit {
+		border: 1px solid currentColor;
+	}
+
+	.unsupported-multi-hit p {
+		margin-block: 0.45em 0;
+	}
+
+	.parental-bond-note {
+		margin-block: -0.25em 1em;
 	}
 
 	.critical-detected {

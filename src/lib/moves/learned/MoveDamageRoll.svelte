@@ -3,7 +3,7 @@
 	import type { MoveStats } from "../MoveStats"
 
 	export let damage: NonNullable<MoveStats["damage"]>
-	export let onconfirm: () => void
+	export let onconfirm: (value?: number) => void
 	export let critical = false
 	export let criticalDiceMultiplier = 2
 	export let moveType: string | undefined = undefined
@@ -102,7 +102,7 @@
 			onapplyhealing?.(Math.max(0, total))
 			return
 		}
-		onconfirm()
+		onconfirm(total)
 	}
 </script>
 
@@ -211,7 +211,7 @@
 
 	{#if error != null}
 		<p class="error">{error} Use an NdM expression such as 1d6, or resolve the move manually.</p>
-		<Button variant="solid" width="full" on:click={onconfirm}>Confirm</Button>
+		<Button variant="solid" width="full" on:click={() => onconfirm(undefined)}>Confirm</Button>
 	{/if}
 </section>
 

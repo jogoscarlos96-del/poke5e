@@ -11,5 +11,6 @@ export type MoveStats = {
 		mod: number,
 		isHealing: boolean,
 		stabApplied: boolean,
+		moveModifier: number,
 	},
 }

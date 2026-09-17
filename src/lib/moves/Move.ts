@@ -170,10 +170,12 @@ export class Move extends DataClass<{
 		result.save = this.save?.withDc(pb, attributeMod)
 
 		const stabToUse = forCharacter.stab ?? new Stab({ base: "default", bonus: 0 })
-		result.damage = this.dice ? MoveDice.damage(this.dice, stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion) : undefined
-		if (result.damage == null) {
-			result.damage = this.damage?.damage(stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
-		}
+		const calculatedDamage = this.dice
+			? MoveDice.damage(this.dice, stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
+			: this.damage?.damage(stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
+		result.damage = calculatedDamage != null
+			? { ...calculatedDamage, moveModifier: attributeMod }
+			: undefined
 
 		return result
 	}
