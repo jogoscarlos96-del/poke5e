@@ -40,6 +40,7 @@
 	$: activeMegaDefinition = megaEligible ? megaDefinition : undefined
 	$: effectiveType = MegaEvolution.effectiveType(pokemon, megaDefinition, megaEligible)
 	$: effectiveAbilities = MegaEvolution.effectiveAbilities(pokemon, megaDefinition, megaEligible)
+	$: moveRollerAbilityNames = effectiveAbilities.flatMap((ability) => [ability.name, ...ability.aliases])
 	$: effectiveAc = MegaEvolution.effectiveAc(pokemon, megaDefinition, megaEligible)
 	$: abilityModifierMultiplier = MegaEvolution.attributeModifierMultiplier(megaDefinition, megaEligible)
 	$: megaAvatar = activeMegaDefinition?.portrait ?? pokemon.avatar
@@ -179,6 +180,7 @@
 		{editable}
 		pokemonType={effectiveType}
 		attributeModifierMultiplier={abilityModifierMultiplier}
+		abilityNames={moveRollerAbilityNames}
 		on:update={onUpdatePp}
 		on:apply-healing={onApplyHealing}
 	/>

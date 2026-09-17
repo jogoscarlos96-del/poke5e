@@ -8,11 +8,14 @@
 	export let moveName: string
 	export let moveType: string
 	export let stats: MoveStats
+	export let abilityNames: string[] = []
 	export let currentHp: number | undefined = undefined
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	type SaveOutcome = "failed" | "succeeded"
+
+	const CRITICAL_THRESHOLDS = Array.from({ length: 19 }, (_, index) => 20 - index)
 
 	let dialog: HTMLDialogElement | undefined = undefined
 	let wasOpen = false
@@ -21,6 +24,8 @@
 	let hitConfirmed = false
 	let saveOutcome: SaveOutcome | undefined = undefined
 	let rollAfterSuccessfulSave = false
+	let criticalThreshold = 20
+	let criticalSelected = false
 
 	$: resolution = stats.toHit != null
 		? "attack"
@@ -29,6 +34,12 @@
 			: stats.damage != null
 				? "direct"
 				: "none"
+	$: normalizedAbilityNames = abilityNames.map((name) => name.trim().toLowerCase())
+	$: hasSuperLuck = normalizedAbilityNames.includes("super luck")
+	$: hasSniper = normalizedAbilityNames.includes("sniper")
+	$: hasHustle = normalizedAbilityNames.includes("hustle")
+	$: criticalDiceMultiplier = hasSniper ? 3 : 2
+	$: automaticCritical = attackDie != null && attackDie >= criticalThreshold
 
 	$: if (open && !wasOpen) {
 		wasOpen = true
@@ -52,6 +63,8 @@
 		hitConfirmed = false
 		saveOutcome = undefined
 		rollAfterSuccessfulSave = false
+		criticalThreshold = abilityNames.some((name) => name.trim().toLowerCase() === "super luck") ? 19 : 20
+		criticalSelected = false
 	}
 
 	const close = () => {
@@ -64,10 +77,12 @@
 		attackDie = Math.floor(Math.random() * 20) + 1
 		attackTotal = attackDie + stats.toHit
 		hitConfirmed = false
+		criticalSelected = false
 	}
 
 	const confirmHit = () => {
 		hitConfirmed = true
+		criticalSelected = automaticCritical
 	}
 
 	const confirmMiss = () => {
@@ -123,6 +138,17 @@
 					<span>d20</span>
 					<strong>{signed(stats.toHit ?? 0)}</strong>
 				</div>
+				<div class="critical-range">
+					<label for="move-roller-critical-range">Critical Range</label>
+					<select id="move-roller-critical-range" bind:value={criticalThreshold}>
+						{#each CRITICAL_THRESHOLDS as threshold}
+							<option value={threshold}>{threshold}+</option>
+						{/each}
+					</select>
+				</div>
+				{#if hasSuperLuck}
+					<p class="ability-note">Super Luck sets the default critical range to 19+.</p>
+				{/if}
 
 				{#if attackDie == null || attackTotal == null}
 					<Button variant="solid" width="full" on:click={rollD20}>Roll Attack</Button>
@@ -141,6 +167,12 @@
 							<dd>{attackTotal}</dd>
 						</div>
 					</dl>
+					{#if automaticCritical}
+						<div class="critical-detected">
+							<strong>Critical detected</strong>
+							<span>{criticalThreshold}+</span>
+						</div>
+					{/if}
 					<p class="instruction">Compare the total against the target's AC, then choose the result.</p>
 					<div class="decision-grid">
 						<Button variant="subtle" width="full" on:click={confirmMiss}>Miss</Button>
@@ -148,7 +180,32 @@
 					</div>
 				{:else if stats.damage != null}
 					<div class="confirmed"><strong>Hit confirmed.</strong></div>
-					<MoveDamageRoll damage={stats.damage} onconfirm={close} />
+					{#if !stats.damage.isHealing}
+						<div class="critical-control">
+							<div class="critical-control-heading">
+								<strong>Critical Hit?</strong>
+								<span>{criticalThreshold}+ range</span>
+							</div>
+							<div class="decision-grid">
+								<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
+								<Button variant={criticalSelected ? "success" : "subtle"} width="full" on:click={() => criticalSelected = true}>Critical</Button>
+							</div>
+							{#if criticalSelected && hasSniper}
+								<p class="ability-note"><strong>Sniper:</strong> critical damage uses three times the normal damage dice.</p>
+							{/if}
+							{#if criticalSelected && hasHustle}
+								<p class="ability-note"><strong>Hustle:</strong> resolve its critical-hit additional-action effect.</p>
+							{/if}
+						</div>
+					{/if}
+					{#key criticalSelected}
+						<MoveDamageRoll
+							damage={stats.damage}
+							critical={criticalSelected && !stats.damage.isHealing}
+							{criticalDiceMultiplier}
+							onconfirm={close}
+						/>
+					{/key}
 				{:else}
 					<div class="confirmed">
 						<strong>Hit confirmed.</strong>
@@ -302,7 +359,8 @@
 	}
 
 	.spent-note,
-	.instruction {
+	.instruction,
+	.ability-note {
 		font-size: var(--font-sz-venus);
 	}
 
@@ -318,7 +376,10 @@
 	.roll-formula,
 	.save-summary,
 	.confirmed,
-	.direct-note {
+	.direct-note,
+	.critical-range,
+	.critical-detected,
+	.critical-control {
 		margin-block-end: 1em;
 		padding: 0.8em;
 		background: var(--skin-input-bg);
@@ -326,7 +387,10 @@
 	}
 
 	.roll-formula,
-	.save-summary {
+	.save-summary,
+	.critical-range,
+	.critical-detected,
+	.critical-control-heading {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -335,6 +399,34 @@
 
 	.roll-formula {
 		font-size: var(--font-sz-neptune);
+	}
+
+	.critical-range label,
+	.critical-detected strong,
+	.critical-control-heading strong {
+		font-weight: bold;
+	}
+
+	.critical-range select {
+		min-width: 4.5em;
+		padding: 0.25em 0.4em;
+	}
+
+	.critical-detected {
+		background: var(--skin-bg-dark);
+		color: var(--skin-bg-text);
+	}
+
+	.critical-control-heading {
+		margin-block-end: 0.65em;
+	}
+
+	.critical-control-heading span {
+		font-size: var(--font-sz-venus);
+	}
+
+	.critical-control .ability-note:last-child {
+		margin-block-end: 0;
 	}
 
 	.roll-result {

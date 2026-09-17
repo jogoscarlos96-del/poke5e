@@ -12,6 +12,7 @@
 	export let editable: boolean = false
 	export let pokemonType: PokemonType = pokemon.type
 	export let attributeModifierMultiplier = 1
+	export let abilityNames: string[] = []
 
 	const onUpdate = (move: LearnedMove) => {
 		dispatch("update", { ...move } as LearnedMove)
@@ -30,6 +31,7 @@
 			{editable}
 			{pokemonType}
 			{attributeModifierMultiplier}
+			{abilityNames}
 			onupdate={onUpdate}
 			onapplyhealing={onApplyHealing}
 		/>

@@ -9,6 +9,7 @@
 		editable = false,
 		pokemonType = pokemon.type,
 		attributeModifierMultiplier = 1,
+		abilityNames = [],
 		onupdate,
 		onapplyhealing,
 	}: {
@@ -16,6 +17,7 @@
 		editable?: boolean,
 		pokemonType?: PokemonType,
 		attributeModifierMultiplier?: number,
+		abilityNames?: string[],
 		onupdate?: (value: LearnedMove) => void,
 		onapplyhealing?: (value: number) => void,
 	} = $props()
@@ -42,6 +44,7 @@
 				{pokemonType}
 				stab={pokemon.stab}
 				{attributeModifierMultiplier}
+				{abilityNames}
 				currentHp={pokemon.hp.current}
 				maxHp={pokemon.hp.max}
 				onupdatepp={onUpdatePp(move)}

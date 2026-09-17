@@ -28,6 +28,7 @@
 		pokemonType,
 		attributes,
 		attributeModifierMultiplier = 1,
+		abilityNames = [],
 		editable = false,
 		currentHp,
 		maxHp,
@@ -40,6 +41,7 @@
 		pokemonType: PokemonType,
 		attributes: Attributes,
 		attributeModifierMultiplier?: number,
+		abilityNames?: string[],
 		editable?: boolean,
 		currentHp?: number,
 		maxHp?: number,
@@ -147,6 +149,7 @@
 		moveName={move.name}
 		moveType={move.type}
 		stats={moveStats}
+		{abilityNames}
 		{currentHp}
 		{maxHp}
 		{onapplyhealing}

@@ -4,20 +4,25 @@
 
 	export let damage: NonNullable<MoveStats["damage"]>
 	export let onconfirm: () => void
+	export let critical = false
+	export let criticalDiceMultiplier = 2
 	export let currentHp: number | undefined = undefined
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	let diceRolls: number[] = []
+	let criticalDiceRolls: number[] = []
+	let normalTotal: number | undefined = undefined
+	let criticalBonus: number | undefined = undefined
 	let total: number | undefined = undefined
 	let error: string | undefined = undefined
 
 	$: label = damage.isHealing ? "Healing" : "Damage"
-	$: expression = `${damage.dice} ${signed(damage.mod)}`
 	$: canApplyHealing = damage.isHealing && onapplyhealing != null
 	$: healingPreview = canApplyHealing && total != null && currentHp != null && maxHp != null
 		? Math.min(maxHp, currentHp + Math.max(0, total))
 		: undefined
+	$: effectiveCriticalMultiplier = Math.max(2, Math.floor(criticalDiceMultiplier))
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 
@@ -25,6 +30,9 @@
 		const match = damage.dice.trim().match(/^(\d+)d(\d+)$/i)
 		if (match == null) {
 			diceRolls = []
+			criticalDiceRolls = []
+			normalTotal = undefined
+			criticalBonus = undefined
 			total = undefined
 			error = `Unable to roll ${damage.dice}.`
 			return
@@ -34,13 +42,21 @@
 		const sides = Number.parseInt(match[2], 10)
 		if (count <= 0 || sides <= 0) {
 			diceRolls = []
+			criticalDiceRolls = []
+			normalTotal = undefined
+			criticalBonus = undefined
 			total = undefined
 			error = `Unable to roll ${damage.dice}.`
 			return
 		}
 
 		diceRolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1)
-		total = diceRolls.reduce((sum, value) => sum + value, 0) + damage.mod
+		normalTotal = diceRolls.reduce((sum, value) => sum + value, 0) + damage.mod
+
+		const extraDiceCount = critical && !damage.isHealing ? count * (effectiveCriticalMultiplier - 1) : 0
+		criticalDiceRolls = Array.from({ length: extraDiceCount }, () => Math.floor(Math.random() * sides) + 1)
+		criticalBonus = criticalDiceRolls.reduce((sum, value) => sum + value, 0)
+		total = normalTotal + criticalBonus
 		error = undefined
 	}
 
@@ -54,28 +70,50 @@
 </script>
 
 <section class="damage-roll">
-	<h3>{label} Roll</h3>
+	<h3>{critical && !damage.isHealing ? "Critical Damage Roll" : `${label} Roll`}</h3>
 	<div class="formula">
 		<span>{damage.dice}</span>
 		<strong>{signed(damage.mod)}</strong>
 	</div>
+	{#if critical && !damage.isHealing}
+		<p class="critical-rule">Critical hit: roll {effectiveCriticalMultiplier}× the normal damage dice; apply the flat modifier once.</p>
+	{/if}
 
 	{#if total == null}
-		<Button variant="solid" width="full" on:click={roll}>Roll {label}</Button>
+		<Button variant="solid" width="full" on:click={roll}>Roll {critical && !damage.isHealing ? "Critical Damage" : label}</Button>
 	{:else}
 		<dl class="result">
 			<div>
-				<dt>Dice</dt>
+				<dt>{critical && !damage.isHealing ? "Normal Dice" : "Dice"}</dt>
 				<dd>{diceRolls.join(", ")}</dd>
 			</div>
 			<div>
 				<dt>Modifier</dt>
 				<dd>{signed(damage.mod)}</dd>
 			</div>
-			<div class="total-row">
-				<dt>Total {label}</dt>
-				<dd>{total}</dd>
-			</div>
+			{#if critical && !damage.isHealing && normalTotal != null && criticalBonus != null}
+				<div>
+					<dt>Normal Damage</dt>
+					<dd>{normalTotal}</dd>
+				</div>
+				<div>
+					<dt>Critical Bonus Dice</dt>
+					<dd>{criticalDiceRolls.join(", ")}</dd>
+				</div>
+				<div>
+					<dt>Critical Bonus</dt>
+					<dd>{criticalBonus}</dd>
+				</div>
+				<div class="total-row">
+					<dt>Critical Total</dt>
+					<dd>{total}</dd>
+				</div>
+			{:else}
+				<div class="total-row">
+					<dt>Total {label}</dt>
+					<dd>{total}</dd>
+				</div>
+			{/if}
 			{#if healingPreview != null && currentHp != null && maxHp != null}
 				<div>
 					<dt>Current HP</dt>
@@ -87,6 +125,9 @@
 				</div>
 			{/if}
 		</dl>
+		{#if critical && !damage.isHealing}
+			<p class="critical-immunity-note">If the target has Battle Armor, Shell Armor, or Solid Rock, ignore the Critical Bonus and use Normal Damage.</p>
+		{/if}
 		<div class="actions">
 			<Button variant="subtle" width="full" on:click={roll}>Roll Again</Button>
 			<Button variant="success" width="full" on:click={confirm}>{canApplyHealing ? "Apply Healing" : "Confirm"}</Button>
@@ -147,7 +188,17 @@
 		gap: 0.5em;
 	}
 
-	.error {
+	.error,
+	.critical-rule,
+	.critical-immunity-note {
 		font-size: var(--font-sz-venus);
+	}
+
+	.critical-rule {
+		margin-block: -0.35em 1em;
+	}
+
+	.critical-immunity-note {
+		margin-block: 0 1em;
 	}
 </style>
