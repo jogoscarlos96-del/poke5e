@@ -11,7 +11,10 @@
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
+	let transientDamageBonus = 0
+	let extraDice = ""
 	let diceRolls: number[] = []
+	let extraDiceRolls: number[] = []
 	let criticalDiceRolls: number[] = []
 	let normalTotal: number | undefined = undefined
 	let criticalBonus: number | undefined = undefined
@@ -25,38 +28,70 @@
 		: undefined
 	$: effectiveCriticalMultiplier = Math.max(2, Math.floor(criticalDiceMultiplier))
 	$: moveTypeBackground = moveType != null ? `var(--skin-${moveType}-bg)` : "var(--skin-bg-dark)"
+	$: effectiveModifier = damage.mod + transientDamageBonus
 
 	const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 
-	const roll = () => {
-		const match = damage.dice.trim().match(/^(\d+)d(\d+)$/i)
-		if (match == null) {
-			diceRolls = []
-			criticalDiceRolls = []
-			normalTotal = undefined
-			criticalBonus = undefined
-			total = undefined
-			error = `Unable to roll ${damage.dice}.`
-			return
-		}
+	const clearRoll = () => {
+		diceRolls = []
+		extraDiceRolls = []
+		criticalDiceRolls = []
+		normalTotal = undefined
+		criticalBonus = undefined
+		total = undefined
+		error = undefined
+	}
+
+	const changeTransientDamageBonus = (amount: number) => {
+		transientDamageBonus += amount
+		clearRoll()
+	}
+
+	const onExtraDiceInput = () => {
+		clearRoll()
+	}
+
+	const parseDice = (expression: string) => {
+		const match = expression.trim().match(/^(\d+)d(\d+)$/i)
+		if (match == null) return undefined
 
 		const count = Number.parseInt(match[1], 10)
 		const sides = Number.parseInt(match[2], 10)
-		if (count <= 0 || sides <= 0) {
-			diceRolls = []
-			criticalDiceRolls = []
-			normalTotal = undefined
-			criticalBonus = undefined
-			total = undefined
+		if (count <= 0 || sides <= 0) return undefined
+
+		return { count, sides }
+	}
+
+	const rollDice = (count: number, sides: number) =>
+		Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1)
+
+	const roll = () => {
+		const baseDice = parseDice(damage.dice)
+		if (baseDice == null) {
+			clearRoll()
 			error = `Unable to roll ${damage.dice}.`
 			return
 		}
 
-		diceRolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1)
-		normalTotal = diceRolls.reduce((sum, value) => sum + value, 0) + damage.mod
+		const trimmedExtraDice = extraDice.trim()
+		const parsedExtraDice = trimmedExtraDice.length > 0 ? parseDice(trimmedExtraDice) : undefined
+		if (trimmedExtraDice.length > 0 && parsedExtraDice == null) {
+			clearRoll()
+			error = `Unable to roll extra dice ${trimmedExtraDice}.`
+			return
+		}
 
-		const extraDiceCount = critical && !damage.isHealing ? count * (effectiveCriticalMultiplier - 1) : 0
-		criticalDiceRolls = Array.from({ length: extraDiceCount }, () => Math.floor(Math.random() * sides) + 1)
+		diceRolls = rollDice(baseDice.count, baseDice.sides)
+		extraDiceRolls = parsedExtraDice != null ? rollDice(parsedExtraDice.count, parsedExtraDice.sides) : []
+
+		const baseDiceTotal = diceRolls.reduce((sum, value) => sum + value, 0)
+		const extraDiceTotal = extraDiceRolls.reduce((sum, value) => sum + value, 0)
+		normalTotal = baseDiceTotal + extraDiceTotal + effectiveModifier
+
+		const criticalExtraDiceCount = critical && !damage.isHealing
+			? baseDice.count * (effectiveCriticalMultiplier - 1)
+			: 0
+		criticalDiceRolls = rollDice(criticalExtraDiceCount, baseDice.sides)
 		criticalBonus = criticalDiceRolls.reduce((sum, value) => sum + value, 0)
 		total = normalTotal + criticalBonus
 		error = undefined
@@ -74,11 +109,37 @@
 <section class="damage-roll" style:--move-type-bg={moveTypeBackground}>
 	<h3>{critical && !damage.isHealing ? "Critical Damage Roll" : `${label} Roll`}</h3>
 	<div class="formula">
-		<span>{damage.dice}</span>
-		<strong>{signed(damage.mod)}</strong>
+		<span>{damage.dice}{extraDice.trim() ? ` + ${extraDice.trim()}` : ""}</span>
+		<strong>{signed(effectiveModifier)}</strong>
 	</div>
+
+	<div class="temporary-bonus-control">
+		<div>
+			<strong>Temporary {label} Bonus</strong>
+			<span>Current {signed(transientDamageBonus)}</span>
+		</div>
+		<div class="bonus-stepper">
+			<Button variant="subtle" on:click={() => changeTransientDamageBonus(-1)}>−</Button>
+			<strong>{signed(transientDamageBonus)}</strong>
+			<Button variant="subtle" on:click={() => changeTransientDamageBonus(1)}>+</Button>
+		</div>
+	</div>
+
+	<div class="extra-dice-control">
+		<label for="move-roller-extra-dice">Extra {label} Dice</label>
+		<input
+			id="move-roller-extra-dice"
+			type="text"
+			inputmode="text"
+			placeholder="e.g. 1d6"
+			bind:value={extraDice}
+			on:input={onExtraDiceInput}
+		/>
+		<span>Optional; rolled once and added to the normal result.</span>
+	</div>
+
 	{#if critical && !damage.isHealing}
-		<p class="critical-rule">Critical hit: roll {effectiveCriticalMultiplier}× the normal damage dice; apply the flat modifier once.</p>
+		<p class="critical-rule">Critical hit: roll {effectiveCriticalMultiplier}× the move's normal damage dice; apply the flat modifier once. Optional extra dice are rolled once.</p>
 	{/if}
 
 	{#if total == null}
@@ -93,6 +154,18 @@
 				<dt>Modifier</dt>
 				<dd>{signed(damage.mod)}</dd>
 			</div>
+			{#if transientDamageBonus !== 0}
+				<div>
+					<dt>Temporary Bonus</dt>
+					<dd>{signed(transientDamageBonus)}</dd>
+				</div>
+			{/if}
+			{#if extraDiceRolls.length > 0}
+				<div>
+					<dt>Extra Dice</dt>
+					<dd>{extraDiceRolls.join(", ")}</dd>
+				</div>
+			{/if}
 			{#if critical && !damage.isHealing && normalTotal != null && criticalBonus != null}
 				<div class="normal-damage-row">
 					<dt>Normal Damage</dt>
@@ -137,7 +210,7 @@
 	{/if}
 
 	{#if error != null}
-		<p class="error">{error} Use the move's listed expression manually.</p>
+		<p class="error">{error} Use an NdM expression such as 1d6, or resolve the move manually.</p>
 		<Button variant="solid" width="full" on:click={onconfirm}>Confirm</Button>
 	{/if}
 </section>
@@ -149,19 +222,100 @@
 	}
 
 	.formula,
-	.result div {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1em;
+	.result div,
+	.temporary-bonus-control,
+	.extra-dice-control {
 		padding: 0.7em 0.8em;
 		background: var(--skin-input-bg);
 		border-radius: 0.75em;
 	}
 
+	.formula,
+	.result div,
+	.temporary-bonus-control {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1em;
+	}
+
 	.formula {
-		margin-block-end: 1em;
+		margin-block-end: 0.75em;
 		font-size: var(--font-sz-neptune);
+	}
+
+	.temporary-bonus-control {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.5em;
+		margin-block-end: 0.75em;
+	}
+
+	.temporary-bonus-control > div:first-child {
+		display: grid;
+		gap: 0.1em;
+		min-width: 0;
+	}
+
+	.temporary-bonus-control > div:first-child strong {
+		font-size: 0.88rem;
+		line-height: 1.15;
+	}
+
+	.temporary-bonus-control > div:first-child span,
+	.extra-dice-control span {
+		font-size: 0.78rem;
+	}
+
+	.bonus-stepper {
+		display: grid;
+		grid-template-columns: auto minmax(2em, auto) auto;
+		align-items: center;
+		gap: 0.1em;
+		text-align: center;
+	}
+
+	.bonus-stepper :global(.button) {
+		min-width: 1.8em;
+		padding-inline: 0.35em;
+	}
+
+	.bonus-stepper :global(.button:hover::before),
+	.bonus-stepper :global(.button:focus::before),
+	.bonus-stepper :global(.button:active::before) {
+		content: none;
+		display: none;
+	}
+
+	.extra-dice-control {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 5.5em;
+		align-items: center;
+		gap: 0.35em 0.65em;
+		margin-block-end: 1em;
+	}
+
+	.extra-dice-control label {
+		font-weight: bold;
+		font-size: 0.88rem;
+	}
+
+	.extra-dice-control input {
+		box-sizing: border-box;
+		width: 100%;
+		min-width: 0;
+		padding: 0.35em 0.45em;
+		border: 1px solid var(--skin-border, currentColor);
+		border-radius: 0.4em;
+		background: var(--skin-content);
+		color: var(--skin-content-text);
+		font: inherit;
+		font-size: 0.82rem;
+		text-align: center;
+	}
+
+	.extra-dice-control span {
+		grid-column: 1 / -1;
 	}
 
 	.result {
