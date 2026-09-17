@@ -177,7 +177,6 @@
 						<span>d20</span>
 						<strong>{signed(effectiveAttackModifier)}</strong>
 					</div>
-
 					<div class="attack-mode-control">
 						<span class="control-label">Roll Mode</span>
 						<div class="attack-mode-grid">
@@ -479,8 +478,7 @@
 	.critical-range,
 	.critical-detected,
 	.critical-control-heading,
-	.temporary-bonus-control,
-	.attack-summary {
+	.temporary-bonus-control {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -507,7 +505,16 @@
 	.attack-mode-grid {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.35em;
+		gap: 0.25em;
+		min-width: 0;
+	}
+
+	.attack-mode-grid :global(.button) {
+		min-width: 0;
+		padding-inline: 0.25em;
+		font-size: 0.78rem;
+		line-height: 1.15;
+		white-space: nowrap;
 	}
 
 	.attack-mode-grid :global(.button:hover::before),
@@ -517,26 +524,38 @@
 		display: none;
 	}
 
+	.temporary-bonus-control {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.5em;
+	}
+
 	.temporary-bonus-control > div:first-child {
 		display: grid;
-		gap: 0.15em;
+		gap: 0.1em;
+		min-width: 0;
+	}
+
+	.temporary-bonus-control > div:first-child strong {
+		font-size: 0.88rem;
+		line-height: 1.15;
 	}
 
 	.temporary-bonus-control > div:first-child span {
-		font-size: var(--font-sz-venus);
+		font-size: 0.78rem;
 	}
 
 	.bonus-stepper {
 		display: grid;
-		grid-template-columns: auto minmax(2.5em, auto) auto;
+		grid-template-columns: auto minmax(2em, auto) auto;
 		align-items: center;
-		gap: 0.25em;
+		gap: 0.1em;
 		text-align: center;
 	}
 
 	.bonus-stepper :global(.button) {
-		min-width: 2.2em;
-		padding-inline: 0.55em;
+		min-width: 1.8em;
+		padding-inline: 0.35em;
 	}
 
 	.bonus-stepper :global(.button:hover::before),
@@ -547,11 +566,20 @@
 	}
 
 	.attack-summary {
+		display: grid;
+		gap: 0.15em;
 		margin-block-end: 0.75em;
 	}
 
+	.attack-summary strong {
+		white-space: nowrap;
+		font-size: 0.95rem;
+		line-height: 1.15;
+	}
+
 	.attack-summary span {
-		font-size: var(--font-sz-venus);
+		font-size: 0.8rem;
+		line-height: 1.2;
 		white-space: nowrap;
 	}
 
@@ -679,8 +707,8 @@
 			border-radius: 0.75rem;
 		}
 
-		.attack-mode-grid {
-			grid-template-columns: 1fr;
+		.attack-mode-grid :global(.button) {
+			font-size: 0.74rem;
 		}
 	}
 </style>
