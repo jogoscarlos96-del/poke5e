@@ -66,22 +66,30 @@ const repeated = (
 	naturalReminder: options.naturalReminder,
 })
 
+const SPLIT_TARGET_NOTE = "This move may split its attacks between different creatures. STAB applies once per move per target, so resolve target-specific STAB and other target-dependent bonuses manually when attacks are split."
+
 const STANDARD_REPEATED_MOVES: Record<string, RepeatedMultiHitProfile> = {
 	"double hit": repeated(2),
 	"double kick": repeated(2),
 	"bonemerang": repeated(2),
-	"dual chop": repeated(2),
-	"gear grind": repeated(2),
+	"dual chop": repeated(2, {
+		note: SPLIT_TARGET_NOTE,
+	}),
+	"gear grind": repeated(2, {
+		note: SPLIT_TARGET_NOTE,
+	}),
 	"twin beam": repeated(2),
 	"dual wingbeat": repeated(2),
 	"double iron bash": repeated(2, {
+		note: "Attack 1 can also trigger this move's flinch effect on a natural 16+. Later qualifying attacks are flagged automatically.",
 		naturalReminder: { threshold: 16, text: "A natural 16+ triggers this move's flinch effect." },
 	}),
 	"twineedle": repeated(2, {
+		note: `Attack 1 can also poison its target on a natural 19+. Later qualifying attacks are flagged automatically. ${SPLIT_TARGET_NOTE}`,
 		naturalReminder: { threshold: 19, text: "A natural 19+ triggers this move's poison effect for that target." },
 	}),
 	"dragon darts": repeated(2, {
-		note: "Dragon Darts may split its attacks between up to two creatures. If the attacks target different creatures, resolve target-specific STAB or other bonuses manually where needed.",
+		note: SPLIT_TARGET_NOTE,
 	}),
 	"triple dive": repeated(3),
 	"surging strikes": repeated(3, { repeatFlatBonus: 5 }),
