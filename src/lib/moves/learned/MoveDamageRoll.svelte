@@ -184,15 +184,19 @@
 
 	.result div.critical-bonus-row {
 		background-color: var(--skin-input-bg);
-		background-image: linear-gradient(125deg, transparent 26%, rgb(255 255 255 / 0.04) 36%, rgb(255 255 255 / 0.5) 48%, rgb(255 255 255 / 0.08) 60%, transparent 70%);
-		background-size: 280% 280%;
-		animation: critical-row-shimmer 6s linear infinite;
+		background-image: linear-gradient(125deg, transparent 18%, rgb(255 255 255 / 0.04) 34%, rgb(255 255 255 / 0.5) 50%, rgb(255 255 255 / 0.08) 66%, transparent 82%);
+		background-size: 42% 240%;
+		background-repeat: no-repeat;
+		background-position: -80% 160%;
+		animation: critical-row-shimmer 5s linear infinite;
 	}
 
 	.result div.critical-total-row {
-		background-image: linear-gradient(125deg, transparent 26%, rgb(255 255 255 / 0.08) 36%, rgb(255 255 255 / 0.72) 48%, rgb(255 255 255 / 0.14) 60%, transparent 70%);
-		background-size: 280% 280%;
-		animation: critical-row-shimmer 6s linear infinite;
+		background-image: linear-gradient(125deg, transparent 18%, rgb(255 255 255 / 0.08) 34%, rgb(255 255 255 / 0.72) 50%, rgb(255 255 255 / 0.14) 66%, transparent 82%);
+		background-size: 42% 240%;
+		background-repeat: no-repeat;
+		background-position: -80% 160%;
+		animation: critical-row-shimmer 5s linear infinite;
 	}
 
 	.total-row {
@@ -235,8 +239,9 @@
 	}
 
 	@keyframes critical-row-shimmer {
-		0% { background-position: 190% 190%; }
-		66.667%, 100% { background-position: -120% -120%; }
+		0% { background-position: -80% 160%; }
+		60% { background-position: 180% -60%; }
+		60.001%, 100% { background-position: 180% -60%; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
