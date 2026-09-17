@@ -177,6 +177,8 @@
 	}
 
 	.result div.critical-result-row {
+		--shimmer-edge: rgb(255 255 255 / 0.08);
+		--shimmer-peak: rgb(255 255 255 / 0.5);
 		border: none;
 		position: relative;
 		overflow: hidden;
@@ -184,19 +186,33 @@
 
 	.result div.critical-bonus-row {
 		background-color: var(--skin-input-bg);
-		background-image: linear-gradient(125deg, transparent 18%, rgb(255 255 255 / 0.04) 34%, rgb(255 255 255 / 0.5) 50%, rgb(255 255 255 / 0.08) 66%, transparent 82%);
-		background-size: 42% 240%;
-		background-repeat: no-repeat;
-		background-position: -80% 160%;
-		animation: critical-row-shimmer 5s linear infinite;
 	}
 
 	.result div.critical-total-row {
-		background-image: linear-gradient(125deg, transparent 18%, rgb(255 255 255 / 0.08) 34%, rgb(255 255 255 / 0.72) 50%, rgb(255 255 255 / 0.14) 66%, transparent 82%);
-		background-size: 42% 240%;
-		background-repeat: no-repeat;
-		background-position: -80% 160%;
-		animation: critical-row-shimmer 5s linear infinite;
+		--shimmer-edge: rgb(255 255 255 / 0.14);
+		--shimmer-peak: rgb(255 255 255 / 0.72);
+	}
+
+	.result div.critical-result-row::after,
+	:global(.critical-toggle-special.active .button)::after {
+		content: "";
+		position: absolute;
+		top: -60%;
+		bottom: -60%;
+		left: -50%;
+		width: 32%;
+		pointer-events: none;
+		background: linear-gradient(115deg, transparent 10%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 34%, var(--shimmer-peak, rgb(255 255 255 / 0.7)) 50%, var(--shimmer-edge, rgb(255 255 255 / 0.1)) 66%, transparent 90%);
+		animation: critical-shimmer-sweep 5s linear infinite;
+	}
+
+	:global(.critical-toggle-special.active .button) {
+		--shimmer-edge: rgb(255 255 255 / 0.12);
+		--shimmer-peak: rgb(255 255 255 / 0.7);
+		position: relative;
+		overflow: hidden;
+		background-image: none !important;
+		animation: none !important;
 	}
 
 	.total-row {
@@ -238,17 +254,17 @@
 		margin-block: 0 1em;
 	}
 
-	@keyframes critical-row-shimmer {
-		0% { background-position: -80% 160%; }
-		60% { background-position: 180% -60%; }
-		60.001%, 100% { background-position: 180% -60%; }
+	@keyframes critical-shimmer-sweep {
+		0% { transform: translateX(0); }
+		60% { transform: translateX(500%); }
+		60.001%, 100% { transform: translateX(500%); }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.result div.critical-bonus-row,
-		.result div.critical-total-row {
+		.result div.critical-result-row::after,
+		:global(.critical-toggle-special.active .button)::after {
+			display: none;
 			animation: none;
-			background-image: none;
 		}
 	}
 </style>
