@@ -57,6 +57,9 @@
 	$: currentRepeatedDamage = repeatedProfile != null
 		? {
 			...damage,
+			dice: repeatedProfile.repeatDiceCount != null
+				? damage.dice.replace(/^\s*\d+d(\d+)\s*$/i, `${repeatedProfile.repeatDiceCount}d$1`)
+				: damage.dice,
 			mod: hasSuccessfulHit
 				? (repeatedProfile.repeatModifier === "move" ? damage.moveModifier : 0) + repeatedProfile.repeatFlatBonus
 				: damage.mod,
