@@ -102,13 +102,9 @@ const STANDARD_REPEATED_MOVES: Record<string, RepeatedMultiHitProfile> = {
 	}),
 }
 
-const STANDARD_UNSUPPORTED_MOVES: Record<string, string> = {
-	"barrage": "Barrage first rolls for its projectile count, so its damage sequence does not match the normal combo or repeated-attack pattern.",
-	"beat up": "Beat Up's number of attacks depends on the trainer's currently carried conscious creatures.",
-	"population bomb": "Population Bomb uses ten attacks with a special fixed per-hit damage expression.",
-	"tachyon cutter": "Tachyon Cutter has its own guaranteed two-hit resolution rather than the normal repeated-attack flow.",
-	"hyperspace fury": "Hyperspace Fury uses a special multi-projectile resolution that is safer to resolve from the move text.",
-}
+// Bespoke standard moves such as Barrage, Beat Up, Population Bomb, Tachyon Cutter,
+// and Hyperspace Fury are routed through SpecialMultiHit.ts instead of this generic flow.
+const STANDARD_UNSUPPORTED_MOVES: Record<string, string> = {}
 
 export const getStandardMultiHitProfile = (moveName: string): MultiHitProfile | undefined => {
 	const name = normalizeMoveName(moveName)
