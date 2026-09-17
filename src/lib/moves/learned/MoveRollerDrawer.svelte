@@ -190,7 +190,7 @@
 								<div class="critical-toggle-option">
 									<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
 								</div>
-								<div class="critical-toggle-option critical-toggle-special" class:active={criticalSelected} style:--critical-fallback="var(--skin-{moveType}-bg)">
+								<div class="critical-toggle-option critical-toggle-special" class:active={criticalSelected} style:--critical-type-bg="var(--skin-{moveType}-bg)">
 									<Button variant="subtle" width="full" on:click={() => criticalSelected = true}>Critical</Button>
 								</div>
 							</div>
@@ -207,6 +207,7 @@
 							damage={stats.damage}
 							critical={criticalSelected && !stats.damage.isHealing}
 							{criticalDiceMultiplier}
+							{moveType}
 							onconfirm={close}
 						/>
 					{/key}
@@ -449,23 +450,19 @@
 	}
 
 	.critical-toggle-special :global(.button) {
-		border: 2px solid transparent;
-		background:
-			linear-gradient(var(--skin-input-bg), var(--skin-input-bg)) padding-box,
-			linear-gradient(110deg, #ff6b8a, #ffbd6d, #f4e77a, #72df9d, #63c8ff, #9b7cff, #ff74c8, #ff6b8a) border-box;
-		background-size: auto, 260% 260%;
+		border: none;
+		background: var(--skin-input-bg);
 		color: var(--skin-content-text);
 	}
 
 	.critical-toggle-special.active :global(.button) {
-		background-color: var(--critical-fallback);
-		background-image: linear-gradient(110deg, #e84b73, #ef8b45, #d6bd3d, #37a975, #318ec8, #7555c9, #cf4a9e, #e84b73);
-		background-size: 260% 260%;
-		color: white;
+		background-color: var(--critical-type-bg);
+		background-image: linear-gradient(125deg, transparent 28%, rgb(255 255 255 / 0.08) 38%, rgb(255 255 255 / 0.7) 48%, rgb(255 255 255 / 0.12) 58%, transparent 68%);
+		background-size: 280% 280%;
+		color: var(--skin-bg-text);
 		font-weight: 800;
-		text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
-		box-shadow: 0 0 0.7em rgb(149 111 255 / 0.3), 0 0 1em rgb(255 116 200 / 0.16);
-		animation: critical-button-shimmer 5s linear infinite;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+		animation: critical-button-shimmer 3.2s ease-in-out infinite;
 	}
 
 	.roll-result {
@@ -512,14 +509,14 @@
 	}
 
 	@keyframes critical-button-shimmer {
-		0% { background-position: 0% 50%; }
-		100% { background-position: 260% 50%; }
+		0% { background-position: 170% 170%; }
+		55%, 100% { background-position: -90% -90%; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.critical-toggle-special.active :global(.button) {
 			animation: none;
-			background-position: 50% 50%;
+			background-image: none;
 		}
 	}
 
