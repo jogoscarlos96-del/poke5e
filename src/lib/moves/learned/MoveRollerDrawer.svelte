@@ -247,9 +247,9 @@
 	const initialAttackLabel = () => {
 		if (automatedMultiHitProfile?.kind === "repeated") {
 			if (initialAttackOutcome === "miss") return "Attack 1 — Miss"
-			return `Attack 1 — ${automaticCritical ? "Critical Hit" : "Hit"}`
+			return `Attack 1 — ${criticalSelected ? "Critical Hit" : "Hit"}`
 		}
-		return automaticCritical ? "Critical Hit" : "Attack"
+		return criticalSelected ? "Critical Hit" : "Attack"
 	}
 </script>
 
@@ -279,7 +279,7 @@
 		{#if resolution === "attack"}
 			<section>
 				{#if continuationActive && automatedMultiHitProfile != null && stats.damage != null}
-					<div class="attack-summary" class:critical-summary={automaticCritical && initialAttackOutcome === "hit"}>
+					<div class="attack-summary" class:critical-summary={criticalSelected && initialAttackOutcome === "hit"}>
 						<strong>{initialAttackLabel()}</strong>
 						<span>Natural {attackDie} · Total {attackTotal}</span>
 					</div>
@@ -293,6 +293,8 @@
 						{moveType}
 						{comboGuaranteeSource}
 						initialHit={initialAttackOutcome === "hit"}
+						initialCritical={criticalSelected && initialAttackOutcome === "hit"}
+						{hasHustle}
 						{initialDamageTotal}
 						{initialDamageKnown}
 						onconfirm={close}
@@ -333,7 +335,7 @@
 						</select>
 					</div>
 					{#if hasSuperLuck}
-						<p class="ability-note">Super Luck sets the default critical range to 19+.</p>
+						<p class="ability-note">Super Luck increases the critical range by 1. The 19+ default assumes a normal 20+ move; lower the selector by one more if the move or another effect already expands its critical range.</p>
 					{/if}
 
 					{#if isCustom && attackDie == null}
@@ -386,8 +388,8 @@
 						</div>
 					{/if}
 
-					{#if hasParentalBond}
-						<p class="ability-note parental-bond-note"><strong>Parental Bond:</strong> its bonus-action second execution is separate from this move's multi-hit sequence and should be resolved after this move.</p>
+					{#if hasParentalBond && stats.damage != null && !stats.damage.isHealing}
+						<p class="ability-note parental-bond-note"><strong>Parental Bond:</strong> if this is an instantaneous damaging move against one target, you may use your bonus action to execute it again at no PP cost. Resolve that second execution separately, halve its total damage, and do not apply MOVE, STAB, bonus damage, or benefits from other abilities or feats.</p>
 					{/if}
 
 					{#if attackDie == null || attackTotal == null}
@@ -432,7 +434,7 @@
 						</div>
 					{/if}
 				{:else}
-					<div class="attack-summary" class:critical-summary={automaticCritical && initialAttackOutcome === "hit"}>
+					<div class="attack-summary" class:critical-summary={criticalSelected && initialAttackOutcome === "hit"}>
 						<strong>{initialAttackLabel()}</strong>
 						<span>Natural {attackDie} · Total {attackTotal}</span>
 					</div>
@@ -463,7 +465,7 @@
 									<p class="ability-note"><strong>Sniper:</strong> critical damage uses three times the normal damage dice.</p>
 								{/if}
 								{#if criticalSelected && hasHustle}
-									<p class="ability-note"><strong>Hustle:</strong> resolve its critical-hit additional-action effect.</p>
+									<p class="ability-note"><strong>Hustle:</strong> you may gain one additional action this round. If that action makes an attack, roll it with disadvantage.</p>
 								{/if}
 							</div>
 						{/if}

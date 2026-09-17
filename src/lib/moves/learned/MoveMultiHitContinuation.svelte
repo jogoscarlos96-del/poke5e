@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
+	import { criticalDiceCount, hasHustleCritical } from "./AbilityInteractions"
 	import MoveDamageRoll from "./MoveDamageRoll.svelte"
 	import MoveCompactDamageRoll from "./MoveCompactDamageRoll.svelte"
 	import type { AttackRollMode, AutomatedMultiHitProfile, ComboMultiHitProfile, RepeatedMultiHitProfile } from "./MultiHit"
@@ -14,6 +15,8 @@
 	export let moveType: string | undefined = undefined
 	export let comboGuaranteeSource: string | undefined = undefined
 	export let initialHit = true
+	export let initialCritical = false
+	export let hasHustle = false
 	export let initialDamageTotal = 0
 	export let initialDamageKnown = true
 	export let onconfirm: () => void
@@ -31,6 +34,7 @@
 		hit: boolean,
 		natural: number,
 		total: number,
+		critical: boolean,
 		damage?: number,
 	}
 
@@ -56,6 +60,8 @@
 	$: repeatedProfile = profile.kind === "repeated" ? profile as RepeatedMultiHitProfile : undefined
 	$: successfulComboHits = comboSteps.filter((step) => step.success).length
 	$: comboDamageDice = comboProfile?.source === "standard" ? damage.dice : comboProfile?.additionalDice ?? damage.dice
+	$: sharedCritical = initialCritical && initialHit
+	$: sequenceHasCritical = hasHustleCritical(sharedCritical, repeatedSteps.map((step) => step.critical))
 	$: currentRepeatedDamage = repeatedProfile != null
 		? {
 			...damage,
@@ -109,7 +115,10 @@
 			return
 		}
 
-		const damageRolls = rollDice(parsed.count, parsed.sides)
+		const damageRolls = rollDice(
+			criticalDiceCount(parsed.count, sharedCritical, criticalDiceMultiplier),
+			parsed.sides,
+		)
 		const extraDamage = damageRolls.reduce((sum, value) => sum + value, 0)
 		const nextSuccessfulHits = successfulComboHits + 1
 		comboSteps = [...comboSteps, {
@@ -166,6 +175,7 @@
 			hit: false,
 			natural: currentNatural,
 			total: currentAttackTotal,
+			critical: false,
 		}]
 
 		if (repeatedProfile.stopOnMiss) {
@@ -189,6 +199,7 @@
 			hit: true,
 			natural: currentNatural,
 			total: currentAttackTotal,
+			critical: currentCriticalSelected,
 			damage: value,
 		}]
 		if (value != null) runningTotal += value
@@ -203,7 +214,7 @@
 		<div class="sequence-heading">
 			<div>
 				<strong>Combo Hits</strong>
-				<span>Additional hit damage: {comboDamageDice}</span>
+				<span>Additional hit damage: {comboDamageDice}{sharedCritical ? ` · ${criticalDiceMultiplier}× critical dice` : ""}</span>
 			</div>
 			<strong>{runningTotal}</strong>
 		</div>
@@ -242,6 +253,9 @@
 			{#if hasManualDamage}
 				<p class="rule-note">The initial damage was resolved manually and is not included in the tracked total.</p>
 			{/if}
+			{#if hasHustle && sequenceHasCritical}
+				<p class="rule-note"><strong>Hustle:</strong> this move scored a critical hit. You may gain one additional action this round; if that action makes an attack, roll it with disadvantage.</p>
+			{/if}
 			<Button variant="success" width="full" on:click={onconfirm}>Confirm Total</Button>
 		{/if}
 
@@ -265,7 +279,7 @@
 			<div class="compact-history">
 				{#each repeatedSteps as step}
 					<div class:miss={!step.hit}>
-						<strong>Attack {step.attack} — {step.hit ? "Hit" : "Miss"}</strong>
+						<strong>Attack {step.attack} — {step.hit ? (step.critical ? "Critical Hit" : "Hit") : "Miss"}</strong>
 						<span>Natural {step.natural} · Total {step.total}{step.hit ? ` · ${step.damage != null ? `Damage ${step.damage}` : "Damage manual"}` : ""}</span>
 					</div>
 				{/each}
@@ -352,6 +366,9 @@
 			</div>
 			{#if hasManualDamage}
 				<p class="rule-note">One or more hit damage results were resolved manually and are not included in the tracked total.</p>
+			{/if}
+			{#if hasHustle && sequenceHasCritical}
+				<p class="rule-note"><strong>Hustle:</strong> this move scored at least one critical hit. You may gain one additional action this round; if that action makes an attack, roll it with disadvantage.</p>
 			{/if}
 			<Button variant="success" width="full" on:click={onconfirm}>Confirm Sequence</Button>
 		{/if}

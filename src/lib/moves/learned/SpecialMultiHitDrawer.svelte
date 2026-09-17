@@ -2,6 +2,7 @@
 	import { tick } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
+	import { hasHustleCritical, supportsParentalBondSpecial } from "./AbilityInteractions"
 	import MoveDamageRoll from "./MoveDamageRoll.svelte"
 	import type { AttackRollMode } from "./MultiHit"
 	import {
@@ -60,6 +61,8 @@
 	$: hasSniper = normalizedAbilities.includes("sniper")
 	$: hasHustle = normalizedAbilities.includes("hustle")
 	$: hasParentalBond = normalizedAbilities.includes("parental bond")
+	$: parentalBondEligible = hasParentalBond && supportsParentalBondSpecial(profile)
+	$: hustleTriggered = hasHustle && hasHustleCritical(barrageCritical, attackSteps.map((step) => step.critical))
 	$: criticalDiceMultiplier = hasSniper ? 3 : 2
 	$: effectiveAttackModifier = (stats.toHit ?? 0) + transientAttackBonus
 	$: repeatedAttackCount = profile.kind === "repeated-special"
@@ -337,7 +340,7 @@
 			{/each}
 		</select>
 	</div>
-	{#if hasSuperLuck}<p class="ability-note">Super Luck sets the default critical range to 19+.</p>{/if}
+	{#if hasSuperLuck}<p class="ability-note">Super Luck increases the critical range by 1. The 19+ default assumes a normal 20+ move; lower the selector by one more if another effect already expands the range.</p>{/if}
 
 	{#if attackNatural == null || attackTotal == null}
 		<Button variant="solid" width="full" on:click={onroll}>Roll Attack</Button>
@@ -382,8 +385,8 @@
 			<span>{profile.note}</span>
 		</div>
 
-		{#if hasParentalBond}
-			<p class="ability-note"><strong>Parental Bond:</strong> its bonus-action second execution is separate from this sequence.</p>
+		{#if parentalBondEligible}
+			<p class="ability-note"><strong>Parental Bond:</strong> after this execution, you may use your bonus action to execute the move again against the same target at no PP cost. Resolve that second execution separately, halve its total damage, and do not apply MOVE, STAB, bonus damage, or benefits from other abilities or feats.</p>
 		{/if}
 
 		{#if sequenceEnded}
@@ -394,8 +397,8 @@
 			{#if hasManualDamage}
 				<p class="ability-note">Any manually resolved damage is not included in the tracked total.</p>
 			{/if}
-			{#if hasHustle && attackSteps.some((step) => step.critical)}
-				<p class="ability-note"><strong>Hustle:</strong> at least one attack was a critical hit; resolve its additional-action effect.</p>
+			{#if hustleTriggered}
+				<p class="ability-note"><strong>Hustle:</strong> this move scored at least one critical hit. You may gain one additional action this round; if that action makes an attack, roll it with disadvantage.</p>
 			{/if}
 			<Button variant="success" width="full" on:click={close}>Confirm Total</Button>
 
@@ -462,7 +465,7 @@
 				<div class="history">
 					{#each attackSteps as step}
 						<div class:miss={!step.hit}>
-							<strong>Attack {step.attack} — {step.hit ? "Hit" : "Miss"}</strong>
+							<strong>Attack {step.attack} — {step.hit ? (step.critical ? "Critical Hit" : "Hit") : "Miss"}</strong>
 							<span>Natural {step.natural} · Total {step.total}{step.hit ? ` · Damage ${step.damage ?? "manual"}` : ""}</span>
 						</div>
 					{/each}
