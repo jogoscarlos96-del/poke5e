@@ -462,7 +462,7 @@
 		color: var(--skin-bg-text);
 		font-weight: 800;
 		text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-		animation: critical-button-shimmer 3.2s ease-in-out infinite;
+		animation: critical-button-shimmer 6s linear infinite;
 	}
 
 	.roll-result {
@@ -509,8 +509,8 @@
 	}
 
 	@keyframes critical-button-shimmer {
-		0% { background-position: 170% 170%; }
-		55%, 100% { background-position: -90% -90%; }
+		0% { background-position: 190% 190%; }
+		66.667%, 100% { background-position: -120% -120%; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
