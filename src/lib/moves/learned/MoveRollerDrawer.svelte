@@ -14,11 +14,15 @@
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
 	type SaveOutcome = "failed" | "succeeded"
+	type AttackRollMode = "advantage" | "normal" | "disadvantage"
 
 	const CRITICAL_THRESHOLDS = Array.from({ length: 19 }, (_, index) => 20 - index)
 
 	let dialog: HTMLDialogElement | undefined = undefined
 	let wasOpen = false
+	let attackRollMode: AttackRollMode = "normal"
+	let transientAttackBonus = 0
+	let attackRolls: number[] = []
 	let attackDie: number | undefined = undefined
 	let attackTotal: number | undefined = undefined
 	let hitConfirmed = false
@@ -40,6 +44,7 @@
 	$: hasHustle = normalizedAbilityNames.includes("hustle")
 	$: criticalDiceMultiplier = hasSniper ? 3 : 2
 	$: automaticCritical = attackDie != null && attackDie >= criticalThreshold
+	$: effectiveAttackModifier = (stats.toHit ?? 0) + transientAttackBonus
 
 	$: if (open && !wasOpen) {
 		wasOpen = true
@@ -58,6 +63,9 @@
 	}
 
 	const resetResolution = () => {
+		attackRollMode = "normal"
+		transientAttackBonus = 0
+		attackRolls = []
 		attackDie = undefined
 		attackTotal = undefined
 		hitConfirmed = false
@@ -72,10 +80,40 @@
 		if (dialog?.open) dialog.close()
 	}
 
+	const setAttackRollMode = (mode: AttackRollMode) => {
+		attackRollMode = mode
+		attackRolls = []
+		attackDie = undefined
+		attackTotal = undefined
+		hitConfirmed = false
+		criticalSelected = false
+	}
+
+	const changeTransientAttackBonus = (amount: number) => {
+		transientAttackBonus += amount
+		attackRolls = []
+		attackDie = undefined
+		attackTotal = undefined
+		hitConfirmed = false
+		criticalSelected = false
+	}
+
 	const rollD20 = () => {
 		if (stats.toHit == null) return
-		attackDie = Math.floor(Math.random() * 20) + 1
-		attackTotal = attackDie + stats.toHit
+
+		const firstRoll = Math.floor(Math.random() * 20) + 1
+		if (attackRollMode === "normal") {
+			attackRolls = [firstRoll]
+			attackDie = firstRoll
+		} else {
+			const secondRoll = Math.floor(Math.random() * 20) + 1
+			attackRolls = [firstRoll, secondRoll]
+			attackDie = attackRollMode === "advantage"
+				? Math.max(firstRoll, secondRoll)
+				: Math.min(firstRoll, secondRoll)
+		}
+
+		attackTotal = (attackDie ?? 0) + effectiveAttackModifier
 		hitConfirmed = false
 		criticalSelected = false
 	}
@@ -133,90 +171,132 @@
 
 		{#if resolution === "attack"}
 			<section>
-				<h3>Attack Roll</h3>
-				<div class="roll-formula">
-					<span>d20</span>
-					<strong>{signed(stats.toHit ?? 0)}</strong>
-				</div>
-				<div class="critical-range">
-					<label for="move-roller-critical-range">Critical Range</label>
-					<select id="move-roller-critical-range" bind:value={criticalThreshold}>
-						{#each CRITICAL_THRESHOLDS as threshold}
-							<option value={threshold}>{threshold}+</option>
-						{/each}
-					</select>
-				</div>
-				{#if hasSuperLuck}
-					<p class="ability-note">Super Luck sets the default critical range to 19+.</p>
-				{/if}
+				{#if !hitConfirmed}
+					<h3>Attack Roll</h3>
+					<div class="roll-formula">
+						<span>d20</span>
+						<strong>{signed(effectiveAttackModifier)}</strong>
+					</div>
 
-				{#if attackDie == null || attackTotal == null}
-					<Button variant="solid" width="full" on:click={rollD20}>Roll Attack</Button>
-				{:else if !hitConfirmed}
-					<dl class="roll-result">
-						<div>
-							<dt>Natural Roll</dt>
-							<dd>{attackDie}</dd>
+					<div class="attack-mode-control">
+						<span class="control-label">Roll Mode</span>
+						<div class="attack-mode-grid">
+							<Button variant={attackRollMode === "advantage" ? "solid" : "subtle"} width="full" on:click={() => setAttackRollMode("advantage")}>Advantage</Button>
+							<Button variant={attackRollMode === "normal" ? "solid" : "subtle"} width="full" on:click={() => setAttackRollMode("normal")}>Normal</Button>
+							<Button variant={attackRollMode === "disadvantage" ? "solid" : "subtle"} width="full" on:click={() => setAttackRollMode("disadvantage")}>Disadvantage</Button>
 						</div>
-						<div>
-							<dt>Attack Modifier</dt>
-							<dd>{signed(stats.toHit ?? 0)}</dd>
-						</div>
-						<div class="total-row">
-							<dt>Total</dt>
-							<dd>{attackTotal}</dd>
-						</div>
-					</dl>
-					{#if automaticCritical}
-						<div class="critical-detected">
-							<strong>Critical detected</strong>
-							<span>{criticalThreshold}+</span>
-						</div>
-					{/if}
-					<p class="instruction">Compare the total against the target's AC, then choose the result.</p>
-					<div class="decision-grid">
-						<Button variant="subtle" width="full" on:click={confirmMiss}>Miss</Button>
-						<Button variant="success" width="full" on:click={confirmHit}>Hit</Button>
 					</div>
-				{:else if stats.damage != null}
-					<div class="confirmed"><strong>Hit confirmed.</strong></div>
-					{#if !stats.damage.isHealing}
-						<div class="critical-control">
-							<div class="critical-control-heading">
-								<strong>Critical Hit?</strong>
-								<span>{criticalThreshold}+ range</span>
-							</div>
-							<div class="decision-grid critical-toggle">
-								<div class="critical-toggle-option">
-									<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
+
+					<div class="temporary-bonus-control">
+						<div>
+							<strong>Temporary Attack Bonus</strong>
+							<span>Current {signed(transientAttackBonus)}</span>
+						</div>
+						<div class="bonus-stepper">
+							<Button variant="subtle" on:click={() => changeTransientAttackBonus(-1)}>−</Button>
+							<strong>{signed(transientAttackBonus)}</strong>
+							<Button variant="subtle" on:click={() => changeTransientAttackBonus(1)}>+</Button>
+						</div>
+					</div>
+
+					<div class="critical-range">
+						<label for="move-roller-critical-range">Critical Range</label>
+						<select id="move-roller-critical-range" bind:value={criticalThreshold}>
+							{#each CRITICAL_THRESHOLDS as threshold}
+								<option value={threshold}>{threshold}+</option>
+							{/each}
+						</select>
+					</div>
+					{#if hasSuperLuck}
+						<p class="ability-note">Super Luck sets the default critical range to 19+.</p>
+					{/if}
+
+					{#if attackDie == null || attackTotal == null}
+						<Button variant="solid" width="full" on:click={rollD20}>Roll Attack</Button>
+					{:else}
+						<dl class="roll-result">
+							{#if attackRolls.length > 1}
+								<div>
+									<dt>{attackRollMode === "advantage" ? "Advantage Rolls" : "Disadvantage Rolls"}</dt>
+									<dd>{attackRolls.join(", ")}</dd>
 								</div>
-								<div class="critical-toggle-option critical-toggle-special" class:active={criticalSelected} style:--critical-type-bg="var(--skin-{moveType}-bg)">
-									<Button variant="subtle" width="full" on:click={() => criticalSelected = true}>Critical</Button>
-								</div>
+							{/if}
+							<div>
+								<dt>Natural Roll</dt>
+								<dd>{attackDie}</dd>
 							</div>
-							{#if criticalSelected && hasSniper}
-								<p class="ability-note"><strong>Sniper:</strong> critical damage uses three times the normal damage dice.</p>
+							<div>
+								<dt>Attack Modifier</dt>
+								<dd>{signed(stats.toHit ?? 0)}</dd>
+							</div>
+							{#if transientAttackBonus !== 0}
+								<div>
+									<dt>Temporary Bonus</dt>
+									<dd>{signed(transientAttackBonus)}</dd>
+								</div>
 							{/if}
-							{#if criticalSelected && hasHustle}
-								<p class="ability-note"><strong>Hustle:</strong> resolve its critical-hit additional-action effect.</p>
-							{/if}
+							<div class="total-row">
+								<dt>Total</dt>
+								<dd>{attackTotal}</dd>
+							</div>
+						</dl>
+						{#if automaticCritical}
+							<div class="critical-detected">
+								<strong>Critical detected</strong>
+								<span>{criticalThreshold}+</span>
+							</div>
+						{/if}
+						<p class="instruction">Compare the total against the target's AC, then choose the result.</p>
+						<div class="decision-grid">
+							<Button variant="subtle" width="full" on:click={confirmMiss}>Miss</Button>
+							<Button variant="success" width="full" on:click={confirmHit}>Hit</Button>
 						</div>
 					{/if}
-					{#key criticalSelected}
-						<MoveDamageRoll
-							damage={stats.damage}
-							critical={criticalSelected && !stats.damage.isHealing}
-							{criticalDiceMultiplier}
-							{moveType}
-							onconfirm={close}
-						/>
-					{/key}
 				{:else}
-					<div class="confirmed">
-						<strong>Hit confirmed.</strong>
-						<p>This move has no structured damage or healing roll.</p>
+					<div class="attack-summary" class:critical-summary={automaticCritical}>
+						<strong>{automaticCritical ? "Critical Hit" : "Attack — Hit"}</strong>
+						<span>Natural {attackDie} · Total {attackTotal}</span>
 					</div>
-					<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+
+					{#if stats.damage != null}
+						{#if !stats.damage.isHealing}
+							<div class="critical-control">
+								<div class="critical-control-heading">
+									<strong>Critical Hit?</strong>
+									<span>{criticalThreshold}+ range</span>
+								</div>
+								<div class="decision-grid critical-toggle">
+									<div class="critical-toggle-option">
+										<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
+									</div>
+									<div class="critical-toggle-option critical-toggle-special" class:active={criticalSelected} style:--critical-type-bg="var(--skin-{moveType}-bg)">
+										<Button variant="subtle" width="full" on:click={() => criticalSelected = true}>Critical</Button>
+									</div>
+								</div>
+								{#if criticalSelected && hasSniper}
+									<p class="ability-note"><strong>Sniper:</strong> critical damage uses three times the normal damage dice.</p>
+								{/if}
+								{#if criticalSelected && hasHustle}
+									<p class="ability-note"><strong>Hustle:</strong> resolve its critical-hit additional-action effect.</p>
+								{/if}
+							</div>
+						{/if}
+						{#key criticalSelected}
+							<MoveDamageRoll
+								damage={stats.damage}
+								critical={criticalSelected && !stats.damage.isHealing}
+								{criticalDiceMultiplier}
+								{moveType}
+								onconfirm={close}
+							/>
+						{/key}
+					{:else}
+						<div class="confirmed">
+							<strong>Hit confirmed.</strong>
+							<p>This move has no structured damage or healing roll.</p>
+						</div>
+						<Button variant="solid" width="full" on:click={close}>Confirm</Button>
+					{/if}
 				{/if}
 			</section>
 		{:else if resolution === "save"}
@@ -384,7 +464,10 @@
 	.direct-note,
 	.critical-range,
 	.critical-detected,
-	.critical-control {
+	.critical-control,
+	.attack-mode-control,
+	.temporary-bonus-control,
+	.attack-summary {
 		margin-block-end: 1em;
 		padding: 0.8em;
 		background: var(--skin-input-bg);
@@ -395,7 +478,9 @@
 	.save-summary,
 	.critical-range,
 	.critical-detected,
-	.critical-control-heading {
+	.critical-control-heading,
+	.temporary-bonus-control,
+	.attack-summary {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -406,10 +491,73 @@
 		font-size: var(--font-sz-neptune);
 	}
 
+	.control-label,
 	.critical-range label,
 	.critical-detected strong,
-	.critical-control-heading strong {
+	.critical-control-heading strong,
+	.temporary-bonus-control strong {
 		font-weight: bold;
+	}
+
+	.attack-mode-control {
+		display: grid;
+		gap: 0.55em;
+	}
+
+	.attack-mode-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.35em;
+	}
+
+	.attack-mode-grid :global(.button:hover::before),
+	.attack-mode-grid :global(.button:focus::before),
+	.attack-mode-grid :global(.button:active::before) {
+		content: none;
+		display: none;
+	}
+
+	.temporary-bonus-control > div:first-child {
+		display: grid;
+		gap: 0.15em;
+	}
+
+	.temporary-bonus-control > div:first-child span {
+		font-size: var(--font-sz-venus);
+	}
+
+	.bonus-stepper {
+		display: grid;
+		grid-template-columns: auto minmax(2.5em, auto) auto;
+		align-items: center;
+		gap: 0.25em;
+		text-align: center;
+	}
+
+	.bonus-stepper :global(.button) {
+		min-width: 2.2em;
+		padding-inline: 0.55em;
+	}
+
+	.bonus-stepper :global(.button:hover::before),
+	.bonus-stepper :global(.button:focus::before),
+	.bonus-stepper :global(.button:active::before) {
+		content: none;
+		display: none;
+	}
+
+	.attack-summary {
+		margin-block-end: 0.75em;
+	}
+
+	.attack-summary span {
+		font-size: var(--font-sz-venus);
+		white-space: nowrap;
+	}
+
+	.attack-summary.critical-summary {
+		background: var(--skin-bg-dark);
+		color: var(--skin-bg-text);
 	}
 
 	.critical-range select {
@@ -529,6 +677,10 @@
 			max-height: calc(100dvh - 1rem);
 			padding: 0.8em 1em 1em;
 			border-radius: 0.75rem;
+		}
+
+		.attack-mode-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
