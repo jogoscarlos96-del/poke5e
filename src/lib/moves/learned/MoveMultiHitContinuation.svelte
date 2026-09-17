@@ -55,6 +55,7 @@
 	$: comboProfile = profile.kind === "combo" ? profile as ComboMultiHitProfile : undefined
 	$: repeatedProfile = profile.kind === "repeated" ? profile as RepeatedMultiHitProfile : undefined
 	$: successfulComboHits = comboSteps.filter((step) => step.success).length
+	$: comboDamageDice = comboProfile?.source === "standard" ? damage.dice : comboProfile?.additionalDice ?? damage.dice
 	$: currentRepeatedDamage = repeatedProfile != null
 		? {
 			...damage,
@@ -86,9 +87,9 @@
 	const resolveComboStep = () => {
 		if (comboProfile == null || comboEnded) return
 
-		const parsed = parseDice(comboProfile.additionalDice)
+		const parsed = parseDice(comboDamageDice)
 		if (parsed == null) {
-			comboError = `Unable to roll ${comboProfile.additionalDice}. Use an NdM expression such as 1d4.`
+			comboError = `Unable to roll ${comboDamageDice}. Use an NdM expression such as 1d4.`
 			return
 		}
 
@@ -202,7 +203,7 @@
 		<div class="sequence-heading">
 			<div>
 				<strong>Combo Hits</strong>
-				<span>Additional hit damage: {comboProfile.additionalDice}</span>
+				<span>Additional hit damage: {comboDamageDice}</span>
 			</div>
 			<strong>{runningTotal}</strong>
 		</div>
