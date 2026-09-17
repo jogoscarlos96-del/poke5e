@@ -186,9 +186,13 @@
 								<strong>Critical Hit?</strong>
 								<span>{criticalThreshold}+ range</span>
 							</div>
-							<div class="decision-grid">
-								<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
-								<Button variant={criticalSelected ? "success" : "subtle"} width="full" on:click={() => criticalSelected = true}>Critical</Button>
+							<div class="decision-grid critical-toggle">
+								<div class="critical-toggle-option">
+									<Button variant={criticalSelected ? "subtle" : "solid"} width="full" on:click={() => criticalSelected = false}>Normal</Button>
+								</div>
+								<div class="critical-toggle-option critical-toggle-special" class:active={criticalSelected} style:--critical-fallback="var(--skin-{moveType}-bg)">
+									<Button variant="subtle" width="full" on:click={() => criticalSelected = true}>Critical</Button>
+								</div>
 							</div>
 							{#if criticalSelected && hasSniper}
 								<p class="ability-note"><strong>Sniper:</strong> critical damage uses three times the normal damage dice.</p>
@@ -429,6 +433,41 @@
 		margin-block-end: 0;
 	}
 
+	.critical-toggle-option {
+		min-width: 0;
+	}
+
+	.critical-toggle-option :global(.button) {
+		height: 100%;
+	}
+
+	.critical-toggle :global(.button:hover::before),
+	.critical-toggle :global(.button:focus::before),
+	.critical-toggle :global(.button:active::before) {
+		content: none;
+		display: none;
+	}
+
+	.critical-toggle-special :global(.button) {
+		border: 2px solid transparent;
+		background:
+			linear-gradient(var(--skin-input-bg), var(--skin-input-bg)) padding-box,
+			linear-gradient(110deg, #ff6b8a, #ffbd6d, #f4e77a, #72df9d, #63c8ff, #9b7cff, #ff74c8, #ff6b8a) border-box;
+		background-size: auto, 260% 260%;
+		color: var(--skin-content-text);
+	}
+
+	.critical-toggle-special.active :global(.button) {
+		background-color: var(--critical-fallback);
+		background-image: linear-gradient(110deg, #e84b73, #ef8b45, #d6bd3d, #37a975, #318ec8, #7555c9, #cf4a9e, #e84b73);
+		background-size: 260% 260%;
+		color: white;
+		font-weight: 800;
+		text-shadow: 0 1px 2px rgb(0 0 0 / 0.55);
+		box-shadow: 0 0 0.7em rgb(149 111 255 / 0.3), 0 0 1em rgb(255 116 200 / 0.16);
+		animation: critical-button-shimmer 5s linear infinite;
+	}
+
 	.roll-result {
 		display: grid;
 		gap: 0.5em;
@@ -470,6 +509,18 @@
 
 	.direct-note {
 		font-size: var(--font-sz-venus);
+	}
+
+	@keyframes critical-button-shimmer {
+		0% { background-position: 0% 50%; }
+		100% { background-position: 260% 50%; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.critical-toggle-special.active :global(.button) {
+			animation: none;
+			background-position: 50% 50%;
+		}
 	}
 
 	@media (max-width: 32rem) {
