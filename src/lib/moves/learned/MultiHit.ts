@@ -90,8 +90,7 @@ const STANDARD_REPEATED_MOVES: Record<string, RepeatedMultiHitProfile> = {
 	"bubble": repeated(3, { repeatModifier: "none" }),
 	"scale shot": repeated(5, {
 		repeatModifier: "none",
-		repeatDiceCount: 1,
-		note: "Scale Shot rolls one damage die for each successful attack and adds MOVE only once if at least one attack hits. Remember its movement and AC effect after resolving the attacks.",
+		note: "Scale Shot uses the move's current scaled damage dice on each successful attack and adds MOVE only once if at least one attack hits. Remember its movement and AC effect after resolving the attacks.",
 	}),
 }
 
