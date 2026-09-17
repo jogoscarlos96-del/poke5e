@@ -16,6 +16,7 @@ export type RepeatedMultiHitProfile = {
 	stopOnMiss: boolean,
 	repeatModifier: "move" | "none",
 	repeatFlatBonus: number,
+	repeatDiceCount?: number,
 	note?: string,
 	naturalReminder?: {
 		threshold: number,
@@ -60,6 +61,7 @@ const repeated = (
 	stopOnMiss: options.stopOnMiss ?? false,
 	repeatModifier: options.repeatModifier ?? "move",
 	repeatFlatBonus: options.repeatFlatBonus ?? 0,
+	repeatDiceCount: options.repeatDiceCount,
 	note: options.note,
 	naturalReminder: options.naturalReminder,
 })
@@ -88,7 +90,8 @@ const STANDARD_REPEATED_MOVES: Record<string, RepeatedMultiHitProfile> = {
 	"bubble": repeated(3, { repeatModifier: "none" }),
 	"scale shot": repeated(5, {
 		repeatModifier: "none",
-		note: "Scale Shot adds MOVE only once if at least one attack hits. Remember its movement and AC effect after resolving the attacks.",
+		repeatDiceCount: 1,
+		note: "Scale Shot rolls one damage die for each successful attack and adds MOVE only once if at least one attack hits. Remember its movement and AC effect after resolving the attacks.",
 	}),
 }
 
