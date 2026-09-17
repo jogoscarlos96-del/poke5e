@@ -318,25 +318,27 @@
 						</div>
 					</div>
 
-					{#key currentCriticalSelected}
-						{#if repeatedProfile.repeatDiceCount != null}
-							<MoveCompactDamageRoll
-								damage={currentRepeatedDamage}
-								critical={currentCriticalSelected}
-								{criticalDiceMultiplier}
-								{moveType}
-								onconfirm={confirmRepeatedDamage}
-							/>
-						{:else}
-							<MoveDamageRoll
-								damage={currentRepeatedDamage}
-								critical={currentCriticalSelected}
-								{criticalDiceMultiplier}
-								{moveType}
-								onconfirm={confirmRepeatedDamage}
-							/>
-						{/if}
-					{/key}
+					<div class="damage-step-card">
+						{#key currentCriticalSelected}
+							{#if repeatedProfile.repeatDiceCount != null}
+								<MoveCompactDamageRoll
+									damage={currentRepeatedDamage}
+									critical={currentCriticalSelected}
+									{criticalDiceMultiplier}
+									{moveType}
+									onconfirm={confirmRepeatedDamage}
+								/>
+							{:else}
+								<MoveDamageRoll
+									damage={currentRepeatedDamage}
+									critical={currentCriticalSelected}
+									{criticalDiceMultiplier}
+									{moveType}
+									onconfirm={confirmRepeatedDamage}
+								/>
+							{/if}
+						{/key}
+					</div>
 				{/if}
 			</div>
 		{:else}
@@ -363,7 +365,6 @@
 
 	.sequence-heading,
 	.sequence-total,
-	.current-attack-card,
 	.resolved-current,
 	.critical-control {
 		padding: 0.8em;
@@ -439,16 +440,34 @@
 	.current-attack-card {
 		display: grid;
 		gap: 0.65em;
+		padding: 0.8em;
+		background: var(--skin-content);
+		border: 1px solid var(--skin-border, currentColor);
+		border-radius: 0.8em;
 	}
 
 	.current-attack-heading {
-		padding-block-end: 0.1em;
+		padding-block-end: 0.55em;
+		border-block-end: 1px solid var(--skin-border, currentColor);
+	}
+
+	.attack-result-line,
+	.resolved-current,
+	.critical-control,
+	.damage-step-card {
+		border: 1px solid var(--skin-border, currentColor);
 	}
 
 	.attack-result-line {
 		padding: 0.65em 0.75em;
-		background: var(--skin-content);
+		background: var(--skin-input-bg);
 		border-radius: 0.6em;
+	}
+
+	.damage-step-card {
+		padding: 0.65em;
+		background: var(--skin-input-bg);
+		border-radius: 0.7em;
 	}
 
 	.decision-grid {
