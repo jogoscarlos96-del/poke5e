@@ -89,24 +89,24 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await resolveInitialHitAndDamage(dialog)
 	await expect(dialog.getByText("Combo Hits", { exact: true })).toBeVisible()
 
-	const confirmCombo = dialog.getByRole("button", { name: "Confirm Total", exact: true })
-	const continueCombo = dialog.getByRole("button", {
-		name: /^(Roll for Additional Hit|Resolve Guaranteed Hit 2)$/,
-	})
-	const comboAction = dialog.getByRole("button", {
-		name: /^(Roll for Additional Hit|Resolve Guaranteed Hit 2|Confirm Total)$/,
-	})
+	const comboPanel = dialog.locator("section.multi-hit-continuation")
+	await expect(comboPanel).toBeVisible()
+	const comboButton = comboPanel.locator("button")
 	for (let hit = 2; hit <= 5; hit += 1) {
-		// The combo can end on any d4 check. Wait for whichever action Svelte
-		// renders next before deciding whether to continue or confirm the total.
-		await expect(comboAction).toBeVisible()
-		if (await confirmCombo.isVisible()) break
-		await continueCombo.click()
+		// The combo panel exposes exactly one action at a time. Read the rendered
+		// action instead of relying on a specific accessible name while Svelte
+		// swaps continuation for the final confirmation state.
+		await expect(comboButton).toHaveCount(1)
+		await expect(comboButton).toBeVisible()
+		const actionLabel = (await comboButton.innerText()).trim()
+		if (actionLabel === "Confirm Total") break
+		await comboButton.click()
 		// Every combo attempt adds a history row, whether it succeeds or ends the combo.
 		await expect(dialog.getByText(`Hit ${hit}`, { exact: true })).toBeVisible()
 	}
-	await expect(confirmCombo).toBeVisible()
-	await confirmCombo.click()
+	await expect(comboButton).toHaveCount(1)
+	await expect(comboButton).toHaveText("Confirm Total")
+	await comboButton.click()
 	await expect(dialog).not.toBeVisible()
 
 	// Separate-attack repeated family at a narrow viewport. Resolve hit 2 damage and
