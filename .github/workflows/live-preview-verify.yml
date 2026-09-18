@@ -38,4 +38,9 @@ jobs:
           exit 1
 
       - name: Verify Move Roller on live Vercel preview
-        run: BASE_URL="$PREVIEW_URL" pnpm exec playwright test test/smoke/move-roller.test.ts --project=smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_URL="${PREVIEW_URL%%\?*}" \
+          VERCEL_SHARE_URL="$PREVIEW_URL" \
+          pnpm exec playwright test test/smoke/move-roller.test.ts --project=smoke
