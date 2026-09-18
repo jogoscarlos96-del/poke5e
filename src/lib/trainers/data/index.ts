@@ -63,4 +63,33 @@ export interface TrainerDataProvider {
 	verifyWriteKey: (trainer: Trainer, writeKey: ReadWriteKey) => Promise<boolean>
 }
 
-export const provider = new SupabaseTrainerProvider(supabase, userAssets)
+const supabaseProvider = new SupabaseTrainerProvider(supabase, userAssets)
+const legacyUpdateOneMove = supabaseProvider.updateOneMove
+
+supabaseProvider.updateOneMove = async (writeKey: ReadWriteKey, move: LearnedMove): Promise<boolean> => {
+	if (move.rank == null) {
+		return legacyUpdateOneMove(writeKey, move)
+	}
+
+	const { data, error } = await supabase.rpc("update_move", {
+		_write_key: writeKey,
+		_id: move.id,
+		_move_id: move.moveId,
+		_pp_cur: move.pp.current,
+		_pp_max: move.pp.max,
+		_notes: move.notes,
+		_rank: move.rank,
+	}).single<number>()
+
+	if (error) {
+		throw new TrainerDataProviderError(`Could not update move on pokemon (${move.id}).`, error)
+	}
+
+	if (data <= 0) {
+		throw new TrainerDataProviderError("Either this pokemon does not exist or you do not have permission to edit them.")
+	}
+
+	return data > 0
+}
+
+export const provider: TrainerDataProvider = supabaseProvider

@@ -5,4 +5,5 @@ export type LearnedMove = {
 	moveId: string,
 	pp: Resource,
 	notes?: string,
+	rank?: number,
 }

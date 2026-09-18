@@ -24,9 +24,10 @@
 
 	const featNames = $derived(pokemon.feats.map((feat) => feat.name))
 
-	const onUpdatePp = (move: LearnedMove) => (pp: number) => {
+	const onUpdatePp = (move: LearnedMove, rank: number) => (pp: number) => {
 		onupdate?.({
 			...move,
+			rank,
 			pp: {
 				current: pp,
 				max: move.pp.max,
@@ -36,7 +37,7 @@
 </script>
 
 <ul>
-	{#each pokemon.moves as move}
+	{#each pokemon.moves as move, rank}
 		<li>
 			<LearnedMoveInfo
 				value={move}
@@ -50,7 +51,7 @@
 				{featNames}
 				currentHp={pokemon.hp.current}
 				maxHp={pokemon.hp.max}
-				onupdatepp={onUpdatePp(move)}
+				onupdatepp={onUpdatePp(move, rank)}
 				{onapplyhealing}
 			/>
 		</li>
