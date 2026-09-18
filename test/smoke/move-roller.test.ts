@@ -49,9 +49,6 @@ const resolveInitialHitAndDamage = async (dialog: Locator) => {
 }
 
 test("Move Roller resolves standard, combo, and repeated flows", async ({ page }) => {
-	// Keep the core journey focused on the three representative standard families.
-	// Population Bomb has its own journey below because ten independent attacks can
-	// otherwise consume most of this test's timeout after the earlier flows finish.
 	test.setTimeout(180_000)
 
 	const site = await Poke5eSite.startJourney("Move Roller integrated verification", page)
@@ -73,7 +70,6 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	await page.getByRole("button", { name: "Finish!", exact: true }).click()
 	await expect(page.getByRole("heading", { name: "Roller Tester", exact: true })).toBeVisible()
 
-	// Manual PP correction is not a move use and must not open the roller.
 	const emberCard = moveCard(page, "Ember")
 	const emberPp = emberCard.locator('input[id^="current-pp-"]')
 	await expect(emberPp).toBeVisible()
@@ -83,13 +79,11 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	await assertNoUnexpectedDialog(page, "Unexpected dialog after manual Ember PP correction")
 	await expect(moveRollerDialog(page)).toHaveCount(0)
 
-	// Standard attack -> hit -> damage -> close.
 	let dialog = await openMoveRoller(page, "Ember")
 	await assertNoHorizontalOverflow(dialog)
 	await resolveInitialHitAndDamage(dialog)
 	await expect(dialog).not.toBeVisible()
 
-	// Same-roll Combo family, including continuation and final total.
 	dialog = await openMoveRoller(page, "Fury Swipes")
 	await resolveInitialHitAndDamage(dialog)
 	await expect(dialog.getByText("Combo Hits", { exact: true })).toBeVisible()
@@ -110,8 +104,6 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	await comboButton.click()
 	await expect(dialog).not.toBeVisible()
 
-	// Separate-attack repeated family at a narrow viewport. Resolve hit 2 damage and
-	// confirm that the drawer never grows wider than its own viewport allocation.
 	await page.setViewportSize({ width: 320, height: 700 })
 	dialog = await openMoveRoller(page, "Double Kick")
 	await assertNoHorizontalOverflow(dialog)
@@ -136,7 +128,6 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 
 	await dialog.getByRole("button", { name: "Confirm Sequence", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
-
 	await trainers.removeTrainer(readKey)
 })
 
@@ -177,8 +168,6 @@ test("Move Roller resolves Population Bomb special multi-hit flow", async ({ pag
 })
 
 test("Move Roller resolves progressive and table-driven damage", async ({ page }) => {
-	// Keep the progressive/table moves together, but give the multi-round Outrage
-	// sequence its own journey so it does not inherit this test's elapsed time.
 	test.setTimeout(240_000)
 
 	const site = await Poke5eSite.startJourney("Dynamic Move Roller verification", page)
@@ -200,7 +189,6 @@ test("Move Roller resolves progressive and table-driven damage", async ({ page }
 	await page.getByRole("button", { name: "Finish!", exact: true }).click()
 	await expect(page.getByRole("heading", { name: "Dynamic Tester", exact: true })).toBeVisible()
 
-	// Rollout resolves its symbolic R die from the selected consecutive-hit stage.
 	let dialog = await openMoveRoller(page, "Rollout")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
@@ -211,7 +199,6 @@ test("Move Roller resolves progressive and table-driven damage", async ({ page }
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// Fury Cutter uses the same progressive framework even though its base dice are ordinary NdM dice.
 	dialog = await openMoveRoller(page, "Fury Cutter")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
@@ -222,7 +209,6 @@ test("Move Roller resolves progressive and table-driven damage", async ({ page }
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// Magnitude converts a d100 table result into a concrete rollable expression.
 	dialog = await openMoveRoller(page, "Magnitude")
 	await dialog.getByRole("button", { name: "Save Failed", exact: true }).click()
 	await expect(dialog.getByText("Magnitude damage", { exact: true })).toBeVisible()
@@ -236,7 +222,7 @@ test("Move Roller resolves progressive and table-driven damage", async ({ page }
 	await trainers.removeTrainer(readKey)
 })
 
-test("Move Roller resolves Outrage as a three-round sequence", async ({ page }) => {
+test("Move Roller resolves Outrage as one three-round sequence roll", async ({ page }) => {
 	test.setTimeout(180_000)
 
 	const site = await Poke5eSite.startJourney("Outrage Move Roller verification", page)
@@ -256,25 +242,21 @@ test("Move Roller resolves Outrage as a three-round sequence", async ({ page }) 
 	await expect(page.getByRole("heading", { name: "Outrage Tester", exact: true })).toBeVisible()
 
 	const dialog = await openMoveRoller(page, "Outrage")
+	await expect(dialog.getByText("Outrage sequence", { exact: true })).toBeVisible()
+	await expect(dialog.getByRole("button", { name: "Roll Outrage Sequence", exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: "Roll Outrage Sequence", exact: true }).click()
+
 	for (let round = 1; round <= 3; round += 1) {
-		await test.step(`Outrage round ${round}`, async () => {
-			await expect(dialog.getByText(`Round ${round} of 3`, { exact: true })).toBeVisible()
-			await expect(dialog.getByText("Dynamic damage could not be resolved.", { exact: true })).toHaveCount(0)
-			const rollDamage = dialog.getByRole("button", { name: "Roll Damage", exact: true })
-			await expect(rollDamage).toBeVisible()
-			await rollDamage.click()
-			await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
-			await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
-			if (round < 3) await expect(dialog).toBeVisible()
-		})
+		await expect(dialog.getByText(`Round ${round}`, { exact: true })).toBeVisible()
 	}
+	await expect(dialog.getByText(/Unable to resolve Outrage/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm Sequence", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
 	await trainers.removeTrainer(readKey)
 })
 
 test("Move Roller resolves conditional, HP-scaled, and count-based damage rules", async ({ page }) => {
-	// This journey also updates persisted HP before exercising four conditional moves.
 	test.setTimeout(300_000)
 
 	const site = await Poke5eSite.startJourney("Conditional Move Roller verification", page)
@@ -296,7 +278,6 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await page.getByRole("button", { name: "Finish!", exact: true }).click()
 	await expect(page.getByRole("heading", { name: "Conditional Tester", exact: true })).toBeVisible()
 
-	// Conditional dice multiplier: only the dice expression changes when the condition is active.
 	let dialog = await openMoveRoller(page, "Assurance")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
@@ -308,7 +289,6 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// HP-scaled total multiplier: zero HP guarantees the 10%-or-lower branch for the UI test.
 	const hpInput = page.locator("#current-hp")
 	await hpInput.fill("0")
 	await hpInput.press("Tab")
@@ -325,7 +305,6 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await dialog.getByRole("button", { name: "Confirm Final Damage", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// Count-based same-size bonus dice: Stored Power adds one die per active effect.
 	dialog = await openMoveRoller(page, "Stored Power")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
@@ -337,7 +316,6 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// Last Respects uses two extra d6 per downed ally and caps the total at 10 dice.
 	dialog = await openMoveRoller(page, "Last Respects")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
