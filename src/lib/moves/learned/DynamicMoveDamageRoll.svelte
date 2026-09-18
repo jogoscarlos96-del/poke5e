@@ -60,15 +60,15 @@
 		if (profile?.kind === "round-sequence") {
 			roundResults = [...roundResults, { round: stage, total: value }]
 			if (stage < profile.multipliers.length) {
-				// Force the completed BaseMoveDamageRoll instance out of the DOM before
-				// advancing. This guarantees that each automatic-hit round starts with
-				// a fresh Roll Damage state instead of retaining the previous round's
-				// Roll Again / Confirm result state.
+				// Unmount the completed roll before changing rounds, then wait for the
+				// newly keyed BaseMoveDamageRoll to mount before this click handler ends.
+				// Without the final tick, the round label can update before the fresh
+				// Roll Damage action exists in the DOM.
 				roundTransitioning = true
 				await tick()
 				stage += 1
-				await tick()
 				roundTransitioning = false
+				await tick()
 				return
 			}
 		}
