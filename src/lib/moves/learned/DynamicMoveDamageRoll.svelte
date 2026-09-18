@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, tick } from "svelte"
+	import { getContext } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
 	import BaseMoveDamageRoll from "./BaseMoveDamageRoll.svelte"
@@ -35,7 +35,6 @@
 	let conditionCount = 0
 	let roundResults: RoundResult[] = []
 	let pendingBaseTotal: number | undefined = undefined
-	let roundTransitioning = false
 
 	$: effectiveMoveName = moveName ?? contextMoveName?.() ?? ""
 	$: profile = getDynamicMoveDamageProfile(effectiveMoveName)
@@ -56,19 +55,11 @@
 		magnitudeRoll = Math.floor(Math.random() * 100) + 1
 	}
 
-	const confirmDamage = async (value?: number) => {
+	const confirmDamage = (value?: number) => {
 		if (profile?.kind === "round-sequence") {
 			roundResults = [...roundResults, { round: stage, total: value }]
 			if (stage < profile.multipliers.length) {
-				// Unmount the completed roll before changing rounds, then wait for the
-				// newly keyed BaseMoveDamageRoll to mount before this click handler ends.
-				// Without the final tick, the round label can update before the fresh
-				// Roll Damage action exists in the DOM.
-				roundTransitioning = true
-				await tick()
 				stage += 1
-				roundTransitioning = false
-				await tick()
 				return
 			}
 		}
@@ -203,7 +194,7 @@
 		</section>
 	{/if}
 
-	{#if !roundTransitioning && resolvedDamage != null}
+	{#if resolvedDamage != null}
 		{#key rollKey}
 			<BaseMoveDamageRoll
 				damage={resolvedDamage}
@@ -216,7 +207,7 @@
 				{onapplyhealing}
 			/>
 		{/key}
-	{:else if !roundTransitioning && profile?.kind !== "magnitude"}
+	{:else if profile?.kind !== "magnitude"}
 		<div class="error-card">
 			<strong>Dynamic damage could not be resolved.</strong>
 			<span>The move uses {damage.dice}, which is not a supported dynamic dice expression yet.</span>
