@@ -22,9 +22,12 @@
 	export let maxHp: number | undefined = undefined
 	export let onapplyhealing: ((value: number) => void) | undefined = undefined
 
-	type RoundResult = {
+	type SequenceRoundResult = {
 		round: number,
-		total?: number,
+		dice: string,
+		rolls: number[],
+		modifier: number,
+		total: number,
 	}
 
 	const contextMoveName = getContext<(() => string | undefined) | undefined>(MOVE_ROLLER_MOVE_NAME_CONTEXT)
@@ -33,11 +36,8 @@
 	let magnitudeRoll: number | undefined = undefined
 	let conditionActive = false
 	let conditionCount = 0
-	let roundResults: RoundResult[] = []
-	let roundDiceRolls: number[] = []
-	let roundTotal: number | undefined = undefined
-	let roundError: string | undefined = undefined
-	let rolledRound: number | undefined = undefined
+	let sequenceResults: SequenceRoundResult[] = []
+	let sequenceError: string | undefined = undefined
 	let pendingBaseTotal: number | undefined = undefined
 
 	$: effectiveMoveName = moveName ?? contextMoveName?.() ?? ""
@@ -70,34 +70,32 @@
 		magnitudeRoll = Math.floor(Math.random() * 100) + 1
 	}
 
-	const rollRoundSequenceDamage = () => {
-		if (resolvedDamage == null) return
-		const parsed = parseDice(resolvedDamage.dice)
-		rolledRound = stage
-
-		if (parsed == null) {
-			roundDiceRolls = []
-			roundTotal = undefined
-			roundError = `Unable to roll ${resolvedDamage.dice}.`
-			return
-		}
-
-		roundDiceRolls = Array.from({ length: parsed.count }, () => Math.floor(Math.random() * parsed.sides) + 1)
-		roundTotal = roundDiceRolls.reduce((sum, value) => sum + value, 0) + resolvedDamage.mod
-		roundError = undefined
-	}
-
-	const confirmRoundSequenceDamage = () => {
+	const rollRoundSequence = () => {
 		if (profile?.kind !== "round-sequence") return
-		roundResults = [...roundResults, { round: stage, total: roundTotal }]
 
-		if (stage < profile.multipliers.length) {
-			stage += 1
-			roundError = undefined
-			return
+		const results: SequenceRoundResult[] = []
+		for (let index = 0; index < profile.multipliers.length; index += 1) {
+			const round = index + 1
+			const roundDamage = resolveDynamicMoveDamage(profile, damage, { stage: round })
+			const parsed = roundDamage != null ? parseDice(roundDamage.dice) : undefined
+			if (roundDamage == null || parsed == null) {
+				sequenceResults = []
+				sequenceError = `Unable to resolve Outrage round ${round}.`
+				return
+			}
+
+			const rolls = Array.from({ length: parsed.count }, () => Math.floor(Math.random() * parsed.sides) + 1)
+			results.push({
+				round,
+				dice: roundDamage.dice,
+				rolls,
+				modifier: roundDamage.mod,
+				total: rolls.reduce((sum, value) => sum + value, 0) + roundDamage.mod,
+			})
 		}
 
-		onconfirm(roundTotal)
+		sequenceResults = results
+		sequenceError = undefined
 	}
 
 	const confirmDamage = (value?: number) => {
@@ -144,61 +142,41 @@
 			<p>{profile.note}</p>
 		</section>
 	{:else if profile?.kind === "round-sequence"}
-		<section class="dynamic-rule">
+		<section class="dynamic-rule sequence-rule">
 			<div class="rule-heading">
 				<strong>{effectiveMoveName} sequence</strong>
-				<span>Round {stage} of {profile.multipliers.length}</span>
-			</div>
-			<div class="resolved-line">
-				<span>{profile.label}</span>
-				<strong>{resolvedDamage?.dice ?? damage.dice}</strong>
+				<span>{profile.multipliers.length} automatic-hit rounds</span>
 			</div>
 			<p>{profile.note}</p>
-			{#if roundResults.length > 0}
-				<div class="round-history">
-					{#each roundResults as result}
-						<div>
-							<span>Round {result.round}</span>
-							<strong>{result.total != null ? `Damage ${result.total}` : "Damage manual"}</strong>
+		</section>
+
+		<section class="sequence-roll">
+			{#if sequenceResults.length === 0}
+				<Button variant="solid" width="full" on:click={rollRoundSequence}>Roll Outrage Sequence</Button>
+			{:else}
+				<div class="sequence-results">
+					{#each sequenceResults as result}
+						<div class="sequence-round">
+							<div class="sequence-round-heading">
+								<strong>Round {result.round}</strong>
+								<span>{result.dice} {signed(result.modifier)}</span>
+							</div>
+							<div class="sequence-round-detail">
+								<span>Dice: {result.rolls.join(", ")}</span>
+								<strong>Damage {result.total}</strong>
+							</div>
 						</div>
 					{/each}
 				</div>
+				<div class="sequence-actions">
+					<Button variant="subtle" width="full" on:click={rollRoundSequence}>Roll Again</Button>
+					<Button variant="success" width="full" on:click={() => onconfirm(undefined)}>Confirm Sequence</Button>
+				</div>
+			{/if}
+			{#if sequenceError != null}
+				<p class="error">{sequenceError} Resolve the sequence manually.</p>
 			{/if}
 		</section>
-
-		{#if resolvedDamage != null}
-			<section class="round-sequence-roll">
-				<h3>Damage Roll</h3>
-				<div class="round-formula">
-					<span>{resolvedDamage.dice}</span>
-					<strong>{signed(resolvedDamage.mod)}</strong>
-				</div>
-
-				{#if rolledRound !== stage}
-					<Button variant="solid" width="full" on:click={rollRoundSequenceDamage}>Roll Damage</Button>
-				{:else if roundTotal != null}
-					<dl class="round-result">
-						<div><dt>Dice</dt><dd>{roundDiceRolls.join(", ")}</dd></div>
-						<div><dt>Modifier</dt><dd>{signed(resolvedDamage.mod)}</dd></div>
-						<div class="round-total"><dt>Total Damage</dt><dd>{roundTotal}</dd></div>
-					</dl>
-					<div class="round-actions">
-						<Button variant="subtle" width="full" on:click={rollRoundSequenceDamage}>Roll Again</Button>
-						<Button variant="success" width="full" on:click={confirmRoundSequenceDamage}>Confirm</Button>
-					</div>
-				{/if}
-
-				{#if roundError != null && rolledRound === stage}
-					<p class="error">{roundError} Resolve this round manually.</p>
-					<Button variant="solid" width="full" on:click={confirmRoundSequenceDamage}>Confirm</Button>
-				{/if}
-			</section>
-		{:else}
-			<div class="error-card">
-				<strong>Dynamic damage could not be resolved.</strong>
-				<span>The move uses {damage.dice}, which is not a supported dynamic dice expression yet.</span>
-			</div>
-		{/if}
 	{:else if profile?.kind === "magnitude"}
 		<section class="dynamic-rule">
 			<div class="rule-heading">
@@ -291,7 +269,7 @@
 <style>
 	.dynamic-rule,
 	.error-card,
-	.round-sequence-roll {
+	.sequence-roll {
 		display: grid;
 		gap: 0.55em;
 		margin-block-end: 0.75em;
@@ -303,10 +281,9 @@
 	.rule-heading,
 	.resolved-line,
 	.magnitude-result,
-	.round-history > div,
 	.final-total-breakdown > div,
-	.round-formula,
-	.round-result > div {
+	.sequence-round-heading,
+	.sequence-round-detail {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -317,15 +294,15 @@
 	.dynamic-rule p,
 	.error-card span,
 	.magnitude-result span,
-	.round-history span,
 	.checkbox-row span,
-	.final-total-breakdown span {
+	.final-total-breakdown span,
+	.sequence-round span {
 		font-size: 0.78rem;
 	}
 
 	.dynamic-rule p,
 	.error-card span,
-	.round-sequence-roll p {
+	.sequence-roll p {
 		margin: 0;
 		line-height: 1.35;
 	}
@@ -385,46 +362,32 @@
 	}
 
 	.magnitude-result,
-	.resolved-line,
-	.round-formula,
-	.round-result > div {
+	.resolved-line {
 		padding: 0.55em 0.65em;
 		background: var(--skin-content);
 		border-radius: 0.55em;
 	}
 
-	.round-sequence-roll h3 {
-		margin: 0;
+	.sequence-results,
+	.final-total-breakdown {
+		display: grid;
+		gap: 0.4em;
 	}
 
-	.round-result {
+	.sequence-round {
 		display: grid;
 		gap: 0.35em;
-		margin: 0;
+		padding: 0.55em 0.65em;
+		background: var(--skin-content);
+		border-radius: 0.55em;
 	}
 
-	.round-result .round-total {
-		font-size: var(--font-sz-neptune);
-	}
-
-	.round-result dd {
-		margin: 0;
-		text-align: right;
-	}
-
-	.round-actions {
+	.sequence-actions {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.5em;
 	}
 
-	.round-history,
-	.final-total-breakdown {
-		display: grid;
-		gap: 0.3em;
-	}
-
-	.round-history > div,
 	.final-total-breakdown > div {
 		padding: 0.45em 0.55em;
 		background: var(--skin-content);
