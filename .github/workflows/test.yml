@@ -41,6 +41,8 @@ jobs:
       - name: Reset local Supabase database
         shell: bash
         run: |
+          set -euo pipefail
+
           for attempt in 1 2 3; do
             echo "Supabase reset attempt ${attempt}/3"
             if pnpm supabase db reset; then
@@ -52,7 +54,10 @@ jobs:
               exit 1
             fi
 
-            echo "Supabase reset hit a transient failure; retrying in 5 seconds..."
+            echo "Supabase reset failed; recycling the local Supabase stack before retrying..."
+            pnpm supabase stop || true
+            sleep 5
+            pnpm supabase start
             sleep 5
           done
       - name: Unit Tests
