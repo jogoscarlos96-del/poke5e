@@ -5,6 +5,7 @@
 	import BaseMoveDamageRoll from "./BaseMoveDamageRoll.svelte"
 	import {
 		getDynamicMoveDamageProfile,
+		healthTotalMultiplier,
 		magnitudeBaseDice,
 		magnitudeLevelMultiplier,
 		MOVE_ROLLER_MOVE_NAME_CONTEXT,
@@ -30,14 +31,25 @@
 
 	let stage = 1
 	let magnitudeRoll: number | undefined = undefined
+	let conditionActive = false
+	let conditionCount = 0
 	let roundResults: RoundResult[] = []
+	let pendingBaseTotal: number | undefined = undefined
 
 	$: effectiveMoveName = moveName ?? contextMoveName?.() ?? ""
 	$: profile = getDynamicMoveDamageProfile(effectiveMoveName)
-	$: resolvedDamage = resolveDynamicMoveDamage(profile, damage, { stage, magnitudeRoll })
+	$: resolvedDamage = resolveDynamicMoveDamage(profile, damage, {
+		stage,
+		magnitudeRoll,
+		conditionActive,
+		count: conditionCount,
+	})
 	$: magnitudeBase = magnitudeRoll != null ? magnitudeBaseDice(magnitudeRoll) : undefined
 	$: magnitudeMultiplier = profile?.kind === "magnitude" ? magnitudeLevelMultiplier(damage.dice) : undefined
-	$: rollKey = `${profile?.kind ?? "standard"}:${stage}:${magnitudeRoll ?? "pending"}:${resolvedDamage?.dice ?? "pending"}`
+	$: totalMultiplier = profile?.kind === "health-total" ? healthTotalMultiplier(currentHp, maxHp) : 1
+	$: hpPercent = currentHp != null && maxHp != null && maxHp > 0 ? Math.max(0, currentHp) / maxHp * 100 : undefined
+	$: finalTotal = pendingBaseTotal != null ? pendingBaseTotal * totalMultiplier : undefined
+	$: rollKey = `${profile?.kind ?? "standard"}:${stage}:${magnitudeRoll ?? "pending"}:${conditionActive}:${conditionCount}:${totalMultiplier}:${resolvedDamage?.dice ?? "pending"}`
 
 	const rollMagnitude = () => {
 		magnitudeRoll = Math.floor(Math.random() * 100) + 1
@@ -52,88 +64,155 @@
 			}
 		}
 
+		if (profile?.kind === "health-total" && value != null && totalMultiplier > 1) {
+			pendingBaseTotal = value
+			return
+		}
+
 		onconfirm(value)
+	}
+
+	const confirmFinalTotal = () => {
+		onconfirm(finalTotal)
 	}
 </script>
 
-{#if profile?.kind === "progressive"}
-	<section class="dynamic-rule">
+{#if pendingBaseTotal != null && profile?.kind === "health-total"}
+	<section class="dynamic-rule final-total-card">
 		<div class="rule-heading">
-			<strong>{effectiveMoveName} progression</strong>
-			<span>{resolvedDamage?.dice ?? damage.dice}</span>
+			<strong>{effectiveMoveName} final damage</strong>
+			<span>{totalMultiplier}× total</span>
 		</div>
-		<label for="dynamic-progress-stage">{profile.label}</label>
-		<select id="dynamic-progress-stage" bind:value={stage}>
-			{#each profile.multipliers as multiplier, index}
-				<option value={index + 1}>Hit {index + 1} · {multiplier}× dice</option>
-			{/each}
-		</select>
+		<div class="final-total-breakdown">
+			<div><span>Rolled damage</span><strong>{pendingBaseTotal}</strong></div>
+			<div><span>HP multiplier</span><strong>×{totalMultiplier}</strong></div>
+			<div class="final-total-row"><span>Final damage</span><strong>{finalTotal}</strong></div>
+		</div>
 		<p>{profile.note}</p>
+		<Button variant="success" width="full" on:click={confirmFinalTotal}>Confirm Final Damage</Button>
 	</section>
-{:else if profile?.kind === "round-sequence"}
-	<section class="dynamic-rule">
-		<div class="rule-heading">
-			<strong>{effectiveMoveName} sequence</strong>
-			<span>Round {stage} of {profile.multipliers.length}</span>
-		</div>
-		<div class="resolved-line">
-			<span>{profile.label}</span>
-			<strong>{resolvedDamage?.dice ?? damage.dice}</strong>
-		</div>
-		<p>{profile.note}</p>
-		{#if roundResults.length > 0}
-			<div class="round-history">
-				{#each roundResults as result}
-					<div>
-						<span>Round {result.round}</span>
-						<strong>{result.total != null ? `Damage ${result.total}` : "Damage manual"}</strong>
-					</div>
+{:else}
+	{#if profile?.kind === "progressive"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>{effectiveMoveName} progression</strong>
+				<span>{resolvedDamage?.dice ?? damage.dice}</span>
+			</div>
+			<label for="dynamic-progress-stage">{profile.label}</label>
+			<select id="dynamic-progress-stage" bind:value={stage}>
+				{#each profile.multipliers as multiplier, index}
+					<option value={index + 1}>Hit {index + 1} · {multiplier}× dice</option>
 				{/each}
+			</select>
+			<p>{profile.note}</p>
+		</section>
+	{:else if profile?.kind === "round-sequence"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>{effectiveMoveName} sequence</strong>
+				<span>Round {stage} of {profile.multipliers.length}</span>
 			</div>
-		{/if}
-	</section>
-{:else if profile?.kind === "magnitude"}
-	<section class="dynamic-rule">
-		<div class="rule-heading">
-			<strong>Magnitude damage</strong>
-			<span>{magnitudeMultiplier != null ? `${magnitudeMultiplier}× level dice` : damage.dice}</span>
-		</div>
-		<div class="magnitude-controls">
-			<label for="magnitude-d100">d100 result</label>
-			<input id="magnitude-d100" type="number" min="1" max="100" bind:value={magnitudeRoll} placeholder="1–100" />
-			<Button variant="solid" on:click={rollMagnitude}>{magnitudeRoll == null ? "Roll d100" : "Roll Again"}</Button>
-		</div>
-		{#if magnitudeRoll != null && resolvedDamage != null}
-			<div class="magnitude-result">
-				<span>d100 {magnitudeRoll}</span>
-				<span>Base {magnitudeBase}</span>
-				<strong>Resolved {resolvedDamage.dice}</strong>
+			<div class="resolved-line">
+				<span>{profile.label}</span>
+				<strong>{resolvedDamage?.dice ?? damage.dice}</strong>
 			</div>
-		{:else if magnitudeRoll != null}
-			<p class="error">Enter a d100 result from 1 to 100.</p>
-		{/if}
-		<p>{profile.note}</p>
-	</section>
-{/if}
+			<p>{profile.note}</p>
+			{#if roundResults.length > 0}
+				<div class="round-history">
+					{#each roundResults as result}
+						<div>
+							<span>Round {result.round}</span>
+							<strong>{result.total != null ? `Damage ${result.total}` : "Damage manual"}</strong>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</section>
+	{:else if profile?.kind === "magnitude"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>Magnitude damage</strong>
+				<span>{magnitudeMultiplier != null ? `${magnitudeMultiplier}× level dice` : damage.dice}</span>
+			</div>
+			<div class="magnitude-controls">
+				<label for="magnitude-d100">d100 result</label>
+				<input id="magnitude-d100" type="number" min="1" max="100" bind:value={magnitudeRoll} placeholder="1–100" />
+				<Button variant="solid" on:click={rollMagnitude}>{magnitudeRoll == null ? "Roll d100" : "Roll Again"}</Button>
+			</div>
+			{#if magnitudeRoll != null && resolvedDamage != null}
+				<div class="magnitude-result">
+					<span>d100 {magnitudeRoll}</span>
+					<span>Base {magnitudeBase}</span>
+					<strong>Resolved {resolvedDamage.dice}</strong>
+				</div>
+			{:else if magnitudeRoll != null}
+				<p class="error">Enter a d100 result from 1 to 100.</p>
+			{/if}
+			<p>{profile.note}</p>
+		</section>
+	{:else if profile?.kind === "conditional-dice"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>{effectiveMoveName} condition</strong>
+				<span>{conditionActive ? `${profile.multiplier}× dice` : "Normal dice"}</span>
+			</div>
+			<label class="checkbox-row" for="dynamic-condition-active">
+				<input id="dynamic-condition-active" type="checkbox" bind:checked={conditionActive} />
+				<span>{profile.label}</span>
+			</label>
+			{#if resolvedDamage != null}
+				<div class="resolved-line"><span>Damage dice</span><strong>{resolvedDamage.dice}</strong></div>
+			{/if}
+			<p>{profile.note}</p>
+		</section>
+	{:else if profile?.kind === "health-total"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>{effectiveMoveName} HP scaling</strong>
+				<span>{totalMultiplier}× total damage</span>
+			</div>
+			<div class="resolved-line">
+				<span>Current HP</span>
+				<strong>{currentHp ?? "?"} / {maxHp ?? "?"}{hpPercent != null ? ` · ${hpPercent.toFixed(0)}%` : ""}</strong>
+			</div>
+			<p>{profile.note}</p>
+		</section>
+	{:else if profile?.kind === "extra-dice-count"}
+		<section class="dynamic-rule">
+			<div class="rule-heading">
+				<strong>{effectiveMoveName} bonus dice</strong>
+				<span>{resolvedDamage?.dice ?? damage.dice}</span>
+			</div>
+			<div class="count-control">
+				<label for="dynamic-condition-count">{profile.label}</label>
+				<input id="dynamic-condition-count" type="number" min="0" bind:value={conditionCount} />
+			</div>
+			{#if resolvedDamage != null}
+				<div class="resolved-line"><span>Resolved damage dice</span><strong>{resolvedDamage.dice}</strong></div>
+			{/if}
+			<p>{profile.note}</p>
+		</section>
+	{/if}
 
-{#if resolvedDamage != null}
-	{#key rollKey}
-		<BaseMoveDamageRoll
-			damage={resolvedDamage}
-			onconfirm={confirmDamage}
-			{critical}
-			{criticalDiceMultiplier}
-			{moveType}
-			{currentHp}
-			{maxHp}
-			{onapplyhealing}
-		/>
-	{/key}
-{:else if profile?.kind !== "magnitude"}
-	<div class="error-card">
-		<strong>Dynamic damage could not be resolved.</strong>
-		<span>The move uses {damage.dice}, which is not a supported dynamic dice expression yet.</span>
-	</div>
+	{#if resolvedDamage != null}
+		{#key rollKey}
+			<BaseMoveDamageRoll
+				damage={resolvedDamage}
+				onconfirm={confirmDamage}
+				{critical}
+				{criticalDiceMultiplier}
+				{moveType}
+				{currentHp}
+				{maxHp}
+				{onapplyhealing}
+			/>
+		{/key}
+	{:else if profile?.kind !== "magnitude"}
+		<div class="error-card">
+			<strong>Dynamic damage could not be resolved.</strong>
+			<span>The move uses {damage.dice}, which is not a supported dynamic dice expression yet.</span>
+		</div>
+	{/if}
 {/if}
 
 <style>
@@ -150,7 +229,8 @@
 	.rule-heading,
 	.resolved-line,
 	.magnitude-result,
-	.round-history > div {
+	.round-history > div,
+	.final-total-breakdown > div {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -161,7 +241,9 @@
 	.dynamic-rule p,
 	.error-card span,
 	.magnitude-result span,
-	.round-history span {
+	.round-history span,
+	.checkbox-row span,
+	.final-total-breakdown span {
 		font-size: 0.78rem;
 	}
 
@@ -177,7 +259,7 @@
 	}
 
 	.dynamic-rule select,
-	.dynamic-rule input {
+	.dynamic-rule input[type="number"] {
 		box-sizing: border-box;
 		width: 100%;
 		min-width: 0;
@@ -187,6 +269,30 @@
 		background: var(--skin-content);
 		color: var(--skin-content-text);
 		font: inherit;
+	}
+
+	.checkbox-row {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.55em;
+		padding: 0.55em 0.65em;
+		background: var(--skin-content);
+		border-radius: 0.55em;
+	}
+
+	.checkbox-row input {
+		margin-block-start: 0.1em;
+	}
+
+	.count-control {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 5em;
+		align-items: center;
+		gap: 0.55em;
+	}
+
+	.count-control input {
+		text-align: center;
 	}
 
 	.magnitude-controls {
@@ -201,21 +307,28 @@
 		padding-inline: 0.65em;
 	}
 
-	.magnitude-result {
+	.magnitude-result,
+	.resolved-line {
 		padding: 0.55em 0.65em;
 		background: var(--skin-content);
 		border-radius: 0.55em;
 	}
 
-	.round-history {
+	.round-history,
+	.final-total-breakdown {
 		display: grid;
 		gap: 0.3em;
 	}
 
-	.round-history > div {
+	.round-history > div,
+	.final-total-breakdown > div {
 		padding: 0.45em 0.55em;
 		background: var(--skin-content);
 		border-radius: 0.5em;
+	}
+
+	.final-total-breakdown .final-total-row {
+		font-size: var(--font-sz-neptune);
 	}
 
 	.error,
