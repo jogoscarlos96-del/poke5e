@@ -22,10 +22,36 @@ export type MagnitudeDamageProfile = {
 	note: string,
 }
 
+export type ConditionalDiceDamageProfile = {
+	kind: "conditional-dice",
+	move: "assurance" | "payback" | "gyro-ball" | "venoshock" | "stomping-tantrum" | "snipe-shot",
+	label: string,
+	multiplier: number,
+	note: string,
+}
+
+export type HealthTotalDamageProfile = {
+	kind: "health-total",
+	move: "reversal" | "flail",
+	note: string,
+}
+
+export type ExtraDiceCountDamageProfile = {
+	kind: "extra-dice-count",
+	move: "stored-power" | "power-trip" | "last-respects",
+	label: string,
+	dicePerCount: number,
+	maxTotalDice?: number,
+	note: string,
+}
+
 export type DynamicMoveDamageProfile =
 	| ProgressiveDamageProfile
 	| RoundSequenceDamageProfile
 	| MagnitudeDamageProfile
+	| ConditionalDiceDamageProfile
+	| HealthTotalDamageProfile
+	| ExtraDiceCountDamageProfile
 
 export type MoveDamage = NonNullable<MoveStats["damage"]>
 
@@ -60,6 +86,80 @@ const PROFILES: Record<string, DynamicMoveDamageProfile> = {
 		move: "magnitude",
 		note: "Roll d100 to determine the base damage dice. The move's level multiplier is then applied automatically. Raised creatures are immune; burrowed creatures and creatures in Dig's invulnerable stage take double damage. A successful save takes half damage.",
 	},
+	assurance: {
+		kind: "conditional-dice",
+		move: "assurance",
+		label: "Target already took damage this round",
+		multiplier: 2,
+		note: "Assurance doubles its damage dice if the target has already taken damage during the same round.",
+	},
+	payback: {
+		kind: "conditional-dice",
+		move: "payback",
+		label: "Target damaged the user on the immediately previous turn",
+		multiplier: 2,
+		note: "Payback doubles only the move's damage dice when this condition is met; MOVE and other flat modifiers are still applied once.",
+	},
+	"gyro ball": {
+		kind: "conditional-dice",
+		move: "gyro-ball",
+		label: "User DEX is lower than the target's DEX",
+		multiplier: 2,
+		note: "Gyro Ball doubles the damage dice when the user's DEX score is lower than the target's.",
+	},
+	venoshock: {
+		kind: "conditional-dice",
+		move: "venoshock",
+		label: "Target is already poisoned",
+		multiplier: 2,
+		note: "Venoshock doubles the damage dice against a target that is already poisoned.",
+	},
+	"stomping tantrum": {
+		kind: "conditional-dice",
+		move: "stomping-tantrum",
+		label: "User's last attack missed",
+		multiplier: 2,
+		note: "Stomping Tantrum doubles its damage dice if the user's previous attack missed.",
+	},
+	"snipe shot": {
+		kind: "conditional-dice",
+		move: "snipe-shot",
+		label: "This attack was made with advantage",
+		multiplier: 2,
+		note: "Snipe Shot doubles its damage dice when the attack was made with advantage.",
+	},
+	reversal: {
+		kind: "health-total",
+		move: "reversal",
+		note: "Reversal doubles total damage below 50% maximum HP and triples total damage at 10% maximum HP or lower. This multiplier is applied before resistances or vulnerabilities.",
+	},
+	flail: {
+		kind: "health-total",
+		move: "flail",
+		note: "Flail doubles total damage below 50% maximum HP and triples total damage at 10% maximum HP or lower. This multiplier is applied before resistances or vulnerabilities.",
+	},
+	"stored power": {
+		kind: "extra-dice-count",
+		move: "stored-power",
+		label: "Active stat-changing effects on the user",
+		dicePerCount: 1,
+		note: "Add one additional damage die for each stat-changing effect currently applied to the user. A single move affecting multiple ability scores counts as one effect.",
+	},
+	"power trip": {
+		kind: "extra-dice-count",
+		move: "power-trip",
+		label: "Unique stat changes affecting the user",
+		dicePerCount: 1,
+		note: "Add one additional damage die for each unique stat change currently affecting the user.",
+	},
+	"last respects": {
+		kind: "extra-dice-count",
+		move: "last-respects",
+		label: "Currently downed allies this combat",
+		dicePerCount: 2,
+		maxTotalDice: 10,
+		note: "Add 2d6 for each currently downed ally this combat, to a maximum of 10 total damage dice.",
+	},
 }
 
 export const getDynamicMoveDamageProfile = (moveName: string): DynamicMoveDamageProfile | undefined =>
@@ -86,6 +186,16 @@ export const scaleDamageDice = (expression: string, multiplier: number): string 
 	const parsed = parseDice(expression)
 	if (parsed == null || !Number.isFinite(multiplier) || multiplier <= 0) return undefined
 	return `${parsed.count * Math.floor(multiplier)}d${parsed.sides}`
+}
+
+export const addDamageDice = (expression: string, additionalDice: number, maxTotalDice?: number): string | undefined => {
+	const parsed = parseDice(expression)
+	if (parsed == null || !Number.isFinite(additionalDice)) return undefined
+
+	const extra = Math.max(0, Math.floor(additionalDice))
+	const uncapped = parsed.count + extra
+	const count = maxTotalDice == null ? uncapped : Math.min(Math.max(parsed.count, Math.floor(maxTotalDice)), uncapped)
+	return `${count}d${parsed.sides}`
 }
 
 export const magnitudeBaseDice = (roll: number): string | undefined => {
@@ -118,19 +228,41 @@ export const resolveMagnitudeDice = (expression: string, roll: number): string |
 	return scaleDamageDice(baseDice, multiplier)
 }
 
+export const healthTotalMultiplier = (currentHp: number | undefined, maxHp: number | undefined): number => {
+	if (currentHp == null || maxHp == null || maxHp <= 0) return 1
+	const ratio = Math.max(0, currentHp) / maxHp
+	if (ratio <= 0.1) return 3
+	if (ratio < 0.5) return 2
+	return 1
+}
+
 export const resolveDynamicMoveDamage = (
 	profile: DynamicMoveDamageProfile | undefined,
 	damage: MoveDamage,
 	options: {
 		stage?: number,
 		magnitudeRoll?: number,
+		conditionActive?: boolean,
+		count?: number,
 	} = {},
 ): MoveDamage | undefined => {
-	if (profile == null) return damage
+	if (profile == null || profile.kind === "health-total") return damage
 
 	if (profile.kind === "magnitude") {
 		if (options.magnitudeRoll == null) return undefined
 		const dice = resolveMagnitudeDice(damage.dice, options.magnitudeRoll)
+		return dice == null ? undefined : { ...damage, dice }
+	}
+
+	if (profile.kind === "conditional-dice") {
+		if (!options.conditionActive) return damage
+		const dice = scaleDamageDice(damage.dice, profile.multiplier)
+		return dice == null ? undefined : { ...damage, dice }
+	}
+
+	if (profile.kind === "extra-dice-count") {
+		const count = Math.max(0, Math.floor(options.count ?? 0))
+		const dice = addDamageDice(damage.dice, count * profile.dicePerCount, profile.maxTotalDice)
 		return dice == null ? undefined : { ...damage, dice }
 	}
 
