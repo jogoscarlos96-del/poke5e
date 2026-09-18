@@ -47,7 +47,7 @@ export interface TrainerDataProvider {
 	updateTrainerAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, newAvatar: File, oldResource?: StorageResource) => Promise<StorageResource>
 	removeTrainerAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, oldResource?: StorageResource) => Promise<void>
 	updatePokemon: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<boolean>
-	updatePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon, newAvatar: File) => Promise<StorageResource>
+	updatePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<StorageResource>
 	removePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<void>
 	addPokemonToTeam: (writeKey: ReadWriteKey, readKey: ReadWriteKey, trainerId: TrainerId, pokemon: PokemonSpecies, rank?: number) => Promise<TrainerPokemon>
 	acceptPokemonTransfer: (writeKey: ReadWriteKey, readKey: ReadWriteKey, trainerId: TrainerId, transferCode: TransferCode) => Promise<TrainerPokemon>
@@ -64,6 +64,20 @@ export interface TrainerDataProvider {
 }
 
 const supabaseProvider = new SupabaseTrainerProvider(supabase, userAssets)
+const updateMoveset = supabaseProvider.updateMoveset
+
+supabaseProvider.updateMoveset = async (
+	writeKey: ReadWriteKey,
+	readKey: ReadWriteKey,
+	pokemonId: PokemonId,
+	moves: LearnedMove[],
+): Promise<LearnedMove[]> => {
+	const updatedMoves = await updateMoveset(writeKey, readKey, pokemonId, moves)
+	return updatedMoves.map((move) => ({
+		...move,
+		id: move.id.toString(),
+	}))
+}
 
 supabaseProvider.updateOneMove = async (writeKey: ReadWriteKey, move: LearnedMove): Promise<boolean> => {
 	const { data, error } = await supabase.rpc("update_one_move", {
