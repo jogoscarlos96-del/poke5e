@@ -15,12 +15,19 @@ const { subscribe, set, update } = writable<ErrorMessage>({
 export const error = {
 	subscribe,
 	show: (action: string, error: Error) => {
-		ErrorsDb.report(action, error).then((id) => {
-			set({
-				hasError: true,
-				message: ErrorMessages.simple(error),
+		// Show the useful application error immediately. Reporting the error is a
+		// secondary best-effort operation and must not delay or hide the message.
+		set({
+			hasError: true,
+			message: ErrorMessages.simple(error),
+		})
+
+		void ErrorsDb.report(action, error).then((id) => {
+			if (id == null) return
+			update((prev) => ({
+				...prev,
 				referenceId: id,
-			})
+			}))
 		})
 	},
 	hide: () => update((prev) => ({
