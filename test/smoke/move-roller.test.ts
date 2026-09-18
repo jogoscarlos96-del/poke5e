@@ -47,7 +47,9 @@ const resolveInitialHitAndDamage = async (dialog: Locator) => {
 }
 
 test("Move Roller resolves standard, combo, repeated, and special multi-hit flows", async ({ page }) => {
-	test.setTimeout(90_000)
+	// Live Vercel + Supabase round-trips make this full end-to-end journey slower than
+	// the local smoke suite. Keep enough headroom for all four move families.
+	test.setTimeout(180_000)
 
 	const site = await Poke5eSite.startJourney("Move Roller integrated verification", page)
 	const trainers = await site.navToTrainers()
