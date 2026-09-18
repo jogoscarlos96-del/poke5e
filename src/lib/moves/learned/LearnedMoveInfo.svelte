@@ -5,7 +5,7 @@
 	import MoveDescription from "$lib/moves/MoveDescription.svelte"
 	import { CustomMove } from "$lib/moves/custom"
 	import type { Stab } from "$lib/pokemon/stab"
-	import type { PokemonType } from "$lib/pokemon/types"
+	import type { PokemonType, PokeType } from "$lib/pokemon/types"
 	import { currentEdition } from "$lib/site/edition"
 	import { Url } from "$lib/site/url"
 	import { FlatDl, LoaderInline, VisuallyHidden } from "$lib/ui/elements"
@@ -16,6 +16,9 @@
 	import { MovesStore } from "../store"
 	import { MoveTime } from "../time"
 	import type { LearnedMove } from "./LearnedMove"
+	import MoveRollerDrawer from "./MoveRollerDrawer.svelte"
+	import SpecialMultiHitDrawer from "./SpecialMultiHitDrawer.svelte"
+	import { getSpecialMultiHitProfile } from "./SpecialMultiHit"
 
 	// needed because svelte strips away ending spaces
 	const COMMA_SPACE = ", "
@@ -27,8 +30,13 @@
 		pokemonType,
 		attributes,
 		attributeModifierMultiplier = 1,
+		abilityNames = [],
+		featNames = [],
 		editable = false,
+		currentHp,
+		maxHp,
 		onupdatepp,
+		onapplyhealing,
 	}: {
 		value: LearnedMove,
 		level: Level,
@@ -36,12 +44,20 @@
 		pokemonType: PokemonType,
 		attributes: Attributes,
 		attributeModifierMultiplier?: number,
+		abilityNames?: string[],
+		featNames?: string[],
 		editable?: boolean,
+		currentHp?: number,
+		maxHp?: number,
 		onupdatepp: (value: number) => void,
+		onapplyhealing?: (value: number) => void,
 	} = $props()
 
+	let rollerOpen = $state(false)
+
 	const move = $derived($MovesStore.result?.find((it) => it.id === value.moveId))
-	const moveHref = $derived(CustomMove.isCustom(value.moveId) ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
+	const isCustomMove = $derived(CustomMove.isCustom(value.moveId))
+	const moveHref = $derived(isCustomMove ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
 	const currentPp = $derived(value.pp.current)
 	const moveStats = $derived(move?.calculateMoveStats($currentEdition, {
 		attributes: attributes,
@@ -53,9 +69,31 @@
 
 	const attributeList = $derived(move?.power.attributeList())
 	const bestPowers = $derived(move?.power.bestAttribute(attributes))
+	const specialMultiHitProfile = $derived(
+		move != null && !isCustomMove ? getSpecialMultiHitProfile(move.name, level.data) : undefined,
+	)
+	const specialMoveModifier = $derived.by(() => {
+		const bestPower = move?.power.bestAttribute(attributes)[0]
+		return bestPower == null ? 0 : attributes[bestPower].modifier * attributeModifierMultiplier
+	})
+	const specialStabBonus = $derived(
+		move != null && pokemonType.data.includes(move.type as PokeType)
+			? stab.calculate(specialMoveModifier, level, $currentEdition)
+			: 0,
+	)
 
 	const onChangePp = (e: CustomEvent<NumericChangeDetail>) => {
+		const previousPp = currentPp
 		onupdatepp(e.detail.value)
+
+		if (
+			editable
+			&& e.detail.source === "decrement"
+			&& previousPp > 0
+			&& e.detail.value < previousPp
+		) {
+			rollerOpen = true
+		}
 	}
 </script>
 
@@ -122,6 +160,32 @@
 			<div class="space-inner smaller-font notes"><Markdown value={value.notes} /></div>
 		{/if}
 	</div>
+
+	{#if specialMultiHitProfile != null}
+		<SpecialMultiHitDrawer
+			bind:open={rollerOpen}
+			moveName={move.name}
+			moveType={move.type}
+			stats={moveStats}
+			profile={specialMultiHitProfile}
+			moveModifier={specialMoveModifier}
+			stabBonus={specialStabBonus}
+			{abilityNames}
+		/>
+	{:else}
+		<MoveRollerDrawer
+			bind:open={rollerOpen}
+			moveName={move.name}
+			moveType={move.type}
+			stats={moveStats}
+			{abilityNames}
+			{featNames}
+			isCustom={isCustomMove}
+			{currentHp}
+			{maxHp}
+			{onapplyhealing}
+		/>
+	{/if}
 {:else}
 	<LoaderInline />
 {/if}

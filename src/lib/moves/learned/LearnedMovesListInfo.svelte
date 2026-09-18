@@ -9,14 +9,20 @@
 		editable = false,
 		pokemonType = pokemon.type,
 		attributeModifierMultiplier = 1,
+		abilityNames = [],
 		onupdate,
+		onapplyhealing,
 	}: {
 		pokemon: TrainerPokemon
 		editable?: boolean,
 		pokemonType?: PokemonType,
 		attributeModifierMultiplier?: number,
-		onupdate?: (value: LearnedMove) => void
+		abilityNames?: string[],
+		onupdate?: (value: LearnedMove) => void,
+		onapplyhealing?: (value: number) => void,
 	} = $props()
+
+	const featNames = $derived(pokemon.feats.map((feat) => feat.name))
 
 	const onUpdatePp = (move: LearnedMove) => (pp: number) => {
 		onupdate?.({
@@ -32,7 +38,21 @@
 <ul>
 	{#each pokemon.moves as move}
 		<li>
-			<LearnedMoveInfo value={move} {editable} level={pokemon.level} attributes={pokemon.attributes} {pokemonType} stab={pokemon.stab} {attributeModifierMultiplier} onupdatepp={onUpdatePp(move)} />
+			<LearnedMoveInfo
+				value={move}
+				{editable}
+				level={pokemon.level}
+				attributes={pokemon.attributes}
+				{pokemonType}
+				stab={pokemon.stab}
+				{attributeModifierMultiplier}
+				{abilityNames}
+				{featNames}
+				currentHp={pokemon.hp.current}
+				maxHp={pokemon.hp.max}
+				onupdatepp={onUpdatePp(move)}
+				{onapplyhealing}
+			/>
 		</li>
 	{/each}
 </ul>

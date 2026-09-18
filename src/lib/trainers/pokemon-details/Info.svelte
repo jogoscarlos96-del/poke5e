@@ -40,6 +40,7 @@
 	$: activeMegaDefinition = megaEligible ? megaDefinition : undefined
 	$: effectiveType = MegaEvolution.effectiveType(pokemon, megaDefinition, megaEligible)
 	$: effectiveAbilities = MegaEvolution.effectiveAbilities(pokemon, megaDefinition, megaEligible)
+	$: moveRollerAbilityNames = effectiveAbilities.flatMap((ability) => [ability.name, ...ability.aliases])
 	$: effectiveAc = MegaEvolution.effectiveAc(pokemon, megaDefinition, megaEligible)
 	$: abilityModifierMultiplier = MegaEvolution.attributeModifierMultiplier(megaDefinition, megaEligible)
 	$: megaAvatar = activeMegaDefinition?.portrait ?? pokemon.avatar
@@ -67,6 +68,18 @@
 			hp: {
 				...pokemon.hp,
 				current: e.detail.currentHp,
+			},
+		} as TrainerPokemon)
+	}
+
+	const onApplyHealing = (e: CustomEvent<{ healing: number }>) => {
+		const healing = Math.max(0, Math.floor(e.detail.healing))
+		const currentHp = Math.min(pokemon.hp.max, pokemon.hp.current + healing)
+		dispatch("update-health", {
+			...pokemon,
+			hp: {
+				...pokemon.hp,
+				current: currentHp,
 			},
 		} as TrainerPokemon)
 	}
@@ -162,7 +175,15 @@
 	</section>
 {/if}
 <section>
-	<MovesInfo {pokemon} {editable} pokemonType={effectiveType} attributeModifierMultiplier={abilityModifierMultiplier} on:update={onUpdatePp} />
+	<MovesInfo
+		{pokemon}
+		{editable}
+		pokemonType={effectiveType}
+		attributeModifierMultiplier={abilityModifierMultiplier}
+		abilityNames={moveRollerAbilityNames}
+		on:update={onUpdatePp}
+		on:apply-healing={onApplyHealing}
+	/>
 </section>
 {#if pokemon.notes?.length > 0}
 	<hr />

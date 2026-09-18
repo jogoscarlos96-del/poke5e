@@ -14,13 +14,17 @@ export class Poke5eSite {
 
 	constructor(private readonly ui: Ui) {}
 
+	private siteNavLink(name: string | RegExp) {
+		return this.ui.page.getByLabel("Site").getByRole("link", { name, exact: true }).filter({ visible: true })
+	}
+
 	async navToFakemon(): Promise<FakemonPage> {
-		await this.ui.link("Fakémon").click()
+		await this.siteNavLink("Fakémon").click()
 		return new FakemonPage(this.ui)
 	}
 
 	async navToTrainers(): Promise<TrainersPage> {
-		await this.ui.link("Trainers").click()
+		await this.siteNavLink("Trainers").click()
 		return new TrainersPage(this.ui)
 	}
 }

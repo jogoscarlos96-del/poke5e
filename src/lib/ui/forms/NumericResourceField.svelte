@@ -1,6 +1,9 @@
 <script lang="ts" context="module">
+	export type ChangeSource = "input" | "increment" | "decrement"
+
 	export type ChangeDetail = {
 		value: number
+		source: ChangeSource
 	}
 
 	const DEBOUNCE_PERIOD_MS = 500
@@ -31,7 +34,7 @@
 			value = isNaN(numericValue) ? 0 : numericValue
 		}
 
-		dispatch("change", { value } as ChangeDetail)
+		dispatch("change", { value, source: "input" } as ChangeDetail)
 	}
 
 	const onInput = (e: Event) => {
@@ -39,17 +42,17 @@
 		width = target.value.length
 	}
 
-	const updateValueBy = (amount: number) => {
+	const updateValueBy = (amount: number, source: ChangeSource) => {
 		value += amount
 
 		clearTimeout(debounceTimerId.current)
 		debounceTimerId.current = window.setTimeout(() => {
-			dispatch("change", { value } as ChangeDetail)
+			dispatch("change", { value, source } as ChangeDetail)
 		}, DEBOUNCE_PERIOD_MS)
 	}
 
-	const decrement = () => updateValueBy(-1)
-	const increment = () => updateValueBy(1)
+	const decrement = () => updateValueBy(-1, "decrement")
+	const increment = () => updateValueBy(1, "increment")
 
 	const onKeyDown = (e: KeyboardEvent) => {
 		const target = e.target as HTMLInputElement

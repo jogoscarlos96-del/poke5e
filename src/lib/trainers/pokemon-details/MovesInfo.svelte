@@ -12,16 +12,29 @@
 	export let editable: boolean = false
 	export let pokemonType: PokemonType = pokemon.type
 	export let attributeModifierMultiplier = 1
+	export let abilityNames: string[] = []
 
 	const onUpdate = (move: LearnedMove) => {
 		dispatch("update", { ...move } as LearnedMove)
+	}
+
+	const onApplyHealing = (value: number) => {
+		dispatch("apply-healing", { healing: value })
 	}
 </script>
 
 {#if pokemon.moves.length > 0}
 	{#if $MovesStore.result}
 		<h2>Moves</h2>
-		<LearnedMovesListInfo {pokemon} {editable} {pokemonType} {attributeModifierMultiplier} onupdate={onUpdate} />
+		<LearnedMovesListInfo
+			{pokemon}
+			{editable}
+			{pokemonType}
+			{attributeModifierMultiplier}
+			{abilityNames}
+			onupdate={onUpdate}
+			onapplyhealing={onApplyHealing}
+		/>
 	{:else}
 		<Loader />
 	{/if}

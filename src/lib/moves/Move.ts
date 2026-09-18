@@ -166,13 +166,18 @@ export class Move extends DataClass<{
 
 		const pb = forCharacter.level.proficiencyBonus
 
-		result.toHit = this.attack?.toHit(pb, attributeMod)
-		result.save = this.save?.withDc(pb, attributeMod)
+		const toHit = this.attack?.toHit(pb, attributeMod)
+		if (toHit != null) result.toHit = toHit
+
+		const save = this.save?.withDc(pb, attributeMod)
+		if (save != null) result.save = save
 
 		const stabToUse = forCharacter.stab ?? new Stab({ base: "default", bonus: 0 })
-		result.damage = this.dice ? MoveDice.damage(this.dice, stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion) : undefined
-		if (result.damage == null) {
-			result.damage = this.damage?.damage(stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
+		const calculatedDamage = this.dice
+			? MoveDice.damage(this.dice, stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
+			: this.damage?.damage(stabToUse, attributeMod, this.type, forCharacter.type, forCharacter.level, rulesVersion)
+		if (calculatedDamage != null) {
+			result.damage = { ...calculatedDamage, moveModifier: attributeMod }
 		}
 
 		return result
