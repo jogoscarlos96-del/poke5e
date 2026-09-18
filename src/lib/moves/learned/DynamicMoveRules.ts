@@ -29,6 +29,8 @@ export type DynamicMoveDamageProfile =
 
 export type MoveDamage = NonNullable<MoveStats["damage"]>
 
+export const MOVE_ROLLER_MOVE_NAME_CONTEXT = Symbol("move-roller-move-name")
+
 const normalizeMoveName = (name: string) => name.trim().toLowerCase().replace(/[-\s]+/g, " ")
 
 const PROFILES: Record<string, DynamicMoveDamageProfile> = {
