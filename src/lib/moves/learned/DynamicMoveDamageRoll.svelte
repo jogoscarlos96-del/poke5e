@@ -1,15 +1,17 @@
 <script lang="ts">
+	import { getContext } from "svelte"
 	import { Button } from "$lib/ui/elements"
 	import type { MoveStats } from "../MoveStats"
-	import MoveDamageRoll from "./MoveDamageRoll.svelte"
+	import BaseMoveDamageRoll from "./BaseMoveDamageRoll.svelte"
 	import {
 		getDynamicMoveDamageProfile,
 		magnitudeBaseDice,
 		magnitudeLevelMultiplier,
+		MOVE_ROLLER_MOVE_NAME_CONTEXT,
 		resolveDynamicMoveDamage,
 	} from "./DynamicMoveRules"
 
-	export let moveName: string
+	export let moveName: string | undefined = undefined
 	export let damage: NonNullable<MoveStats["damage"]>
 	export let onconfirm: (value?: number) => void
 	export let critical = false
@@ -24,11 +26,14 @@
 		total?: number,
 	}
 
+	const contextMoveName = getContext<(() => string | undefined) | undefined>(MOVE_ROLLER_MOVE_NAME_CONTEXT)
+
 	let stage = 1
 	let magnitudeRoll: number | undefined = undefined
 	let roundResults: RoundResult[] = []
 
-	$: profile = getDynamicMoveDamageProfile(moveName)
+	$: effectiveMoveName = moveName ?? contextMoveName?.() ?? ""
+	$: profile = getDynamicMoveDamageProfile(effectiveMoveName)
 	$: resolvedDamage = resolveDynamicMoveDamage(profile, damage, { stage, magnitudeRoll })
 	$: magnitudeBase = magnitudeRoll != null ? magnitudeBaseDice(magnitudeRoll) : undefined
 	$: magnitudeMultiplier = profile?.kind === "magnitude" ? magnitudeLevelMultiplier(damage.dice) : undefined
@@ -54,7 +59,7 @@
 {#if profile?.kind === "progressive"}
 	<section class="dynamic-rule">
 		<div class="rule-heading">
-			<strong>{moveName} progression</strong>
+			<strong>{effectiveMoveName} progression</strong>
 			<span>{resolvedDamage?.dice ?? damage.dice}</span>
 		</div>
 		<label for="dynamic-progress-stage">{profile.label}</label>
@@ -68,7 +73,7 @@
 {:else if profile?.kind === "round-sequence"}
 	<section class="dynamic-rule">
 		<div class="rule-heading">
-			<strong>{moveName} sequence</strong>
+			<strong>{effectiveMoveName} sequence</strong>
 			<span>Round {stage} of {profile.multipliers.length}</span>
 		</div>
 		<div class="resolved-line">
@@ -113,7 +118,7 @@
 
 {#if resolvedDamage != null}
 	{#key rollKey}
-		<MoveDamageRoll
+		<BaseMoveDamageRoll
 			damage={resolvedDamage}
 			onconfirm={confirmDamage}
 			{critical}
