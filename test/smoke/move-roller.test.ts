@@ -87,12 +87,17 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await expect(dialog.getByText("Combo Hits", { exact: true })).toBeVisible()
 
 	const confirmCombo = dialog.getByRole("button", { name: "Confirm Total", exact: true })
-	for (let attempt = 0; attempt < 5 && !(await confirmCombo.isVisible()); attempt += 1) {
-		const continueCombo = dialog.getByRole("button", {
-			name: /^(Roll for Additional Hit|Resolve Guaranteed Hit 2)$/,
-		})
+	const continueCombo = dialog.getByRole("button", {
+		name: /^(Roll for Additional Hit|Resolve Guaranteed Hit 2)$/,
+	})
+	for (let hit = 2; hit <= 5; hit += 1) {
+		if (await confirmCombo.isVisible()) break
 		await expect(continueCombo).toBeVisible()
 		await continueCombo.click()
+		// Every combo attempt adds a history row, whether it succeeds or ends the combo.
+		// Waiting for that row avoids racing the Svelte render that swaps the
+		// continuation button for Confirm Total when the combo terminates.
+		await expect(dialog.getByText(`Hit ${hit}`, { exact: true })).toBeVisible()
 	}
 	await expect(confirmCombo).toBeVisible()
 	await confirmCombo.click()
