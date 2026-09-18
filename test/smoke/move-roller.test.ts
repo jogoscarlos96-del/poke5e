@@ -301,7 +301,7 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
 	await expect(dialog.getByText("Last Respects bonus dice", { exact: true })).toBeVisible()
 	await dialog.getByLabel("Currently downed allies this combat").fill("9")
-	await expect(dialog.getByText("10d6", { exact: true })).toBeVisible()
+	await expect(dialog.locator(".dynamic-rule .resolved-line strong")).toHaveText("10d6")
 	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
 	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
