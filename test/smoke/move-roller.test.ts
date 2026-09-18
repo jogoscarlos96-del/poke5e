@@ -23,6 +23,13 @@ const assertNoHorizontalOverflow = async (dialog: Locator) => {
 	expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
 }
 
+const assertNoUnexpectedDialog = async (page: Page, context: string) => {
+	const dialog = page.getByRole("dialog")
+	if (await dialog.isVisible()) {
+		throw new Error(`${context}: ${await dialog.innerText()}`)
+	}
+}
+
 const resolveInitialHitAndDamage = async (dialog: Locator) => {
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
@@ -62,7 +69,7 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await emberPp.fill("2")
 	await emberPp.press("Tab")
 	await page.waitForTimeout(650)
-	await expect(page.getByRole("dialog")).not.toBeVisible()
+	await assertNoUnexpectedDialog(page, "Unexpected dialog after manual Ember PP correction")
 
 	// Standard attack -> hit -> damage -> close.
 	let dialog = await openMoveRoller(page, "Ember")

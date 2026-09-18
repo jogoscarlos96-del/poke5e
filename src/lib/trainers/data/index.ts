@@ -64,21 +64,15 @@ export interface TrainerDataProvider {
 }
 
 const supabaseProvider = new SupabaseTrainerProvider(supabase, userAssets)
-const legacyUpdateOneMove = supabaseProvider.updateOneMove
 
 supabaseProvider.updateOneMove = async (writeKey: ReadWriteKey, move: LearnedMove): Promise<boolean> => {
-	if (move.rank == null) {
-		return legacyUpdateOneMove(writeKey, move)
-	}
-
-	const { data, error } = await supabase.rpc("update_move", {
+	const { data, error } = await supabase.rpc("update_one_move", {
 		_write_key: writeKey,
 		_id: move.id,
 		_move_id: move.moveId,
 		_pp_cur: move.pp.current,
 		_pp_max: move.pp.max,
 		_notes: move.notes,
-		_rank: move.rank,
 	}).single<number>()
 
 	if (error) {
