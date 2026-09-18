@@ -159,7 +159,9 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 })
 
 test("Move Roller resolves progressive, table-driven, and round-sequence damage", async ({ page }) => {
-	test.setTimeout(180_000)
+	// This journey provisions a trainer, configures four moves, and resolves a
+	// three-round Outrage sequence. CI can legitimately take longer than three minutes.
+	test.setTimeout(300_000)
 
 	const site = await Poke5eSite.startJourney("Dynamic Move Roller verification", page)
 	const trainers = await site.navToTrainers()
@@ -228,7 +230,8 @@ test("Move Roller resolves progressive, table-driven, and round-sequence damage"
 })
 
 test("Move Roller resolves conditional, HP-scaled, and count-based damage rules", async ({ page }) => {
-	test.setTimeout(180_000)
+	// This journey also updates persisted HP before exercising four conditional moves.
+	test.setTimeout(300_000)
 
 	const site = await Poke5eSite.startJourney("Conditional Move Roller verification", page)
 	const trainers = await site.navToTrainers()
@@ -265,11 +268,14 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	const hpInput = page.locator("#current-hp")
 	await hpInput.fill("0")
 	await hpInput.press("Tab")
-	await page.waitForTimeout(500)
+	await expect(hpInput).toHaveValue("0")
 	dialog = await openMoveRoller(page, "Reversal")
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
 	await expect(dialog.getByText("Reversal HP scaling", { exact: true })).toBeVisible()
+	// Synchronize on the state that actually drives the rule, rather than sleeping for
+	// an arbitrary amount of time after the HP edit.
+	await expect(dialog.getByText(/^0 \/ \d+ · 0%$/)).toBeVisible({ timeout: 10_000 })
 	await expect(dialog.getByText("3× total damage", { exact: true })).toBeVisible()
 	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
