@@ -22,6 +22,7 @@
 	let criticalBonus: number | undefined = undefined
 	let total: number | undefined = undefined
 	let error: string | undefined = undefined
+	let previousDamageDice = damage.dice
 
 	$: label = damage.isHealing ? "Healing" : "Damage"
 	$: canApplyHealing = damage.isHealing && onapplyhealing != null
@@ -43,6 +44,13 @@
 		criticalBonus = undefined
 		total = undefined
 		error = undefined
+	}
+
+	$: if (damage.dice !== previousDamageDice) {
+		previousDamageDice = damage.dice
+		transientDamageBonus = 0
+		extraDice = ""
+		clearRoll()
 	}
 
 	const changeTransientDamageBonus = (amount: number) => {
