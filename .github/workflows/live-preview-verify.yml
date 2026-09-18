@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      PREVIEW_URL: https://kornia-poke5e-git-feature-move-roller-f-cf5047-jcomplicado-6884.vercel.app
+      PREVIEW_URL: ${{ secrets.VERCEL_PREVIEW_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -25,15 +25,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -n "$PREVIEW_URL" || { echo "VERCEL_PREVIEW_URL is not configured"; exit 1; }
           for attempt in $(seq 1 90); do
             if curl -fsS "$PREVIEW_URL" >/dev/null; then
-              echo "Preview is reachable: $PREVIEW_URL"
+              echo "Preview is reachable"
               exit 0
             fi
             echo "Preview not ready yet (${attempt}/90); retrying in 5s..."
             sleep 5
           done
-          echo "Preview did not become reachable: $PREVIEW_URL"
+          echo "Preview did not become reachable"
           exit 1
 
       - name: Verify Move Roller on live Vercel preview
