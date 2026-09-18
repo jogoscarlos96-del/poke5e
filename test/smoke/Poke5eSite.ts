@@ -6,7 +6,8 @@ import { TrainersPage } from "./TrainersPage"
 export class Poke5eSite {
 	static async startJourney(journeyName: string, page: Page): Promise<Poke5eSite> {
 		console.log(`Starting Journey: ${journeyName}`)
-		const response = await page.goto("/")
+		const entryUrl = process.env.VERCEL_SHARE_URL ?? "/"
+		const response = await page.goto(entryUrl)
 
 		const siteNav = page.getByLabel("Site")
 		try {
