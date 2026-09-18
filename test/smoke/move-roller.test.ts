@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test"
 import { Poke5eSite } from "./Poke5eSite"
 
 const MOVE_IDS = ["ember", "fury-swipes", "double-kick", "population-bomb"] as const
+const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter", "outrage"] as const
 
 const moveCard = (page: Page, moveName: string) => page
 	.locator("div.vstack.space-after")
@@ -151,6 +152,75 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	}
 
 	await dialog.getByRole("button", { name: "Confirm Total", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	await trainers.removeTrainer(readKey)
+})
+
+test("Move Roller resolves progressive, table-driven, and round-sequence damage", async ({ page }) => {
+	test.setTimeout(180_000)
+
+	const site = await Poke5eSite.startJourney("Dynamic Move Roller verification", page)
+	const trainers = await site.navToTrainers()
+	const trainerName = `Dynamic Roller Tester ${Math.floor(Math.random() * 999999)}`
+	const readKey = await trainers.createTrainer(trainerName)
+
+	await trainers.addPokemon("Charmander")
+	await page.getByRole("link", { name: "Edit", exact: true }).click()
+	await page.getByLabel("Nickname").fill("Dynamic Tester")
+	await page.getByLabel("Nature").first().selectOption("Serious")
+	await page.getByLabel("male", { exact: true }).check()
+
+	for (const moveId of DYNAMIC_MOVE_IDS) {
+		await page.getByRole("button", { name: "Add Move", exact: true }).click()
+		await page.getByLabel("Move").last().selectOption(moveId)
+	}
+
+	await page.getByRole("button", { name: "Finish!", exact: true }).click()
+	await expect(page.getByRole("heading", { name: "Dynamic Tester", exact: true })).toBeVisible()
+
+	// Rollout resolves its symbolic R die from the selected consecutive-hit stage.
+	let dialog = await openMoveRoller(page, "Rollout")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Rollout progression", { exact: true })).toBeVisible()
+	await dialog.getByLabel("Consecutive successful hit").selectOption("3")
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// Fury Cutter uses the same progressive framework even though its base dice are ordinary NdM dice.
+	dialog = await openMoveRoller(page, "Fury Cutter")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Fury Cutter progression", { exact: true })).toBeVisible()
+	await dialog.getByLabel("Consecutive successful hit").selectOption("4")
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// Magnitude converts a d100 table result into a concrete rollable expression.
+	dialog = await openMoveRoller(page, "Magnitude")
+	await dialog.getByRole("button", { name: "Save Failed", exact: true }).click()
+	await expect(dialog.getByText("Magnitude damage", { exact: true })).toBeVisible()
+	await dialog.getByLabel("d100 result").fill("70")
+	await expect(dialog.getByText(/Resolved \d+d\d+/)).toBeVisible()
+	await dialog.getByRole("button", { name: "Roll Damage", exact: true }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// Outrage spends PP once, then keeps the drawer open for its three automatic-hit rounds.
+	dialog = await openMoveRoller(page, "Outrage")
+	for (let round = 1; round <= 3; round += 1) {
+		await expect(dialog.getByText(`Round ${round} of 3`, { exact: true })).toBeVisible()
+		await dialog.getByRole("button", { name: "Roll Damage", exact: true }).click()
+		await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+		await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+		if (round < 3) await expect(dialog).toBeVisible()
+	}
 	await expect(dialog).not.toBeVisible()
 
 	await trainers.removeTrainer(readKey)
