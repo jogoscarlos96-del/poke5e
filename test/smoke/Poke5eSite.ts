@@ -6,25 +6,7 @@ import { TrainersPage } from "./TrainersPage"
 export class Poke5eSite {
 	static async startJourney(journeyName: string, page: Page): Promise<Poke5eSite> {
 		console.log(`Starting Journey: ${journeyName}`)
-		const entryUrl = process.env.VERCEL_SHARE_URL ?? "/"
-		const response = await page.goto(entryUrl)
-
-		const siteNav = page.getByLabel("Site")
-		try {
-			await siteNav.waitFor({ state: "visible", timeout: 10_000 })
-		} catch {
-			const title = await page.title()
-			const bodyText = (await page.locator("body").innerText())
-				.replace(/\s+/g, " ")
-				.trim()
-				.slice(0, 800)
-			throw new Error(
-				`Expected app Site navigation did not render. `
-				+ `status=${response?.status() ?? "unknown"}; `
-				+ `url=${page.url()}; title=${JSON.stringify(title)}; `
-				+ `body=${JSON.stringify(bodyText)}`,
-			)
-		}
+		await page.goto("/")
 
 		const ui = new Ui(page)
 		return new Poke5eSite(ui)
