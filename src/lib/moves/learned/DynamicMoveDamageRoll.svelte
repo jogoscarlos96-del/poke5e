@@ -37,6 +37,7 @@
 	let roundDiceRolls: number[] = []
 	let roundTotal: number | undefined = undefined
 	let roundError: string | undefined = undefined
+	let rolledRound: number | undefined = undefined
 	let pendingBaseTotal: number | undefined = undefined
 
 	$: effectiveMoveName = moveName ?? contextMoveName?.() ?? ""
@@ -69,17 +70,14 @@
 		magnitudeRoll = Math.floor(Math.random() * 100) + 1
 	}
 
-	const clearRoundRoll = () => {
-		roundDiceRolls = []
-		roundTotal = undefined
-		roundError = undefined
-	}
-
 	const rollRoundSequenceDamage = () => {
 		if (resolvedDamage == null) return
 		const parsed = parseDice(resolvedDamage.dice)
+		rolledRound = stage
+
 		if (parsed == null) {
-			clearRoundRoll()
+			roundDiceRolls = []
+			roundTotal = undefined
 			roundError = `Unable to roll ${resolvedDamage.dice}.`
 			return
 		}
@@ -95,7 +93,7 @@
 
 		if (stage < profile.multipliers.length) {
 			stage += 1
-			clearRoundRoll()
+			roundError = undefined
 			return
 		}
 
@@ -176,9 +174,9 @@
 					<strong>{signed(resolvedDamage.mod)}</strong>
 				</div>
 
-				{#if roundTotal == null}
+				{#if rolledRound !== stage}
 					<Button variant="solid" width="full" on:click={rollRoundSequenceDamage}>Roll Damage</Button>
-				{:else}
+				{:else if roundTotal != null}
 					<dl class="round-result">
 						<div><dt>Dice</dt><dd>{roundDiceRolls.join(", ")}</dd></div>
 						<div><dt>Modifier</dt><dd>{signed(resolvedDamage.mod)}</dd></div>
@@ -190,7 +188,7 @@
 					</div>
 				{/if}
 
-				{#if roundError != null}
+				{#if roundError != null && rolledRound === stage}
 					<p class="error">{roundError} Resolve this round manually.</p>
 					<Button variant="solid" width="full" on:click={confirmRoundSequenceDamage}>Confirm</Button>
 				{/if}
