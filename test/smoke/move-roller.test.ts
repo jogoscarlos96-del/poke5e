@@ -8,13 +8,16 @@ const moveCard = (page: Page, moveName: string) => page
 	.filter({ has: page.getByRole("link", { name: moveName, exact: true }) })
 	.first()
 
+const moveRollerDialog = (page: Page) => page.locator('dialog[aria-labelledby="move-roller-title"]')
+const errorDialog = (page: Page) => page.locator('dialog[aria-label="Something went wrong"]')
+
 const openMoveRoller = async (page: Page, moveName: string) => {
 	const card = moveCard(page, moveName)
 	await expect(card).toBeVisible()
 	await card.getByRole("button", { name: "decrement" }).click()
 
-	const dialog = page.getByRole("dialog")
-	await expect(dialog).toBeVisible({ timeout: 2_500 })
+	const dialog = moveRollerDialog(page)
+	await expect(dialog).toHaveAttribute("open", "", { timeout: 2_500 })
 	await expect(dialog.getByText(moveName, { exact: true })).toBeVisible()
 	return dialog
 }
@@ -24,8 +27,8 @@ const assertNoHorizontalOverflow = async (dialog: Locator) => {
 }
 
 const assertNoUnexpectedDialog = async (page: Page, context: string) => {
-	const dialog = page.getByRole("dialog")
-	if (await dialog.isVisible()) {
+	const dialog = errorDialog(page)
+	if (await dialog.getAttribute("open") !== null) {
 		throw new Error(`${context}: ${await dialog.innerText()}`)
 	}
 }
@@ -70,6 +73,7 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await emberPp.press("Tab")
 	await page.waitForTimeout(650)
 	await assertNoUnexpectedDialog(page, "Unexpected dialog after manual Ember PP correction")
+	await expect(moveRollerDialog(page)).toHaveCount(0)
 
 	// Standard attack -> hit -> damage -> close.
 	let dialog = await openMoveRoller(page, "Ember")
