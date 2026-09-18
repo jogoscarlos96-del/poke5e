@@ -26,6 +26,7 @@
 		CogIcon,
 		DiscIcon,
 		GreatballIcon,
+		HeartIcon,
 		HitIcon,
 		IdBadgeIcon,
 		PencilNotesIcon,
@@ -164,6 +165,12 @@
 		name: "Mega Evolutions",
 		color: "purple",
 		icon: GreatballIcon,
+	}, {
+		id: "abilitydex",
+		href: Url.abilitydex(),
+		name: "Abilitydex",
+		color: "navy",
+		icon: HeartIcon,
 	}, {
 		id: "backups",
 		href: Url.backups.home(),
