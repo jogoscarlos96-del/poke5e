@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
 import { Poke5eSite } from "./Poke5eSite"
 
-const MOVE_IDS = ["ember", "fury-swipes", "double-kick", "population-bomb"] as const
+const MOVE_IDS = ["ember", "fury-swipes", "double-kick"] as const
 const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter"] as const
 const CONDITIONAL_MOVE_IDS = ["assurance", "reversal", "stored-power", "last-respects"] as const
 
@@ -48,9 +48,10 @@ const resolveInitialHitAndDamage = async (dialog: Locator) => {
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 }
 
-test("Move Roller resolves standard, combo, repeated, and special multi-hit flows", async ({ page }) => {
-	// Live Vercel + Supabase round-trips make this full end-to-end journey slower than
-	// the local smoke suite. Keep enough headroom for all four move families.
+test("Move Roller resolves standard, combo, and repeated flows", async ({ page }) => {
+	// Keep the core journey focused on the three representative standard families.
+	// Population Bomb has its own journey below because ten independent attacks can
+	// otherwise consume most of this test's timeout after the earlier flows finish.
 	test.setTimeout(180_000)
 
 	const site = await Poke5eSite.startJourney("Move Roller integrated verification", page)
@@ -97,15 +98,11 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await expect(comboPanel).toBeVisible()
 	const comboButton = comboPanel.locator("button")
 	for (let hit = 2; hit <= 5; hit += 1) {
-		// The combo panel exposes exactly one action at a time. Read the rendered
-		// action instead of relying on a specific accessible name while Svelte
-		// swaps continuation for the final confirmation state.
 		await expect(comboButton).toHaveCount(1)
 		await expect(comboButton).toBeVisible()
 		const actionLabel = (await comboButton.innerText()).trim()
 		if (actionLabel === "Confirm Total") break
 		await comboButton.click()
-		// Every combo attempt adds a history row, whether it succeeds or ends the combo.
 		await expect(dialog.getByText(`Hit ${hit}`, { exact: true })).toBeVisible()
 	}
 	await expect(comboButton).toHaveCount(1)
@@ -140,21 +137,42 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await dialog.getByRole("button", { name: "Confirm Sequence", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
-	// Bespoke special family: Population Bomb uses ten independent attacks with
-	// fixed per-hit damage. Resolve one hit and nine misses through the real drawer.
-	dialog = await openMoveRoller(page, "Population Bomb")
+	await trainers.removeTrainer(readKey)
+})
+
+test("Move Roller resolves Population Bomb special multi-hit flow", async ({ page }) => {
+	test.setTimeout(180_000)
+
+	const site = await Poke5eSite.startJourney("Population Bomb Move Roller verification", page)
+	const trainers = await site.navToTrainers()
+	const trainerName = `Population Bomb Roller Tester ${Math.floor(Math.random() * 999999)}`
+	const readKey = await trainers.createTrainer(trainerName)
+
+	await trainers.addPokemon("Charmander")
+	await page.getByRole("link", { name: "Edit", exact: true }).click()
+	await page.getByLabel("Nickname").fill("Population Bomb Tester")
+	await page.getByLabel("Nature").first().selectOption("Serious")
+	await page.getByLabel("male", { exact: true }).check()
+	await page.getByRole("button", { name: "Add Move", exact: true }).click()
+	await page.getByLabel("Move").last().selectOption("population-bomb")
+
+	await page.getByRole("button", { name: "Finish!", exact: true }).click()
+	await expect(page.getByRole("heading", { name: "Population Bomb Tester", exact: true })).toBeVisible()
+
+	const dialog = await openMoveRoller(page, "Population Bomb")
 	await expect(dialog.getByText("Special Multi-Hit", { exact: true })).toBeVisible()
 	await assertNoHorizontalOverflow(dialog)
 
 	for (let attack = 1; attack <= 10; attack += 1) {
-		await expect(dialog.getByText(`Attack ${attack} of 10`, { exact: true })).toBeVisible()
-		await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
-		await dialog.getByRole("button", { name: attack === 1 ? "Hit" : "Miss", exact: true }).click()
+		await test.step(`Population Bomb attack ${attack}`, async () => {
+			await expect(dialog.getByText(`Attack ${attack} of 10`, { exact: true })).toBeVisible()
+			await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+			await dialog.getByRole("button", { name: attack === 1 ? "Hit" : "Miss", exact: true }).click()
+		})
 	}
 
 	await dialog.getByRole("button", { name: "Confirm Total", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
-
 	await trainers.removeTrainer(readKey)
 })
 
@@ -237,16 +255,18 @@ test("Move Roller resolves Outrage as a three-round sequence", async ({ page }) 
 	await page.getByRole("button", { name: "Finish!", exact: true }).click()
 	await expect(page.getByRole("heading", { name: "Outrage Tester", exact: true })).toBeVisible()
 
-	// Outrage spends PP once, then keeps the drawer open for its three automatic-hit rounds.
 	const dialog = await openMoveRoller(page, "Outrage")
 	for (let round = 1; round <= 3; round += 1) {
-		await expect(dialog.getByText(`Round ${round} of 3`, { exact: true })).toBeVisible()
-		const rollDamage = dialog.getByRole("button", { name: "Roll Damage", exact: true })
-		await expect(rollDamage).toBeVisible()
-		await rollDamage.click()
-		await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
-		await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
-		if (round < 3) await expect(dialog).toBeVisible()
+		await test.step(`Outrage round ${round}`, async () => {
+			await expect(dialog.getByText(`Round ${round} of 3`, { exact: true })).toBeVisible()
+			await expect(dialog.getByText("Dynamic damage could not be resolved.", { exact: true })).toHaveCount(0)
+			const rollDamage = dialog.getByRole("button", { name: "Roll Damage", exact: true })
+			await expect(rollDamage).toBeVisible()
+			await rollDamage.click()
+			await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+			await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+			if (round < 3) await expect(dialog).toBeVisible()
+		})
 	}
 	await expect(dialog).not.toBeVisible()
 
@@ -297,8 +317,6 @@ test("Move Roller resolves conditional, HP-scaled, and count-based damage rules"
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
 	await expect(dialog.getByText("Reversal HP scaling", { exact: true })).toBeVisible()
-	// Synchronize on the state that actually drives the rule, rather than sleeping for
-	// an arbitrary amount of time after the HP edit.
 	await expect(dialog.getByText(/^0 \/ \d+ · 0%$/)).toBeVisible({ timeout: 10_000 })
 	await expect(dialog.getByText("3× total damage", { exact: true })).toBeVisible()
 	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
