@@ -20,9 +20,10 @@ export const ErrorsDb = {
 
 			if (error) {
 				console.error(error)
+				return undefined
 			}
 
-			return data.ret_id
+			return data?.ret_id
 		} catch (e) {
 			console.error(e)
 		}
