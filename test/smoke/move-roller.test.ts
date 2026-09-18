@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test"
 import { Poke5eSite } from "./Poke5eSite"
 
 const MOVE_IDS = ["ember", "fury-swipes", "double-kick", "population-bomb"] as const
-const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter", "outrage"] as const
+const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter"] as const
 const CONDITIONAL_MOVE_IDS = ["assurance", "reversal", "stored-power", "last-respects"] as const
 
 const moveCard = (page: Page, moveName: string) => page
@@ -158,10 +158,10 @@ test("Move Roller resolves standard, combo, repeated, and special multi-hit flow
 	await trainers.removeTrainer(readKey)
 })
 
-test("Move Roller resolves progressive, table-driven, and round-sequence damage", async ({ page }) => {
-	// This journey provisions a trainer, configures four moves, and resolves a
-	// three-round Outrage sequence. CI can legitimately take longer than three minutes.
-	test.setTimeout(300_000)
+test("Move Roller resolves progressive and table-driven damage", async ({ page }) => {
+	// Keep the progressive/table moves together, but give the multi-round Outrage
+	// sequence its own journey so it does not inherit this test's elapsed time.
+	test.setTimeout(240_000)
 
 	const site = await Poke5eSite.startJourney("Dynamic Move Roller verification", page)
 	const trainers = await site.navToTrainers()
@@ -215,11 +215,35 @@ test("Move Roller resolves progressive, table-driven, and round-sequence damage"
 	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
+	await trainers.removeTrainer(readKey)
+})
+
+test("Move Roller resolves Outrage as a three-round sequence", async ({ page }) => {
+	test.setTimeout(180_000)
+
+	const site = await Poke5eSite.startJourney("Outrage Move Roller verification", page)
+	const trainers = await site.navToTrainers()
+	const trainerName = `Outrage Roller Tester ${Math.floor(Math.random() * 999999)}`
+	const readKey = await trainers.createTrainer(trainerName)
+
+	await trainers.addPokemon("Charmander")
+	await page.getByRole("link", { name: "Edit", exact: true }).click()
+	await page.getByLabel("Nickname").fill("Outrage Tester")
+	await page.getByLabel("Nature").first().selectOption("Serious")
+	await page.getByLabel("male", { exact: true }).check()
+	await page.getByRole("button", { name: "Add Move", exact: true }).click()
+	await page.getByLabel("Move").last().selectOption("outrage")
+
+	await page.getByRole("button", { name: "Finish!", exact: true }).click()
+	await expect(page.getByRole("heading", { name: "Outrage Tester", exact: true })).toBeVisible()
+
 	// Outrage spends PP once, then keeps the drawer open for its three automatic-hit rounds.
-	dialog = await openMoveRoller(page, "Outrage")
+	const dialog = await openMoveRoller(page, "Outrage")
 	for (let round = 1; round <= 3; round += 1) {
 		await expect(dialog.getByText(`Round ${round} of 3`, { exact: true })).toBeVisible()
-		await dialog.getByRole("button", { name: "Roll Damage", exact: true }).click()
+		const rollDamage = dialog.getByRole("button", { name: "Roll Damage", exact: true })
+		await expect(rollDamage).toBeVisible()
+		await rollDamage.click()
 		await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
 		await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 		if (round < 3) await expect(dialog).toBeVisible()
