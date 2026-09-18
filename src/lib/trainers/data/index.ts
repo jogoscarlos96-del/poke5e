@@ -47,7 +47,7 @@ export interface TrainerDataProvider {
 	updateTrainerAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, newAvatar: File, oldResource?: StorageResource) => Promise<StorageResource>
 	removeTrainerAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, oldResource?: StorageResource) => Promise<void>
 	updatePokemon: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<boolean>
-	updatePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<StorageResource>
+	updatePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon, newAvatar: File) => Promise<StorageResource>
 	removePokemonAvatar: (writeKey: ReadWriteKey, readKey: ReadWriteKey, info: TrainerPokemon) => Promise<void>
 	addPokemonToTeam: (writeKey: ReadWriteKey, readKey: ReadWriteKey, trainerId: TrainerId, pokemon: PokemonSpecies, rank?: number) => Promise<TrainerPokemon>
 	acceptPokemonTransfer: (writeKey: ReadWriteKey, readKey: ReadWriteKey, trainerId: TrainerId, transferCode: TransferCode) => Promise<TrainerPokemon>
@@ -63,41 +63,4 @@ export interface TrainerDataProvider {
 	verifyWriteKey: (trainer: Trainer, writeKey: ReadWriteKey) => Promise<boolean>
 }
 
-const supabaseProvider = new SupabaseTrainerProvider(supabase, userAssets)
-const updateMoveset = supabaseProvider.updateMoveset
-
-supabaseProvider.updateMoveset = async (
-	writeKey: ReadWriteKey,
-	readKey: ReadWriteKey,
-	pokemonId: PokemonId,
-	moves: LearnedMove[],
-): Promise<LearnedMove[]> => {
-	const updatedMoves = await updateMoveset(writeKey, readKey, pokemonId, moves)
-	return updatedMoves.map((move) => ({
-		...move,
-		id: move.id.toString(),
-	}))
-}
-
-supabaseProvider.updateOneMove = async (writeKey: ReadWriteKey, move: LearnedMove): Promise<boolean> => {
-	const { data, error } = await supabase.rpc("update_one_move", {
-		_write_key: writeKey,
-		_id: move.id,
-		_move_id: move.moveId,
-		_pp_cur: move.pp.current,
-		_pp_max: move.pp.max,
-		_notes: move.notes,
-	}).single<number>()
-
-	if (error) {
-		throw new TrainerDataProviderError(`Could not update move on pokemon (${move.id}).`, error)
-	}
-
-	if (data <= 0) {
-		throw new TrainerDataProviderError("Either this pokemon does not exist or you do not have permission to edit them.")
-	}
-
-	return data > 0
-}
-
-export const provider: TrainerDataProvider = supabaseProvider
+export const provider = new SupabaseTrainerProvider(supabase, userAssets)
