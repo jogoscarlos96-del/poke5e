@@ -480,7 +480,8 @@
 	}
 
 	.ability-heading h2 {
-		font-size: var(--font-sz-mars);
+		font-size: calc(1em + 2pt);
+		font-weight: 700;
 	}
 
 	.aliases {
