@@ -17,9 +17,10 @@ export const error = {
 	show: (action: string, error: Error) => {
 		// Show the useful application error immediately. Reporting the error is a
 		// secondary best-effort operation and must not delay or hide the message.
+		const message = ErrorMessages.simple(error)
 		set({
 			hasError: true,
-			message: ErrorMessages.simple(error),
+			message: `${action}: ${message || "Unknown error"}`,
 		})
 
 		void ErrorsDb.report(action, error).then((id) => {
