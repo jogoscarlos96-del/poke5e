@@ -8,7 +8,10 @@ const moveCard = (page: Page, moveName: string) => page
 	.filter({ has: page.getByRole("link", { name: moveName, exact: true }) })
 	.first()
 
-const moveRollerDialog = (page: Page) => page.locator('dialog[aria-labelledby="move-roller-title"]')
+const moveRollerDialog = (page: Page) => page.locator([
+	'dialog[aria-labelledby="move-roller-title"]',
+	'dialog[aria-labelledby="special-move-roller-title"]',
+].join(", "))
 const errorDialog = (page: Page) => page.locator('dialog[aria-label="Something went wrong"]')
 
 const openMoveRoller = async (page: Page, moveName: string) => {
