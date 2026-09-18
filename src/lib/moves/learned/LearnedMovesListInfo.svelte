@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { setContext } from "svelte"
 	import type { PokemonType } from "$lib/pokemon/types"
 	import type { TrainerPokemon } from "$lib/trainers/types"
 	import type { LearnedMove } from "./LearnedMove"
 	import LearnedMoveInfo from "./LearnedMoveInfo.svelte"
+	import { MOVE_ROLLER_HP_CONTEXT, type MoveRollerHpContext } from "./MoveRollerContext"
 
 	let {
 		pokemon,
@@ -23,6 +25,11 @@
 	} = $props()
 
 	const featNames = $derived(pokemon.feats.map((feat) => feat.name))
+	const hpContext: MoveRollerHpContext = () => ({
+		currentHp: pokemon.hp.current,
+		maxHp: pokemon.hp.max,
+	})
+	setContext(MOVE_ROLLER_HP_CONTEXT, hpContext)
 
 	const onUpdatePp = (move: LearnedMove) => (pp: number) => {
 		onupdate?.({
