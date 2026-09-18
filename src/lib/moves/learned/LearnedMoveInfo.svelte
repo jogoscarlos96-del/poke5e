@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { setContext } from "svelte"
 	import type { Attributes } from "$lib/dnd/attributes"
 	import type { Level } from "$lib/dnd/level"
 	import { MoveStatsInfo } from "$lib/moves"
@@ -15,6 +16,7 @@
 	import { MoveRange } from "../range"
 	import { MovesStore } from "../store"
 	import { MoveTime } from "../time"
+	import { MOVE_ROLLER_MOVE_NAME_CONTEXT } from "./DynamicMoveRules"
 	import type { LearnedMove } from "./LearnedMove"
 	import MoveRollerDrawer from "./MoveRollerDrawer.svelte"
 	import SpecialMultiHitDrawer from "./SpecialMultiHitDrawer.svelte"
@@ -56,6 +58,8 @@
 	let rollerOpen = $state(false)
 
 	const move = $derived($MovesStore.result?.find((it) => it.id === value.moveId))
+	setContext(MOVE_ROLLER_MOVE_NAME_CONTEXT, () => move?.name)
+
 	const isCustomMove = $derived(CustomMove.isCustom(value.moveId))
 	const moveHref = $derived(isCustomMove ? Url.customMoves(value.moveId) : Url.moves(value.moveId))
 	const currentPp = $derived(value.pp.current)
