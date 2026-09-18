@@ -3,6 +3,7 @@ import { Poke5eSite } from "./Poke5eSite"
 
 const MOVE_IDS = ["ember", "fury-swipes", "double-kick", "population-bomb"] as const
 const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter", "outrage"] as const
+const CONDITIONAL_MOVE_IDS = ["assurance", "reversal", "stored-power", "last-respects"] as const
 
 const moveCard = (page: Page, moveName: string) => page
 	.locator("div.vstack.space-after")
@@ -221,6 +222,83 @@ test("Move Roller resolves progressive, table-driven, and round-sequence damage"
 		await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 		if (round < 3) await expect(dialog).toBeVisible()
 	}
+	await expect(dialog).not.toBeVisible()
+
+	await trainers.removeTrainer(readKey)
+})
+
+test("Move Roller resolves conditional, HP-scaled, and count-based damage rules", async ({ page }) => {
+	test.setTimeout(180_000)
+
+	const site = await Poke5eSite.startJourney("Conditional Move Roller verification", page)
+	const trainers = await site.navToTrainers()
+	const trainerName = `Conditional Roller Tester ${Math.floor(Math.random() * 999999)}`
+	const readKey = await trainers.createTrainer(trainerName)
+
+	await trainers.addPokemon("Charmander")
+	await page.getByRole("link", { name: "Edit", exact: true }).click()
+	await page.getByLabel("Nickname").fill("Conditional Tester")
+	await page.getByLabel("Nature").first().selectOption("Serious")
+	await page.getByLabel("male", { exact: true }).check()
+
+	for (const moveId of CONDITIONAL_MOVE_IDS) {
+		await page.getByRole("button", { name: "Add Move", exact: true }).click()
+		await page.getByLabel("Move").last().selectOption(moveId)
+	}
+
+	await page.getByRole("button", { name: "Finish!", exact: true }).click()
+	await expect(page.getByRole("heading", { name: "Conditional Tester", exact: true })).toBeVisible()
+
+	// Conditional dice multiplier: only the dice expression changes when the condition is active.
+	let dialog = await openMoveRoller(page, "Assurance")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Assurance condition", { exact: true })).toBeVisible()
+	await dialog.getByLabel("Target already took damage this round").check()
+	await expect(dialog.getByText(/Damage dice/)).toBeVisible()
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// HP-scaled total multiplier: zero HP guarantees the 10%-or-lower branch for the UI test.
+	const hpInput = page.locator("#current-hp")
+	await hpInput.fill("0")
+	await hpInput.press("Tab")
+	await page.waitForTimeout(500)
+	dialog = await openMoveRoller(page, "Reversal")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Reversal HP scaling", { exact: true })).toBeVisible()
+	await expect(dialog.getByText("3× total damage", { exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog.getByText("Reversal final damage", { exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: "Confirm Final Damage", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// Count-based same-size bonus dice: Stored Power adds one die per active effect.
+	dialog = await openMoveRoller(page, "Stored Power")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Stored Power bonus dice", { exact: true })).toBeVisible()
+	await dialog.getByLabel("Active stat-changing effects on the user").fill("3")
+	await expect(dialog.getByText(/Resolved damage dice/)).toBeVisible()
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	// Last Respects uses two extra d6 per downed ally and caps the total at 10 dice.
+	dialog = await openMoveRoller(page, "Last Respects")
+	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
+	await expect(dialog.getByText("Last Respects bonus dice", { exact: true })).toBeVisible()
+	await dialog.getByLabel("Currently downed allies this combat").fill("9")
+	await expect(dialog.getByText("10d6", { exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await expect(dialog.getByText(/Unable to roll/)).toHaveCount(0)
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
 	await trainers.removeTrainer(readKey)
