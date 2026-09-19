@@ -70,7 +70,6 @@
 	$: hasParentalBond = normalizedAbilityNames.includes("parental bond")
 	$: criticalDiceMultiplier = hasSniper ? 3 : 2
 	$: automaticCritical = attackDie != null && attackDie >= criticalThreshold
-	$: effectiveAttackModifier = (stats.toHit ?? 0) + transientAttackBonus
 	$: comboGuaranteeSource = hasSkillLink && hasComboMaster
 		? "Skill Link / Combo Master"
 		: hasSkillLink
@@ -191,7 +190,7 @@
 				: Math.min(firstRoll, secondRoll)
 		}
 
-		attackTotal = (attackDie ?? 0) + effectiveAttackModifier
+		attackTotal = (attackDie ?? 0) + (stats.toHit ?? 0) + transientAttackBonus
 		hitConfirmed = false
 		initialAttackOutcome = undefined
 		criticalSelected = false
@@ -286,7 +285,7 @@
 					<MoveMultiHitContinuation
 						profile={automatedMultiHitProfile}
 						damage={stats.damage}
-						attackModifier={effectiveAttackModifier}
+						attackModifier={(stats.toHit ?? 0) + transientAttackBonus}
 						{attackRollMode}
 						{criticalThreshold}
 						{criticalDiceMultiplier}
@@ -303,7 +302,7 @@
 					<h3>Attack Roll</h3>
 					<div class="roll-formula">
 						<span>d20</span>
-						<strong>{signed(effectiveAttackModifier)}</strong>
+						<strong>{signed((stats.toHit ?? 0) + transientAttackBonus)}</strong>
 					</div>
 					<div class="attack-mode-control">
 						<span class="control-label">Roll Mode</span>
