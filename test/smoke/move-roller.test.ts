@@ -4,6 +4,7 @@ import { Poke5eSite } from "./Poke5eSite"
 const MOVE_IDS = ["ember", "fury-swipes", "double-kick"] as const
 const DYNAMIC_MOVE_IDS = ["rollout", "magnitude", "fury-cutter"] as const
 const CONDITIONAL_MOVE_IDS = ["assurance", "reversal", "stored-power", "last-respects"] as const
+const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`
 
 const moveCard = (page: Page, moveName: string) => page
 	.locator("div.vstack.space-after")
@@ -87,13 +88,17 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	const attackBonusControl = dialog.locator(".temporary-bonus-control").filter({ hasText: "Temporary Attack Bonus" })
 	await attackBonusControl.getByRole("button", { name: "+", exact: true }).click()
 	await expect(attackBonusControl.getByText("Current +1", { exact: true })).toBeVisible()
-	await expect(attackFormula).toHaveText(baseAttackModifier >= 0 ? `+${baseAttackModifier + 1}` : `${baseAttackModifier + 1}`)
+	await expect(attackFormula).toHaveText(signed(baseAttackModifier + 1))
 	await dialog.getByRole("button", { name: "Close", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
 	dialog = await openMoveRoller(page, "Ember")
-	await expect(dialog.locator(".temporary-bonus-control").filter({ hasText: "Temporary Attack Bonus" }).getByText("Current +0", { exact: true })).toBeVisible()
-	await expect(dialog.locator(".roll-formula strong")).toHaveText(baseAttackModifier >= 0 ? `+${baseAttackModifier}` : `${baseAttackModifier}`)
+	const reopenedAttackBonusControl = dialog.locator(".temporary-bonus-control").filter({ hasText: "Temporary Attack Bonus" })
+	await expect(reopenedAttackBonusControl.getByText("Current +0", { exact: true })).toBeVisible()
+	await expect(dialog.locator(".roll-formula strong")).toHaveText(signed(baseAttackModifier))
+	await reopenedAttackBonusControl.getByRole("button", { name: "+", exact: true }).click()
+	await expect(reopenedAttackBonusControl.getByText("Current +1", { exact: true })).toBeVisible()
+	await expect(dialog.locator(".roll-formula strong")).toHaveText(signed(baseAttackModifier + 1))
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
 
@@ -102,20 +107,20 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	const damageBonusControl = dialog.locator(".damage-roll .temporary-bonus-control").filter({ hasText: "Temporary Damage Bonus" })
 	await damageBonusControl.getByRole("button", { name: "+", exact: true }).click()
 	await expect(damageBonusControl.getByText("This roll · Current +1", { exact: true })).toBeVisible()
-	await expect(damageFormula).toHaveText(baseDamageModifier >= 0 ? `+${baseDamageModifier + 1}` : `${baseDamageModifier + 1}`)
-	await dialog.getByRole("button", { name: "Close", exact: true }).click()
+	await expect(damageFormula).toHaveText(signed(baseDamageModifier + 1))
+	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
+	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
 	dialog = await openMoveRoller(page, "Ember")
 	await expect(dialog.locator(".temporary-bonus-control").filter({ hasText: "Temporary Attack Bonus" }).getByText("Current +0", { exact: true })).toBeVisible()
-	await expect(dialog.locator(".roll-formula strong")).toHaveText(baseAttackModifier >= 0 ? `+${baseAttackModifier}` : `${baseAttackModifier}`)
+	await expect(dialog.locator(".roll-formula strong")).toHaveText(signed(baseAttackModifier))
 	await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
 	await dialog.getByRole("button", { name: "Hit", exact: true }).click()
 	const reopenedDamageControl = dialog.locator(".damage-roll .temporary-bonus-control").filter({ hasText: "Temporary Damage Bonus" })
 	await expect(reopenedDamageControl.getByText("This roll · Current +0", { exact: true })).toBeVisible()
-	await expect(dialog.locator(".damage-roll .formula strong")).toHaveText(baseDamageModifier >= 0 ? `+${baseDamageModifier}` : `${baseDamageModifier}`)
-	await dialog.getByRole("button", { name: /^Roll (Critical )?Damage$/ }).click()
-	await dialog.getByRole("button", { name: "Confirm", exact: true }).click()
+	await expect(dialog.locator(".damage-roll .formula strong")).toHaveText(signed(baseDamageModifier))
+	await dialog.getByRole("button", { name: "Close", exact: true }).click()
 	await expect(dialog).not.toBeVisible()
 
 	dialog = await openMoveRoller(page, "Fury Swipes")
