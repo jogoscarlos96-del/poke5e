@@ -78,7 +78,15 @@
 				? "Combo Master"
 				: undefined
 	$: standardMultiHitProfile = isCustom ? undefined : getStandardMultiHitProfile(moveName)
-	$: customMultiHitProfile = isCustom ? buildCustomMultiHitProfile() : undefined
+	$: customMultiHitProfile = isCustom ? buildCustomMultiHitProfile(
+		customMultiHitMode,
+		customComboDice,
+		customComboMaxAdditionalHits,
+		customRepeatedAttacks,
+		customRepeatedStopOnMiss,
+		customRepeatedModifier,
+		customRepeatedFlatBonus,
+	) : undefined
 	$: multiHitProfile = isCustom ? customMultiHitProfile : standardMultiHitProfile
 	$: automatedMultiHitProfile = multiHitProfile != null && (multiHitProfile.kind === "combo" || multiHitProfile.kind === "repeated")
 		? multiHitProfile as AutomatedMultiHitProfile
@@ -100,24 +108,32 @@
 		if (dialog != null && !dialog.open) dialog.showModal()
 	}
 
-	function buildCustomMultiHitProfile(): AutomatedMultiHitProfile | undefined {
-		if (customMultiHitMode === "combo") {
+	function buildCustomMultiHitProfile(
+		mode: CustomMultiHitMode,
+		comboDice: string,
+		comboMaxAdditionalHits: number,
+		repeatedAttacks: number,
+		repeatedStopOnMiss: boolean,
+		repeatedModifier: "move" | "none",
+		repeatedFlatBonus: number,
+	): AutomatedMultiHitProfile | undefined {
+		if (mode === "combo") {
 			return {
 				kind: "combo",
 				source: "custom",
-				additionalDice: customComboDice.trim() || "1d4",
-				maxAdditionalHits: Math.max(1, Math.min(9, Math.floor(customComboMaxAdditionalHits || 1))),
+				additionalDice: comboDice.trim() || "1d4",
+				maxAdditionalHits: Math.max(1, Math.min(9, Math.floor(comboMaxAdditionalHits || 1))),
 			}
 		}
 
-		if (customMultiHitMode === "repeated") {
+		if (mode === "repeated") {
 			return {
 				kind: "repeated",
 				source: "custom",
-				totalAttacks: Math.max(2, Math.min(10, Math.floor(customRepeatedAttacks || 2))),
-				stopOnMiss: customRepeatedStopOnMiss,
-				repeatModifier: customRepeatedModifier,
-				repeatFlatBonus: Number.isFinite(customRepeatedFlatBonus) ? customRepeatedFlatBonus : 0,
+				totalAttacks: Math.max(2, Math.min(10, Math.floor(repeatedAttacks || 2))),
+				stopOnMiss: repeatedStopOnMiss,
+				repeatModifier: repeatedModifier,
+				repeatFlatBonus: Number.isFinite(repeatedFlatBonus) ? repeatedFlatBonus : 0,
 			}
 		}
 
