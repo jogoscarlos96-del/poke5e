@@ -240,8 +240,8 @@ test("Move Roller resolves Population Bomb special multi-hit flow", async ({ pag
 	for (let attack = 1; attack <= 10; attack += 1) {
 		await test.step(`Population Bomb attack ${attack}`, async () => {
 			await expect(dialog.getByText(`Attack ${attack} of 10`, { exact: true })).toBeVisible()
-			const rollAttack = dialog.getByRole("button", { name: "Roll Attack", exact: true })
-			await expect(rollAttack).toBeVisible({ timeout: 5_000 })
+			const rollAttack = dialog.locator("button").filter({ hasText: "Roll Attack" })
+			await expect(rollAttack).toHaveText("Roll Attack")
 			await rollAttack.click()
 			await dialog.getByRole("button", { name: attack === 1 ? "Hit" : "Miss", exact: true }).click()
 		})
