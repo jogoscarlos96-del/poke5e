@@ -480,21 +480,23 @@
 					<strong>Attack {currentAttack} of {repeatedAttackCount}</strong>
 					<span>{attackRollMode === "advantage" ? "Advantage" : attackRollMode === "disadvantage" ? "Disadvantage" : "Normal"} · {signed(effectiveAttackModifier)}</span>
 				</div>
-				{@render AttackControls({
-					attackRollMode,
-					criticalThreshold,
-					transientAttackBonus,
-					attackRolls,
-					attackNatural,
-					attackTotal,
-					hasSuperLuck,
-					onmode: setAttackRollMode,
-					onbonus: changeTransientAttackBonus,
-					oncritical: (value) => criticalThreshold = value,
-					onroll: rollD20,
-					onmiss: confirmRepeatedMiss,
-					onhit: confirmRepeatedHit,
-				})}
+				{#key currentAttack}
+					{@render AttackControls({
+						attackRollMode,
+						criticalThreshold,
+						transientAttackBonus,
+						attackRolls,
+						attackNatural,
+						attackTotal,
+						hasSuperLuck,
+						onmode: setAttackRollMode,
+						onbonus: changeTransientAttackBonus,
+						oncritical: (value) => criticalThreshold = value,
+						onroll: rollD20,
+						onmiss: confirmRepeatedMiss,
+						onhit: confirmRepeatedHit,
+					})}
+				{/key}
 			{:else if profile.damage.kind === "dice"}
 				<div class="attack-heading">
 					<strong>Attack {currentAttack} — {currentCritical ? "Critical Hit" : "Hit"}</strong>
