@@ -170,6 +170,50 @@ test("Move Roller resolves standard, combo, and repeated flows", async ({ page }
 	await trainers.removeTrainer(readKey)
 })
 
+test("Move Roller continues custom combo and repeated multi-hit flows", async ({ page }) => {
+	test.setTimeout(180_000)
+
+	const site = await Poke5eSite.startJourney("Custom multi-hit Move Roller verification", page)
+	const trainers = await site.navToTrainers()
+	const trainerName = `Custom Multi-Hit Tester ${Math.floor(Math.random() * 999999)}`
+	const readKey = await trainers.createTrainer(trainerName)
+
+	await trainers.addPokemon("Charmander")
+	await page.getByRole("link", { name: "Edit", exact: true }).click()
+	await page.getByLabel("Nickname").fill("Custom Multi-Hit Tester")
+	await page.getByLabel("Nature").first().selectOption("Serious")
+	await page.getByLabel("male", { exact: true }).check()
+	await page.getByRole("button", { name: "Add Move", exact: true }).click()
+	const moveSelect = page.getByLabel("Move").last()
+	await expect(moveSelect).toContainText("Faultline Smash", { timeout: 10_000 })
+	await moveSelect.selectOption({ label: "Faultline Smash" })
+
+	await page.getByRole("button", { name: "Finish!", exact: true }).click()
+	await expect(page.getByRole("heading", { name: "Custom Multi-Hit Tester", exact: true })).toBeVisible()
+
+	let dialog = await openMoveRoller(page, "Faultline Smash")
+	await dialog.getByLabel("Multi-Hit").selectOption("combo")
+	await expect(dialog.getByLabel("Extra-hit dice")).toBeVisible()
+	await resolveInitialHitAndDamage(dialog)
+	await expect(dialog).toBeVisible()
+	await expect(dialog.locator("section.multi-hit-continuation")).toBeVisible()
+	await expect(dialog.getByText("Combo Hits", { exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: "Close", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	dialog = await openMoveRoller(page, "Faultline Smash")
+	await dialog.getByLabel("Multi-Hit").selectOption("repeated")
+	await expect(dialog.getByLabel("Total attacks")).toHaveValue("2")
+	await resolveInitialHitAndDamage(dialog)
+	await expect(dialog).toBeVisible()
+	await expect(dialog.locator("section.multi-hit-continuation")).toBeVisible()
+	await expect(dialog.getByText("Multi-Hit Sequence", { exact: true })).toBeVisible()
+	await dialog.getByRole("button", { name: "Close", exact: true }).click()
+	await expect(dialog).not.toBeVisible()
+
+	await trainers.removeTrainer(readKey)
+})
+
 test("Move Roller resolves Population Bomb special multi-hit flow", async ({ page }) => {
 	test.setTimeout(180_000)
 
@@ -196,7 +240,9 @@ test("Move Roller resolves Population Bomb special multi-hit flow", async ({ pag
 	for (let attack = 1; attack <= 10; attack += 1) {
 		await test.step(`Population Bomb attack ${attack}`, async () => {
 			await expect(dialog.getByText(`Attack ${attack} of 10`, { exact: true })).toBeVisible()
-			await dialog.getByRole("button", { name: "Roll Attack", exact: true }).click()
+			const rollAttack = dialog.locator("button").filter({ hasText: "Roll Attack" })
+			await expect(rollAttack).toHaveText("Roll Attack")
+			await rollAttack.click()
 			await dialog.getByRole("button", { name: attack === 1 ? "Hit" : "Miss", exact: true }).click()
 		})
 	}
