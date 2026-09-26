@@ -165,6 +165,12 @@
 		color: "purple",
 		icon: GreatballIcon,
 	}, {
+		id: "abilitydex",
+		href: Url.abilitydex(),
+		name: "Abilitydex",
+		color: "purple",
+		icon: PencilNotesIcon,
+	}, {
 		id: "backups",
 		href: Url.backups.home(),
 		name: m["backups.title"](),
@@ -179,7 +185,7 @@
 	} ]
 </script>
 
-<div class="page">
+<div class="page" class:abilitydex={activeSection === "abilitydex"}>
 	<SkipLinks content={hasContent} search={hasSearch} />
 	<header>
 		<Container>
@@ -204,6 +210,10 @@
 		flex-direction: column;
 		height: 100dvh;
 		overflow: hidden;
+	}
+
+	.page.abilitydex :global(.icon-shadow) {
+		display: none;
 	}
 
 	.content {
