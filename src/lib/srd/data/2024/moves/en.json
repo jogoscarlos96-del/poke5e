@@ -1354,7 +1354,7 @@
 			"range": {
 				"type": "self"
 			},
-			"description": "As a bonus action, you may switch out, passing along all negative status effects and stat changes to the new creature. This includes existing battle effects from moves such as Substitute, Swords Dance, Ingrain, Aqua Ring, etc. Effects from moves that require concentration may also be transferred, with concentration now dependent on the new creature.",
+			"description": "As a bonus action, you may switch out, passing along all status effects and stat changes to the new creature. This includes existing battle effects from moves such as Substitute, Swords Dance, Ingrain, Aqua Ring, etc. Effects from moves that require concentration may also be transferred, with concentration now dependent on the new creature.",
 			"categories": []
 		},
 		{
@@ -2532,8 +2532,13 @@
 			"range": {
 				"type": "self"
 			},
-			"description": "You pump yourself up, increasing your adrenaline. For the next minute, choose to add +1 to your attack rolls OR +1 to AC. This move can be stacked to a maximum of +5 of the initial choice.",
-			"categories": []
+			"description": "You pump yourself up, increasing your adrenaline. For the duration, add +1 to your damage rolls and AC.",
+			"higherLevels": "The bonuses gained from this move increases to +2 at level 5, +3 at level 10 and +4 at level 17.",
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "No longer requires stacking for full effect. Applies to damage instead of attack rolls."
+			}
 		},
 		{
 			"id": "bulldoze",
@@ -4832,9 +4837,13 @@
 			"range": {
 				"type": "self"
 			},
-			"description": "You create a duplicate image of yourself, 5 feet beside you. The image mimics you and attempt to fool your opponents into attacking it, instead.\n\nWhen subject to any move (attack or saving throw / damaging or non-damaging) with an area of effect of 5 feet wide or less, roll a d4. On a result of 3 or 4, the image absorbs the damage and/or effects of the attack and disappears. Creatures with Truesight bypass the effect of this move. If grappled or restrained by a creature while Double Team is active, Double Team has no effect. (Examples that would trigger the roll include Tackle, Thunder Wave, Rock Slide, etc.)",
+			"description": "You create an illusory duplicate of yourself in your space. Until the move ends, the duplicate moves with you and mimics your actions, shifting position so it’s impossible to track which image is real.\n\nEach time a creature hits you with a move (attack or saving throw, damaging or non-damaging) with an area of effect of 5 feet wide or less during the move's duration, roll a d6 for each of your remaining duplicates. If any of the d6s roll a 4 or higher, one duplicate is hit instead of you, and is destroyed. Duplicates otherwise ignore all other damage and effects. The move ends when all duplicates are destroyed.\n\nA creature is unaffected by this move if it has the Blinded condition, Blindsight, or Truesight.",
+			"higherLevels": "The number of duplicates increases to two at level 5, three at level 10, and four at level 17.",
 			"categories": [],
-			"optional": "When this move is used again before the duplicate is consumed, an additional duplicate is created, up to a maximum of three duplicates.\n\nWith two duplicates, the attacker must roll a 5 or 6 on a d6 to hit the target. With three duplicates, the attacker must roll a 7 or 8 on a d8."
+			"updated": {
+				"tag": "Updated",
+				"details": "Overhauled the duplicates mechanic to be simpler."
+			}
 		},
 		{
 			"id": "double-edge",
@@ -9584,9 +9593,13 @@
 				"value": 60,
 				"unit": "feet"
 			},
-			"description": "You can use a bonus action on your turn to choose one ally other than yourself within 60 feet of you who can hear you. That ally can add a d6 to one ability check, attack roll, or saving throw it makes within the next 10 minutes, before the result of the roll is called by the DM. An ally being helped can only have one d6 available at a time.",
+			"description": "You can use a bonus action on your turn to choose one ally other than yourself within 60 feet of you who can see or hear you. That ally can add a d6 to one D20 Test it fails or damage roll it makes within the next 10 minutes. An ally being helped can only have one d6 available at a time.",
 			"higherLevels": "The helping dice for this move changes to d8 at level 5, d10 at level 10, and d12 at level 17.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Allow use on failure and on damage rolls."
+			}
 		},
 		{
 			"id": "hex",
@@ -12923,7 +12936,7 @@
 			"save": {
 				"attribute": "dex"
 			},
-			"description": "When you use this move, soak in cosmic energy and prepare to unleash a devastating beam. On your next turn, if you keep your concentration, use an action to create a {shape} of cosmic energy, 5 feet wide. Any creature caught in the line must succeed on a {save} or take {dice} {type} damage on a fail and half as much on a save.\n\nAdditionally, on your next turn, saving throws you cause have their DC increased by 3.",
+			"description": "When you use this move, soak in cosmic energy and prepare to unleash a devastating beam. On your next turn, if you keep your concentration, saving throws you cause have their DC increased by 3, and you may use an action to create a {shape} of cosmic energy, 5 feet wide. Any creature caught in the line must succeed on a {save} or take {dice} {type} damage on a fail and half as much on a save.",
 			"categories": [],
 			"updated": {
 				"tag": "Updated",
@@ -17550,25 +17563,22 @@
 			},
 			"pp": 5,
 			"duration": {
-				"unit": "round",
-				"value": 1
+				"unit": "instantaneous"
 			},
 			"range": {
 				"type": "self"
 			},
-			"description": "You land on the ground to rest your body. When activated, your flying speed decreases to zero, and you lose your flying type for as long as you remain on the ground. At the beginning of your next turn, if you have not left the ground, recover {dice} hit points.",
+			"description": "You land on the ground to rest your body. When you activate this move, your Fly Speed becomes 0 until the start of your next turn, and you recover {dice} hit points. In addition, you lose your Flying type when you land, and do not regain it for as long as you remain on the ground.",
 			"dice": {
-				"class": "custom",
-				"tiers": [
-					"2d6",
-					"3d6",
-					"5d6",
-					"8d6"
-				],
+				"class": "110",
 				"modifier": "MOVE",
 				"type": "healing"
 			},
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Healing applies immediately, and amount is buffed."
+			}
 		},
 		{
 			"id": "rototiller",
@@ -17768,7 +17778,7 @@
 			"save": {
 				"attribute": "dex"
 			},
-			"description": "You salt cure the target, dealing damage over time. Choose a target in range. The target must make a {save}. On failure, the target takes {dice} {type} damage, and it takes 1d4 {type} damage at the start of each of its turns until it is returned to a Pokéball or receives healing.\n\nWater- and Steel-type Pokémon are vulnerable to the damage dealt by this move.",
+			"description": "You salt cure the target, dealing damage over time. Choose a target in range. The target must make a {save}. On failure, the target takes {dice} {type} damage, and it takes 1d6 {type} damage at the start of each of its turns until it is returned to a Pokéball or receives healing.\n\nWater- and Steel-type Pokémon are vulnerable to the damage dealt by this move.",
 			"categories": []
 		},
 		{
@@ -19249,7 +19259,7 @@
 			"range": {
 				"type": "varies"
 			},
-			"description": "This move can only be used if you are asleep. While asleep, activate a random move from your move list (not Sleep Talk) that has a move time of 1 action.",
+			"description": "This move is usable while Asleep, and only while Asleep. Activate a random move from your move list (not Sleep Talk) that has a move time of 1 action.",
 			"categories": []
 		},
 		{
@@ -19653,10 +19663,17 @@
 				"modifier": "MOVE",
 				"type": "damage"
 			},
-			"description": "While you are asleep, you may activate this move to create a harsh noise that damages all creatures within range for {dice} {type} damage.",
+			"save": {
+				"attribute": "con"
+			},
+			"description": "This move is usable while Asleep, and only while Asleep. Create a harsh noise that damages all creatures within range for {dice} {type} damage. A creature that takes any of this damage must succeed on a {save} or it flinches.",
 			"categories": [
 				"sound"
-			]
+			],
+			"updated": {
+				"tag": "Updated",
+				"details": "Added flinch chance."
+			}
 		},
 		{
 			"id": "snowscape",
@@ -21551,7 +21568,12 @@
 			"higherLevels": "Your dance improves, granting you an additional sword mirage at each of levels 5, 10, and 17.",
 			"dice": {
 				"class": "custom",
-				"tiers": ["0", "0", "0", "0"],
+				"tiers": [
+					"0",
+					"0",
+					"0",
+					"0"
+				],
 				"modifier": "MOVE",
 				"type": "damage"
 			},
@@ -22078,19 +22100,21 @@
 			"type": "psychic",
 			"power": [],
 			"time": {
-				"unit": "action"
+				"unit": "bonus action"
 			},
 			"pp": 10,
 			"duration": {
 				"unit": "instantaneous"
 			},
 			"range": {
-				"type": "distance",
-				"value": 40,
-				"unit": "feet"
+				"type": "self"
 			},
-			"description": "You disappear from view and reappear at an unoccupied point within range. In wild creature battles, this move can be activated to automatically count as a single success in a group DEX check to run away.",
-			"categories": []
+			"description": "You disappear from view and reappear at an unoccupied space you can see within 30 feet.\n\nIn wild creature battles, this move can be activated to automatically count as a single success in a group DEX check to run away.",
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Made into a bonus action with reduced range."
+			}
 		},
 		{
 			"id": "temper-flare",
