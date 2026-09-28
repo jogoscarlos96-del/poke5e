@@ -21568,12 +21568,7 @@
 			"higherLevels": "Your dance improves, granting you an additional sword mirage at each of levels 5, 10, and 17.",
 			"dice": {
 				"class": "custom",
-				"tiers": [
-					"0",
-					"0",
-					"0",
-					"0"
-				],
+				"tiers": ["0", "0", "0", "0"],
 				"modifier": "MOVE",
 				"type": "damage"
 			},
