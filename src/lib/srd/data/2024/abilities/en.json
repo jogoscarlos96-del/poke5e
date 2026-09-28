@@ -611,7 +611,11 @@
 		{
 			"id": "guts",
 			"name": "Guts",
-			"description": "When this Pokémon is burned or poisoned, they are not affected by the disadvantage or reduced damage effects. They still take damage at the end of each of their turns."
+			"description": "When this Pokémon is burned or poisoned, they are not affected by the disadvantage or reduced damage effects. They still take damage at the end of each of their turns. Additionally, while it is burned, poisoned, paralyzed, frozen, or asleep, it gains +2 to all attack and damage rolls it makes for moves with a melee attack roll.",
+			"updated": {
+				"tag": "Updated",
+				"details": "Added a damage bonus."
+			}
 		},
 			{
 			"id": "hadron-engine",
@@ -1101,7 +1105,11 @@
 		{
 			"id": "prankster",
 			"name": "Prankster",
-			"description": "Once per short rest, this Pokémon can move to the top of initiative order in a single round, but must use a status-affecting move on its turn."
+			"description": "Once per short rest, when a round begins during combat, this Pokémon can choose to take its turn this round before any other creatures; when it does, it cannot use any damaging Moves against other creatures during that turn.",
+			"updated": {
+				"tag": "Updated",
+				"details": "Uses 5.5e terminology more consistently."
+			}
 		},
 		{
 			"id": "pressure",
@@ -1754,7 +1762,7 @@
 		{
 			"id": "wonder-skin",
 			"name": "Wonder Skin",
-			"description": "This Pokémon has advantage on all saving throws against being burned, frozen, poisoned, or paralyzed."
+			"description": "This Pokémon has advantage on all saving throws against being burned, frozen, poisoned, paralyzed, or asleep."
 		},
 		{
 			"id": "zen-mode",

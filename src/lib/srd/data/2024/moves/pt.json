@@ -465,8 +465,7 @@
 		},
 		{
 			"id": "bulk-up",
-			"name": "Fortalecimento",
-			"description": "Você se fortalece, aumentando sua adrenalina. Pelo próximo minuto, escolha adicionar +1 às suas jogadas de ataque OU +1 à CA. Este movimento pode ser acumulado até um máximo de +5 para qualquer uma das opções."
+			"name": "Fortalecimento"
 		},
 		{
 			"id": "bulldoze",
@@ -883,9 +882,7 @@
 		},
 		{
 			"id": "double-team",
-			"name": "Dupla Equipe",
-			"description": "Você cria uma imagem duplicada de si mesmo, a 5 pés ao seu lado. A imagem imita você e tenta enganar seus oponentes para atacá-la.\n\nQuando sujeito a qualquer movimento (ataque ou teste de resistência / com dano ou sem dano) com área de efeito de 5 pés ou menos, role um d4. Em um resultado de 3 ou 4, a imagem absorve o dano e/ou efeitos do ataque e desaparece. Criaturas com Visão Verdadeira ignoram o efeito deste movimento. Se estiver agarrado ou restringido por uma criatura enquanto Dupla Equipe estiver ativa, o movimento não tem efeito.",
-			"optional": "Quando este movimento é usado novamente antes que a duplicata seja consumida, uma duplicata adicional é criada, até um máximo de três.\n\nCom duas duplicatas, o atacante deve rolar 5 ou 6 em um d6 para acertar o alvo. Com três duplicatas, deve rolar 7 ou 8 em um d8."
+			"name": "Dupla Equipe"
 		},
 		{
 			"id": "double-edge",
@@ -1649,7 +1646,6 @@
 		{
 			"id": "helping-hand",
 			"name": "Mão Amiga",
-			"description": "Você pode usar uma ação bônus no seu turno para escolher um aliado que não seja você e que esteja a até 60 pés de você e possa te ouvir. Esse aliado pode adicionar um d6 a um teste de habilidade, jogada de ataque ou teste de resistência que fizer nos próximos 10 minutos, antes do resultado ser anunciado pelo Mestre. Um aliado que recebe ajuda só pode ter um d6 disponível por vez.",
 			"higherLevels": "O dado de ajuda deste movimento muda para d8 no nível 5, d10 no nível 10 e d12 no nível 17."
 		},
 		{
@@ -2858,8 +2854,7 @@
 		},
 		{
 			"id": "roost",
-			"name": "Roost",
-			"description": "Você pousa no chão para descansar seu corpo. Ao ativar este movimento, sua velocidade de voo se torna zero e você perde o tipo voador enquanto permanecer no solo. No início do seu próximo turno, se não tiver deixado o chão, recupere {dice} de pontos de vida."
+			"name": "Roost"
 		},
 		{
 			"id": "rototiller",
@@ -2894,7 +2889,7 @@
 		{
 			"id": "salt-cure",
 			"name": "Cura de Sal",
-			"description": "Você cura o alvo com sal, causando dano ao longo do tempo. Escolha um alvo em alcance. O alvo deve fazer um {save} contra sua CD de Movimento. Em caso de falha, o alvo sofre {dice} de dano do tipo {type} e sofre 1d4 de dano do tipo {type} no início de cada um de seus turnos até ser colocado em uma Pokébola ou receber cura.\n\nPokémon do tipo Água e Aço são vulneráveis ao dano causado por este movimento."
+			"description": "Você cura o alvo com sal, causando dano ao longo do tempo. Escolha um alvo em alcance. O alvo deve fazer um {save} contra sua CD de Movimento. Em caso de falha, o alvo sofre {dice} de dano do tipo {type} e sofre 1d6 de dano do tipo {type} no início de cada um de seus turnos até ser colocado em uma Pokébola ou receber cura.\n\nPokémon do tipo Água e Aço são vulneráveis ao dano causado por este movimento."
 		},
 		{
 			"id": "sand-attack",
@@ -3149,7 +3144,7 @@
 		{
 			"id": "snore",
 			"name": "Ronco",
-			"description": "Enquanto você estiver dormindo, você pode ativar este movimento para criar um som estrondoso que causa dano a todas as criaturas em alcance de {dice} de dano {type}."
+			"description": "Enquanto você estiver dormindo, você pode ativar este movimento para criar um som estrondoso que causa dano a todas as criaturas em alcance de {dice} de dano {type}. Uma criatura que sofra qualquer parte desse dano deve passar em um {save} ou recuar."
 		},
 		{
 			"id": "snowscape",
@@ -3572,8 +3567,7 @@
 		},
 		{
 			"id": "teleport",
-			"name": "Teleporte",
-			"description": "Você desaparece da vista e reaparece em um ponto desocupado dentro do alcance. Em batalhas contra criaturas selvagens, este movimento pode ser usado para contar automaticamente como um sucesso em um teste de DES em grupo para fugir."
+			"name": "Teleporte"
 		},
 		{
 			"id": "temper-flare",
