@@ -47,6 +47,7 @@
 	import type { ThemeColor } from "$lib/ui/theme"
 	import { Url } from "$lib/site/url"
 	import { m } from "$lib/site/i18n"
+	import DiceRoller from "$lib/site/dice/DiceRoller.svelte"
 	
 	if (browser) {
 		import("@auroratide/img-zoom/lib/define.js")
@@ -195,6 +196,7 @@
 			{/snippet}
 		</svelte:boundary>
 	</div>
+	<DiceRoller />
 	<ErrorDialog />
 </div>
 
