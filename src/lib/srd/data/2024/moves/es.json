@@ -465,8 +465,7 @@
 		},
 		{
 			"id": "bulk-up",
-			"name": "Corpulencia",
-			"description": "Te llenas de adrenalina, aumentando tu energía y combatividad. Durante el próximo minuto, elige añadir +1 a tus tiradas de ataque o añadir +1 a tu CA. Este movimiento puede acumularse hasta un máximo de +5 para cualquiera de las dos opciones."
+			"name": "Corpulencia"
 		},
 		{
 			"id": "bulldoze",
@@ -877,9 +876,7 @@
 		},
 		{
 			"id": "double-team",
-			"name": "Doble Equipo",
-			"description": "Creas una imagen duplicada de ti mismo a 5 pies de ti. La imagen te imita e intenta engañar a tus oponentes para que la ataquen a ella en tu lugar.\r\n\nCuando seas objetivo de cualquier movimiento (ataque o tirada de salvación / con daño o sin daño) con un área de efecto de 5 pies de ancho o menos, lanza un d4. En un resultado de 3 o 4, la imagen absorbe el daño y todos los efectos del ataque, luego, la imagen desaparece. Las criaturas con Visión Verdadera ignoran el efecto de este movimiento. Si estás agarrado o restringido por una criatura mientras este movimiento está activo, Doble Equipo no tiene efecto. (Ejemplos que activarían la tirada incluyen Placaje, Onda Trueno, Avalancha, etc.).",
-			"optional": "Cuando este movimiento se usa de nuevo antes de que el duplicado sea consumido, se crea un duplicado adicional, hasta un máximo de tres duplicados. Con dos duplicados, el atacante debe sacar un 5 o 6 en un d6 para golpear al objetivo. Con tres duplicados, el atacante debe sacar un 7 u 8 en un d8."
+			"name": "Doble Equipo"
 		},
 		{
 			"id": "double-edge",
@@ -1734,7 +1731,6 @@
 		{
 			"id": "helping-hand",
 			"name": "Refuerzo",
-			"description": "Puedes usar una acción adicional en tu turno para elegir a un aliado que no seas tú mismo, que esté a menos de 60 pies de ti y que pueda oírte. Ese aliado puede añadir 1d6 a una prueba de característica, tirada de ataque o tirada de salvación que realice en los próximos 10 minutos, antes de que el DM anuncie el resultado de la tirada. Un aliado ayudado solo puede tener 1d6 disponible a la vez.",
 			"higherLevels": "El dado de ayuda para este movimiento pasa a ser un d8 al nivel 5, un d10 al nivel 10 y un d12 al nivel 17."
 		},
 		{
@@ -3360,8 +3356,7 @@
 		},
 		{
 			"id": "roost",
-			"name": "Respiro",
-			"description": "Te posas en el suelo para descansar tu cuerpo. Al activarlo, tu velocidad de vuelo se reduce a cero y pierdes tu tipo Volador mientras permanezcas en el suelo. Al comienzo de tu próximo turno, si no has abandonado el suelo, recuperas {dice} puntos de salud."
+			"name": "Respiro"
 		},
 		{
 			"id": "rototiller",
@@ -3396,7 +3391,7 @@
 		{
 			"id": "salt-cure",
 			"name": "Salazón",
-			"description": "Aplicas una cura de sal al objetivo, infligiendo daño de forma continua. Elige un objetivo a tu alcance, debe realizar una {save}. Si falla, el objetivo recibe {dice} de daño de tipo {type}, y recibe 1d4 de daño de tipo {type} al comienzo de cada uno de sus turnos hasta que sea retirado a una Pokéball o reciba curación.\r\n\nLos Pokémon de tipo Agua y Acero son vulnerables al daño infligido por este movimiento."
+			"description": "Aplicas una cura de sal al objetivo, infligiendo daño de forma continua. Elige un objetivo a tu alcance, debe realizar una {save}. Si falla, el objetivo recibe {dice} de daño de tipo {type}, y recibe 1d6 de daño de tipo {type} al comienzo de cada uno de sus turnos hasta que sea retirado a una Pokéball o reciba curación.\r\n\nLos Pokémon de tipo Agua y Acero son vulnerables al daño infligido por este movimiento."
 		},
 		{
 			"id": "sand-attack",
@@ -3744,7 +3739,7 @@
 		{
 			"id": "snore",
 			"name": "Ronquido",
-			"description": "Mientras estás dormido, puedes activar este movimiento para emitir un ruido estridente que inflige {dice} de daño de tipo {type} a todas las criaturas a tu alcance."
+			"description": "Mientras estás dormido, puedes activar este movimiento para emitir un ruido estridente que inflige {dice} de daño de tipo {type} a todas las criaturas a tu alcance. Una criatura que reciba cualquiera de estos daños debe superar una {save} o se estremecerá."
 		},
 		{
 			"id": "snowscape",
@@ -4166,8 +4161,7 @@
 		},
 		{
 			"id": "teleport",
-			"name": "Teletransporte",
-			"description": "Desapareces de la vista y reapareces en un punto desocupado a tu alcance. En batallas contra criaturas salvajes, este movimiento puede activarse para contar automáticamente como un único éxito en una prueba de Destreza grupal para huir."
+			"name": "Teletransporte"
 		},
 		{
 			"id": "temper-flare",
