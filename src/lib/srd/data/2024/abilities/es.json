@@ -528,7 +528,7 @@
 		{
 			"id": "guts",
 			"name": "Agallas",
-			"description": "Cuando este Pokémon está envenenado o quemado, no se ve afectado por los efectos de desventaja ni reducción de daño de estos estados. Sigue recibiendo daño al final de cada uno de sus turnos."
+			"description": "Cuando este Pokémon está envenenado o quemado, no se ve afectado por los efectos de desventaja ni reducción de daño de estos estados. Sigue recibiendo daño al final de cada uno de sus turnos. Additionally, while it is burned, poisoned, paralyzed, frozen, or asleep, it gains +2 to all attack and damage rolls it makes for moves with a melee attack roll."
 		},
 		{
 			"id": "hadron-engine",
@@ -987,8 +987,7 @@
 		},
 		{
 			"id": "prankster",
-			"name": "Bromista",
-			"description": "Una vez por descanso corto, este Pokémon puede pasar al primer lugar del orden de iniciativa en una sola ronda, pero debe usar un Movimiento de Estado en su turno."
+			"name": "Bromista"
 		},
 		{
 			"id": "pressure",
@@ -1623,7 +1622,7 @@
 		{
 			"id": "wonder-skin",
 			"name": "Piel Milagro",
-			"description": "Este Pokémon tiene ventaja en todas las tiradas de salvación contra quemaduras, congelamiento, envenenamiento o parálisis."
+			"description": "Este Pokémon tiene ventaja en todas las tiradas de salvación contra quemaduras, congelamiento, envenenamiento, parálisis o dormido."
 		},
 		{
 			"id": "zen-mode",
