@@ -448,7 +448,7 @@
 		{
 			"id": "guts",
 			"name": "Cran",
-			"description": "Les effets négatifs des statuts brûlure et empoisonnement n'ont pas d'effets sur ce Pokémon. Seul les dégâts à la fin de ses tours l'affecte."
+			"description": "Les effets négatifs des statuts brûlure et empoisonnement n'ont pas d'effets sur ce Pokémon. Seul les dégâts à la fin de ses tours l'affecte. Additionally, while it is burned, poisoned, paralyzed, frozen, or asleep, it gains +2 to all attack and damage rolls it makes for moves with a melee attack roll."
 		},
 		{
 			"id": "hadron-engine",
@@ -892,8 +892,7 @@
 		},
 		{
 			"id": "prankster",
-			"name": "Farceur",
-			"description": "Une fois par repos court, si ce Pokémon planifie utiliser une capacité affectant ou infligeant un statut, il peut se déplacer à la première position de l'initiative pour ce tour."
+			"name": "Farceur"
 		},
 		{
 			"id": "pressure",
@@ -1528,7 +1527,7 @@
 		{
 			"id": "wonder-skin",
 			"name": "Peau Miracle",
-			"description": "Ce Pokémon à avantage sur les jets de sauvegarde contre les conditions brûlure, gelée, empoisonnement ou paralysie."
+			"description": "Ce Pokémon à avantage sur les jets de sauvegarde contre les conditions brûlure, gelée, empoisonnement, paralysie ou sommeil."
 		},
 		{
 			"id": "zen-mode",
