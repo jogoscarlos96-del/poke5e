@@ -503,6 +503,77 @@
 				"type": "damage"
 			},
 			"updated": null
+		},
+		{
+			"id": "teleport",
+			"time": {
+				"unit": "action"
+			},
+			"range": {
+				"type": "distance",
+				"value": 40,
+				"unit": "feet"
+			},
+			"description": "You disappear from view and reappear at an unoccupied point within range. In wild creature battles, this move can be activated to automatically count as a single success in a group DEX check to run away.",
+			"updated": null
+		},
+		{
+			"id": "snore",
+			"save": null,
+			"description": "This move is usable while Asleep, and only while Asleep. Create a harsh noise that damages all creatures within range for {dice} {type} damage.",
+			"updated": null
+		},
+		{
+			"id": "helping-hand",
+			"description": "You can use a bonus action on your turn to choose one ally other than yourself within 60 feet of you who can hear you. That ally can add a d6 to one ability check, attack roll, or saving throw it makes within the next 10 minutes, before the result of the roll is called by the DM. An ally being helped can only have one d6 available at a time.",
+			"updated": null
+		},
+		{
+			"id": "double-team",
+			"name": "Double Team",
+			"type": "normal",
+			"power": [],
+			"time": {
+				"unit": "bonus action"
+			},
+			"pp": 3,
+			"duration": {
+				"unit": "minute",
+				"value": 1,
+				"concentration": true
+			},
+			"range": {
+				"type": "self"
+			},
+			"description": "You create a duplicate image of yourself, 5 feet beside you. The image mimics you and attempt to fool your opponents into attacking it, instead.\n\nWhen subject to any move (attack or saving throw / damaging or non-damaging) with an area of effect of 5 feet wide or less, roll a d4. On a result of 3 or 4, the image absorbs the damage and/or effects of the attack and disappears. Creatures with Truesight bypass the effect of this move. If grappled or restrained by a creature while Double Team is active, Double Team has no effect. (Examples that would trigger the roll include Tackle, Thunder Wave, Rock Slide, etc.)",
+			"categories": [],
+			"optional": "When this move is used again before the duplicate is consumed, an additional duplicate is created, up to a maximum of three duplicates.\n\nWith two duplicates, the attacker must roll a 5 or 6 on a d6 to hit the target. With three duplicates, the attacker must roll a 7 or 8 on a d8.",
+			"updated": null
+		},
+		{
+			"id": "roost",
+			"duration": {
+				"unit": "round",
+				"value": 1
+			},
+			"description": "You land on the ground to rest your body. When activated, your flying speed decreases to zero, and you lose your flying type for as long as you remain on the ground. At the beginning of your next turn, if you have not left the ground, recover {dice} hit points.",
+			"dice": {
+				"class": "custom",
+				"tiers": [
+					"2d6",
+					"3d6",
+					"5d6",
+					"8d6"
+				],
+				"modifier": "MOVE",
+				"type": "healing"
+			},
+			"updated": null
+		},
+		{
+			"id": "bulk-up",
+			"description": "You pump yourself up, increasing your adrenaline. For the next minute, choose to add +1 to your attack rolls OR +1 to AC. This move can be stacked to a maximum of +5 of the initial choice.",
+			"updated": null
 		}
 	]
 }
