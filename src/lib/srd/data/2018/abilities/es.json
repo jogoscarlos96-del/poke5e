@@ -15,6 +15,14 @@
 		{
 			"id": "sweet-veil",
 			"description": "Cualquier aliado a 15 pies o menos de este Pokémon es inmune a quedarse dormido."
+		},
+		{
+			"id": "wonder-skin",
+			"description": "Este Pokémon tiene ventaja en todas las tiradas de salvación contra quemaduras, congelamiento, envenenamiento o parálisis."
+		},
+		{
+			"id": "guts",
+			"description": "Cuando este Pokémon está envenenado o quemado, no se ve afectado por los efectos de desventaja ni reducción de daño de estos estados. Sigue recibiendo daño al final de cada uno de sus turnos."
 		}
 	]
 }

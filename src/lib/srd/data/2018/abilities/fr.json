@@ -15,6 +15,15 @@
 		{
 			"id": "sweet-veil",
 			"description": "Les alliés de ce Pokémon à 15 pieds sont immunisés au statut sommeil."
+		},
+		{
+			"id": "wonder-skin",
+			"name": "Peau Miracle",
+			"description": "Ce Pokémon à avantage sur les jets de sauvegarde contre les conditions brûlure, gelée, empoisonnement ou paralysie."
+		},
+		{
+			"id": "guts",
+			"description": "Les effets négatifs des statuts brûlure et empoisonnement n'ont pas d'effets sur ce Pokémon. Seul les dégâts à la fin de ses tours l'affecte."
 		}
 	]
 }
