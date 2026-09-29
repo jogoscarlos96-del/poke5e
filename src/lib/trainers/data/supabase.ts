@@ -36,6 +36,7 @@ import { Ability } from "$lib/pokemon/ability"
 import { TagList } from "$lib/poke5e/tags"
 import { TransferCode } from "../pokemon-transfer"
 import { Token } from "$lib/dnd/token"
+import { SafariData, type SafariCaptureCode } from "$lib/safari"
 
 const TRAINER_AVATARS_BUCKET = "trainer_avatars"
 
@@ -798,6 +799,11 @@ export class SupabaseTrainerProvider implements TrainerDataProvider {
 		}
 
 		return await this.getOnePokemon(trainerId, data, readKey)
+	}
+
+	redeemSafariCapture = async (writeKey: ReadWriteKey, readKey: ReadWriteKey, trainerId: TrainerId, captureCode: SafariCaptureCode): Promise<TrainerPokemon> => {
+		const pokemonId = await SafariData.redeemCapture(writeKey, captureCode)
+		return await this.getOnePokemon(trainerId, pokemonId, readKey)
 	}
 
 	reorderPokemonTeam = async (writeKey: ReadWriteKey, readKey: ReadWriteKey, order: TrainerPokemon[]): Promise<boolean> => {

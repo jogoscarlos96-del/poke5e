@@ -124,6 +124,18 @@
 		color: "green",
 		icon: IdBadgeIcon,
 	}, {
+		id: "safari",
+		href: Url.safari(),
+		name: "Safari Zone",
+		color: "forest",
+		icon: GreatballIcon,
+	}, {
+		id: "safari-management",
+		href: Url.safariManagement(),
+		name: "Safari Management",
+		color: "forest",
+		icon: GreatballIcon,
+	}, {
 		id: "encounter-tool",
 		href: Url.encounterTool(),
 		name: m["encounterTool.title"](),

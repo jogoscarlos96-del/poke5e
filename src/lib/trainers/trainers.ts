@@ -7,6 +7,7 @@ import type { PokemonSpecies } from "$lib/poke5e/species"
 import { TrainerLocalStorage } from "./data/TrainerLocalStorage"
 import { TagList } from "$lib/poke5e/tags"
 import type { TransferCode } from "./pokemon-transfer"
+import type { SafariCaptureCode } from "$lib/safari"
 import * as list from "$lib/utils/list"
 
 type AllTrainers = (TrainerData & WithUpdater & WithRemover & WithTags)[]
@@ -37,6 +38,7 @@ type TrainerUpdater = {
 	move: (info: LearnedMove, options?: UpdaterOptions) => Promise<void>
 	addToTeam: (pokemon: PokemonSpecies) => Promise<TrainerPokemon>
 	acceptTransfer: (code: TransferCode) => Promise<TrainerPokemon>
+	redeemSafariCapture: (code: SafariCaptureCode) => Promise<TrainerPokemon>
 	reorderTeam: (info: TrainerPokemon[]) => Promise<void>
 	removeFromTeam: (id: string) => Promise<void>
 }
@@ -449,6 +451,16 @@ export const createStore = () => {
 								return result
 							}).catch((e: Error) => {
 								throw e
+							})
+						},
+						redeemSafariCapture: (code: SafariCaptureCode) => {
+							return provider.redeemSafariCapture(data.writeKey, data.info.readKey, data.info.id, code).then((result) => {
+								storeUpdateOne(readKey, (prev) => ({
+									...prev,
+									pokemon: [...prev.pokemon, result],
+								}))
+
+								return result
 							})
 						},
 						reorderTeam: (order: TrainerPokemon[]) => {
