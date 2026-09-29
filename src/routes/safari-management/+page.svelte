@@ -225,6 +225,33 @@
 <Page theme="forest">
 	<GreatballIcon slot="icon" />
 
+	<svelte:fragment slot="side">
+		{#if unlocked}
+			<nav class="park-nav" aria-label="Safari Parks">
+				<div class="nav-heading">
+					<h1>Safari Parks</h1>
+					<Button variant="success" on:click={startNew}>+ New Park</Button>
+				</div>
+				{#if loading}
+					<Loader />
+				{:else if parks.length === 0}
+					<p>No Safari Parks yet.</p>
+				{:else}
+					<ul>
+						{#each parks as park}
+							<li class:selected={selectedId === park.id}>
+								<button type="button" on:click={() => selectPark(park)}>
+									<strong>{park.name}</strong>
+									<span>{park.active ? "Active" : "Hidden"}</span>
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</nav>
+		{/if}
+	</svelte:fragment>
+
 	{#if !unlocked}
 		<section class="gate">
 			<h1>Safari Management</h1>
@@ -241,29 +268,6 @@
 			</div>
 		</section>
 	{:else}
-		<nav slot="side" class="park-nav" aria-label="Safari Parks">
-			<div class="nav-heading">
-				<h1>Safari Parks</h1>
-				<Button variant="success" on:click={startNew}>+ New Park</Button>
-			</div>
-			{#if loading}
-				<Loader />
-			{:else if parks.length === 0}
-				<p>No Safari Parks yet.</p>
-			{:else}
-				<ul>
-					{#each parks as park}
-						<li class:selected={selectedId === park.id}>
-							<button type="button" on:click={() => selectPark(park)}>
-								<strong>{park.name}</strong>
-								<span>{park.active ? "Active" : "Hidden"}</span>
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</nav>
-
 		<section class="editor">
 			{#if error}<p class="error">{error}</p>{/if}
 			{#if loading && !draft}
