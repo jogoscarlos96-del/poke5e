@@ -5,6 +5,7 @@
 	import { GreatballIcon } from "$lib/ui/icons"
 	import { SpeciesField } from "$lib/poke5e/species"
 	import type { PokemonSpecies } from "$lib/poke5e/species"
+	import { BiomesStore } from "$lib/poke5e/habitat"
 	import { CampaignCreationAccess } from "$lib/site/CampaignCreationAccess"
 	import {
 		SafariData,
@@ -152,7 +153,8 @@
 			...draft,
 			biomes: [...draft.biomes, {
 				id: crypto.randomUUID(),
-				name: "New Biome",
+				biomeId: "",
+				name: "Select biome",
 				description: "",
 				active: true,
 				speciesIds: [],
@@ -198,6 +200,41 @@
 		const biome = draft?.biomes.find((it) => it.id === biomeId)
 		if (!biome) return
 		updateBiome(biomeId, { speciesIds: biome.speciesIds.filter((id) => id !== speciesId) })
+	}
+
+	const canonicalBiomeId = (biome: SafariBiomeDefinition): string =>
+		biome.biomeId
+			?? $BiomesStore?.find((candidate) => candidate.name.toLocaleLowerCase() === biome.name.toLocaleLowerCase())?.id
+			?? ""
+
+	const selectCanonicalBiome = (safariBiomeId: string, canonicalId: string) => {
+		const canonical = $BiomesStore?.find((candidate) => candidate.id === canonicalId)
+		if (!canonical) return
+		updateBiome(safariBiomeId, { biomeId: canonical.id, name: canonical.name })
+	}
+
+	const availableSpecies = (): PokemonSpecies[] =>
+		[...new Map([...allSpecies, ...speciesById.values()].map((species) => [species.id.data, species])).values()]
+
+	const suggestionGroupsForBiome = (biome: SafariBiomeDefinition) => {
+		const biomeId = canonicalBiomeId(biome)
+		if (!biomeId) return []
+
+		const groups = new Map<number, PokemonSpecies[]>()
+		for (const species of availableSpecies()) {
+			if (biome.speciesIds.includes(species.id.data) || !species.habitat.biomes.includes(biomeId)) continue
+			const group = groups.get(species.sr.data) ?? []
+			group.push(species)
+			groups.set(species.sr.data, group)
+		}
+
+		return [...groups.entries()]
+			.sort(([a], [b]) => a - b)
+			.map(([sr, species]) => ({
+				sr,
+				label: species[0]?.sr.toString() ?? String(sr),
+				species: [...species].sort((a, b) => a.name.localeCompare(b.name)),
+			}))
 	}
 
 	const groupsForBiome = (biome: SafariBiomeDefinition) => {
@@ -316,8 +353,13 @@
 						<article class="biome-card">
 							<div class="biome-heading">
 								<label class="biome-name">
-									<span>Biome Name</span>
-									<input value={biome.name} on:input={(event) => updateBiome(biome.id, { name: event.currentTarget.value })} />
+									<span>Biome</span>
+									<select value={canonicalBiomeId(biome)} on:change={(event) => selectCanonicalBiome(biome.id, event.currentTarget.value)}>
+										<option value="">Choose a supported biome…</option>
+										{#each $BiomesStore ?? [] as option}
+											<option value={option.id}>{option.name}</option>
+										{/each}
+									</select>
 								</label>
 								<label class="active-toggle">
 									<input
@@ -338,27 +380,57 @@
 							</label>
 
 							<div class="species-section">
-								<h3>Pokémon / Fakémon</h3>
-								{#if biome.speciesIds.length === 0}
-									<p>No species configured.</p>
-								{:else}
-									{#each groupsForBiome(biome) as group}
-										<div class="sr-group">
-											<h4>{group.label}</h4>
-											<ul>
-												{#each group.ids as speciesId}
-													<li>
-														<span>
-															<strong>{speciesById.get(speciesId)?.name ?? speciesId}</strong>
-															<small>{speciesId}</small>
-														</span>
-														<Button variant="subtle" on:click={() => removeSpecies(biome.id, speciesId)}>Remove</Button>
-													</li>
+								<div class="species-layout">
+									<div class="configured-species">
+										<h3>Safari Pokémon / Fakémon</h3>
+										{#if biome.speciesIds.length === 0}
+											<p>No species configured.</p>
+										{:else}
+											{#each groupsForBiome(biome) as group}
+												<div class="sr-group">
+													<h4>{group.label}</h4>
+													<ul>
+														{#each group.ids as speciesId}
+															<li>
+																<span>
+																	<strong>{speciesById.get(speciesId)?.name ?? speciesId}</strong>
+																	<small>{speciesId}</small>
+																</span>
+																<Button variant="subtle" on:click={() => removeSpecies(biome.id, speciesId)}>Remove</Button>
+															</li>
+														{/each}
+													</ul>
+												</div>
+											{/each}
+										{/if}
+									</div>
+
+									<aside class="biome-suggestions">
+										<h3>Biome Suggestions</h3>
+										{#if !canonicalBiomeId(biome)}
+											<p class="muted">Choose a supported biome to see species whose Poke5e habitat includes it.</p>
+										{:else if suggestionGroupsForBiome(biome).length === 0}
+											<p class="muted">No additional loaded species match this biome.</p>
+										{:else}
+											<p class="muted">Click a species to add it. Suggestions come directly from its Poke5e habitat data.</p>
+											<div class="suggestion-scroll">
+												{#each suggestionGroupsForBiome(biome) as group}
+													<div class="suggestion-group">
+														<h4>SR {group.label}</h4>
+														<div class="suggestion-buttons">
+															{#each group.species as species}
+																<button type="button" on:click={() => addSpecies(biome.id, species)}>
+																	<span>{species.name}</span>
+																	<small>SR {species.sr.toString()}</small>
+																</button>
+															{/each}
+														</div>
+													</div>
 												{/each}
-											</ul>
-										</div>
-									{/each}
-								{/if}
+											</div>
+										{/if}
+									</aside>
+								</div>
 
 								<div class="species-add">
 									{#key speciesFieldReset[biome.id] ?? 0}
@@ -421,13 +493,23 @@
 	.fields { margin-block: 1rem; }
 	label { display: grid; gap: 0.25rem; }
 	label > span { font-weight: bold; }
-	input, textarea { width: 100%; box-sizing: border-box; }
+	input, textarea, select { width: 100%; box-sizing: border-box; }
 	.active-toggle { display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-weight: bold; }
 	.active-toggle input { width: auto; }
 	.biomes-heading { margin-block: 1.25rem 0.75rem; }
 	.biome-card { display: grid; gap: 0.85rem; }
 	.biome-name { flex: 1; }
 	.species-section { border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); padding-top: 0.75rem; }
+	.species-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.85fr); gap: 1rem; align-items: start; }
+	.biome-suggestions { padding: 0.75rem; border-radius: 0.65rem; background: var(--skin-input-bg); }
+	.biome-suggestions h3 { margin-top: 0; }
+	.suggestion-scroll { max-height: 28rem; overflow: auto; padding-right: 0.25rem; }
+	.suggestion-group { margin-bottom: 0.8rem; }
+	.suggestion-group h4 { margin-block: 0.25rem; }
+	.suggestion-buttons { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.35rem; }
+	.suggestion-buttons button { display: grid; gap: 0.12rem; text-align: left; padding: 0.5rem; border: 0; border-radius: 0.5rem; background: var(--skin-content); color: inherit; cursor: pointer; font: inherit; }
+	.suggestion-buttons button:hover, .suggestion-buttons button:focus-visible { outline: 0.12rem solid currentColor; }
+	.suggestion-buttons small { opacity: 0.65; }
 	.sr-group { margin-block: 0.75rem; }
 	.sr-group h4 { margin-block: 0.25rem; }
 	.sr-group li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.4rem 0; }
@@ -442,5 +524,6 @@
 		.access-box form, .manual-add { grid-template-columns: 1fr; }
 		.access-box :global(.button) { grid-column: 1; grid-row: auto; }
 		.editor-heading, .biome-heading, .actions { align-items: stretch; flex-direction: column; }
+		.species-layout { grid-template-columns: 1fr; }
 	}
 </style>
