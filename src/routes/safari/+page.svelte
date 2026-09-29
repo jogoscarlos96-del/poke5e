@@ -222,7 +222,14 @@
 			endEncounter("The Pokémon fled when the Safari Gauge reached -2.")
 			return
 		}
-		persist({ ...session, encounter: { ...session.encounter, gauge: value } })
+		persist({
+			...session,
+			encounter: {
+				...session.encounter,
+				gauge: value,
+				noChangeCount: value === session.encounter.gauge ? session.encounter.noChangeCount : 0,
+			},
+		})
 	}
 
 	const applyInteraction = () => {
@@ -395,9 +402,9 @@
 		notice = `${code} copied.`
 	}
 
-	const groupedEligibleSpecies = () => {
+	const groupSpeciesBySr = (speciesList: PokemonSpecies[]) => {
 		const groups = new Map<number, PokemonSpecies[]>()
-		for (const species of eligibleSpecies) {
+		for (const species of speciesList) {
 			const group = groups.get(species.sr.data) ?? []
 			group.push(species)
 			groups.set(species.sr.data, group)
@@ -409,6 +416,17 @@
 				label: species[0]?.sr.toString() ?? String(sr),
 				species: [...species].sort((a, b) => a.name.localeCompare(b.name)),
 			}))
+	}
+
+	const groupedEligibleSpecies = () => groupSpeciesBySr(eligibleSpecies)
+
+	const groupedPreviewSpecies = () => {
+		if (!selectedBiome || !selectedTrainer) return []
+		const limit = SpeciesRating.maxAllowed(selectedTrainer.level).data
+		const species = selectedBiome.speciesIds
+			.map((id) => speciesById.get(id))
+			.filter((entry): entry is PokemonSpecies => entry != null && entry.sr.data <= limit)
+		return groupSpeciesBySr(species)
 	}
 
 	const stealthDescription = () => {
@@ -707,7 +725,19 @@
 						<div class="preview">
 							<h2>{selectedBiome.name}</h2>
 							<p>{selectedBiome.description}</p>
-							<p>Your Trainer can access species up to SR <strong>{selectedTrainer ? SpeciesRating.maxAllowed(selectedTrainer.level).toString() : ""}</strong>.</p>
+							<p>Your Trainer can access species up to SR <strong>{selectedTrainer ? SpeciesRating.maxAllowed(selectedTrainer.level).toString() : ""}</strong>. Preview the eligible tables before beginning the run.</p>
+							{#if groupedPreviewSpecies().length === 0}
+								<p class="muted">No eligible species are configured in this biome.</p>
+							{:else}
+								<div class="preview-tables">
+									{#each groupedPreviewSpecies() as group}
+										<div class="preview-table">
+											<strong>SR {group.label}</strong>
+											<span>{group.species.map((species) => species.name).join(", ")}</span>
+										</div>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					{/if}
 				{/if}
@@ -769,6 +799,8 @@
 	.capture-card > div { display: grid; gap: 0.2rem; }
 	code { overflow-wrap: anywhere; }
 	.resume, .preview { padding: 0.75rem; background: var(--skin-input-bg); border-radius: 0.65rem; }
+	.preview-tables { display: grid; gap: 0.45rem; margin-top: 0.75rem; }
+	.preview-table { display: grid; grid-template-columns: 4rem 1fr; gap: 0.6rem; align-items: start; padding-top: 0.4rem; border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent); }
 	@media (max-width: 44rem) {
 		.resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.exploration-controls, .encounter-grid, .status-grid { grid-template-columns: 1fr; }
