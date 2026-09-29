@@ -2,6 +2,7 @@ import type { Skill } from "$lib/dnd/skills"
 
 export type SafariBiomeDefinition = {
 	id: string
+	biomeId?: string
 	name: string
 	description: string
 	active: boolean
