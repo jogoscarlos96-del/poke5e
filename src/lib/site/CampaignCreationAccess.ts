@@ -26,7 +26,11 @@ const unlock = async (password: string): Promise<boolean> => {
 	return valid
 }
 
+const managementKey = (): string | undefined =>
+	isUnlocked() ? EXPECTED_PASSWORD_HASH : undefined
+
 export const CampaignCreationAccess = {
 	isUnlocked,
 	unlock,
+	managementKey,
 } as const
