@@ -1,0 +1,1 @@
+CREATE INDEX safari_capture_claims_redeemed_trainer_id_idx ON private.safari_capture_claims(redeemed_trainer_id);
