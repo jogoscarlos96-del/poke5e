@@ -477,8 +477,9 @@
 
 				<SafariGauge value={session.encounter.gauge} on:change={(event) => setGauge(event.detail.value)} />
 
-				{@const details = captureDetails()}
-				<div class="capture-status panel">
+				{#if session?.encounter}
+					{@const details = captureDetails()}
+					<div class="capture-status panel">
 					<h2>Capture Status</h2>
 					<div class="status-grid">
 						<div><span>Base DC</span><strong>{details.base}</strong></div>
@@ -507,7 +508,8 @@
 					{:else}
 						<Button variant="success" disabled={session.safariBallsRemaining <= 0} on:click={attemptCapture}>Throw Safari Ball</Button>
 					{/if}
-				</div>
+					</div>
+				{/if}
 
 				<div class="encounter-grid">
 					<section class="panel">
