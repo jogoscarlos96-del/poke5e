@@ -28,6 +28,7 @@
 	let draft: SafariParkData | undefined
 	let isNew = false
 	let manualSpeciesIds: Record<string, string> = {}
+	let speciesFieldReset: Record<string, number> = {}
 
 	const blankPark = (): SafariParkData => ({
 		name: "New Safari Park",
@@ -95,6 +96,7 @@
 		draft = clonePark(park)
 		isNew = false
 		manualSpeciesIds = {}
+		speciesFieldReset = {}
 	}
 
 	const startNew = () => {
@@ -102,6 +104,7 @@
 		draft = blankPark()
 		isNew = true
 		manualSpeciesIds = {}
+		speciesFieldReset = {}
 	}
 
 	const save = async () => {
@@ -176,6 +179,7 @@
 		const biome = draft.biomes.find((it) => it.id === biomeId)
 		if (!biome || biome.speciesIds.includes(species.id.data)) return
 		updateBiome(biomeId, { speciesIds: [...biome.speciesIds, species.id.data] })
+		speciesFieldReset = { ...speciesFieldReset, [biomeId]: (speciesFieldReset[biomeId] ?? 0) + 1 }
 	}
 
 	const addManualSpecies = async (biomeId: string) => {
@@ -357,14 +361,16 @@
 								{/if}
 
 								<div class="species-add">
-									<SpeciesField
-										label="Add known Pokémon / Fakémon"
-										value=""
-										name="species-{biome.id}"
-										{allSpecies}
-										explicitSubmit
-										on:change={(event) => event.detail.species && addSpecies(biome.id, event.detail.species)}
-									/>
+									{#key speciesFieldReset[biome.id] ?? 0}
+										<SpeciesField
+											label="Add known Pokémon / Fakémon"
+											value=""
+											name="species-{biome.id}"
+											{allSpecies}
+											explicitSubmit
+											on:change={(event) => event.detail.species && addSpecies(biome.id, event.detail.species)}
+										/>
+									{/key}
 									<div class="manual-add">
 										<label>
 											<span>Species ID</span>
