@@ -52,8 +52,10 @@
 	let choosingBiome = false
 
 	let interactionName = ""
-	let interactionDelta = 0
+	let interactionDelta: number | undefined = undefined
 	let spendPokeblock = false
+	let eligibleGroups: ReturnType<typeof groupSpeciesBySr> = []
+	let previewGroups: ReturnType<typeof groupSpeciesBySr> = []
 	let selectedSkill: Skill = "animal handling"
 
 	$: selectedTrainer = cachedTrainers.find((trainer) => trainer.readKey === selectedTrainerReadKey)
@@ -71,6 +73,12 @@
 			.map((id) => speciesById.get(id))
 			.filter((species): species is PokemonSpecies => species != null && species.sr.data <= maxSr)
 		: []
+	$: eligibleGroups = groupSpeciesBySr(eligibleSpecies)
+	$: previewGroups = !selectedBiome || !selectedTrainer
+		? []
+		: groupSpeciesBySr(selectedBiome.speciesIds
+			.map((id) => speciesById.get(id))
+			.filter((entry): entry is PokemonSpecies => entry != null && entry.sr.data <= SpeciesRating.maxAllowed(selectedTrainer.level).data))
 
 	onMount(() => {
 		void load()
@@ -106,6 +114,7 @@
 	const persist = (next: SafariSessionState) => {
 		session = next
 		SafariSessionLocalStorage.set(next)
+		if (next.trainerReadKey === selectedTrainerReadKey) existingSession = next
 	}
 
 	const skillModifier = (trainer: Trainer, skill: Skill): number => {
@@ -202,7 +211,7 @@
 		}
 		persist({ ...session, pendingStealth: undefined, encounter })
 		interactionName = ""
-		interactionDelta = 0
+		interactionDelta = undefined
 		spendPokeblock = false
 		selectedSkill = "animal handling"
 		notice = undefined
@@ -233,13 +242,14 @@
 	}
 
 	const applyInteraction = () => {
-		if (!session?.encounter || !interactionName.trim()) return
+		if (!session?.encounter || !interactionName.trim() || interactionDelta == null || !Number.isFinite(interactionDelta)) return
 		if (spendPokeblock && session.pokeblocksRemaining <= 0) return
 
 		const encounter = session.encounter
 		const key = interactionName.trim().toLocaleLowerCase()
 		const repeatIndex = encounter.repetitions[key] ?? 0
-		const appliedDelta = repeatedInteractionValue(interactionDelta, repeatIndex)
+		const baseDelta = Math.trunc(interactionDelta)
+		const appliedDelta = repeatedInteractionValue(baseDelta, repeatIndex)
 		const nextGauge = applyGaugeDelta(encounter.gauge, appliedDelta)
 		const noChangeCount = nextNoChangeCount(encounter.gauge, nextGauge, encounter.noChangeCount)
 		const nextEncounter: SafariEncounterState = {
@@ -249,7 +259,7 @@
 			repetitions: { ...encounter.repetitions, [key]: repeatIndex + 1 },
 			lastInteraction: {
 				name: interactionName.trim(),
-				baseDelta: Math.trunc(interactionDelta),
+				baseDelta,
 				appliedDelta,
 			},
 		}
@@ -259,6 +269,8 @@
 			encounter: nextEncounter,
 		}
 		persist(nextSession)
+		interactionDelta = undefined
+		spendPokeblock = false
 
 		if (nextGauge === -2) {
 			endEncounter("The Pokémon fled when the Safari Gauge reached -2.")
@@ -402,7 +414,7 @@
 		notice = `${code} copied.`
 	}
 
-	const groupSpeciesBySr = (speciesList: PokemonSpecies[]) => {
+	function groupSpeciesBySr(speciesList: PokemonSpecies[]) {
 		const groups = new Map<number, PokemonSpecies[]>()
 		for (const species of speciesList) {
 			const group = groups.get(species.sr.data) ?? []
@@ -416,17 +428,6 @@
 				label: species[0]?.sr.toString() ?? String(sr),
 				species: [...species].sort((a, b) => a.name.localeCompare(b.name)),
 			}))
-	}
-
-	const groupedEligibleSpecies = () => groupSpeciesBySr(eligibleSpecies)
-
-	const groupedPreviewSpecies = () => {
-		if (!selectedBiome || !selectedTrainer) return []
-		const limit = SpeciesRating.maxAllowed(selectedTrainer.level).data
-		const species = selectedBiome.speciesIds
-			.map((id) => speciesById.get(id))
-			.filter((entry): entry is PokemonSpecies => entry != null && entry.sr.data <= limit)
-		return groupSpeciesBySr(species)
 	}
 
 	const stealthDescription = () => {
@@ -552,19 +553,20 @@
 
 					<section class="panel">
 						<h2>Interaction</h2>
+						<p class="interaction-help">The site does not judge whether the interaction succeeded. After the DM rules the result, enter the base Gauge change here. A deliberate 0 means no Gauge change and counts toward boredom.</p>
 						<label>
 							<span>Interaction</span>
 							<input bind:value={interactionName} placeholder="Offer food, speak softly, imitate..." />
 						</label>
 						<label>
-							<span>Base Gauge change</span>
-							<input type="number" bind:value={interactionDelta} />
+							<span>DM-assigned base Gauge change</span>
+							<input type="number" bind:value={interactionDelta} placeholder="Required" />
 						</label>
 						<label class="checkbox">
 							<input type="checkbox" bind:checked={spendPokeblock} disabled={session.pokeblocksRemaining <= 0} />
-							Spend 1 Pokéblock
+							Spend 1 Pokéblock when resolved
 						</label>
-						<Button variant="subtle" disabled={!interactionName.trim() || (spendPokeblock && session.pokeblocksRemaining <= 0)} on:click={applyInteraction}>Apply Interaction</Button>
+						<Button variant="subtle" disabled={!interactionName.trim() || interactionDelta == null || !Number.isFinite(interactionDelta) || (spendPokeblock && session.pokeblocksRemaining <= 0)} on:click={applyInteraction}>Resolve Interaction</Button>
 						{#if session.encounter.lastInteraction}
 							<p>
 								{session.encounter.lastInteraction.name}: base {session.encounter.lastInteraction.baseDelta >= 0 ? "+" : ""}{session.encounter.lastInteraction.baseDelta},
@@ -633,11 +635,11 @@
 					</div>
 				</div>
 
-				{#if groupedEligibleSpecies().length === 0}
+				{#if eligibleGroups.length === 0}
 					<div class="panel"><p>No eligible species are configured in this biome.</p></div>
 				{:else}
 					<div class="sr-tables">
-						{#each groupedEligibleSpecies() as group}
+						{#each eligibleGroups as group}
 							<section class="panel sr-table">
 								<h3>SR {group.label}</h3>
 								<div class="species-grid">
@@ -726,11 +728,11 @@
 							<h2>{selectedBiome.name}</h2>
 							<p>{selectedBiome.description}</p>
 							<p>Your Trainer can access species up to SR <strong>{selectedTrainer ? SpeciesRating.maxAllowed(selectedTrainer.level).toString() : ""}</strong>. Preview the eligible tables before beginning the run.</p>
-							{#if groupedPreviewSpecies().length === 0}
+							{#if previewGroups.length === 0}
 								<p class="muted">No eligible species are configured in this biome.</p>
 							{:else}
 								<div class="preview-tables">
-									{#each groupedPreviewSpecies() as group}
+									{#each previewGroups as group}
 										<div class="preview-table">
 											<strong>SR {group.label}</strong>
 											<span>{group.species.map((species) => species.name).join(", ")}</span>
@@ -793,6 +795,7 @@
 	.checkbox { display: flex; align-items: center; gap: 0.4rem; }
 	.checkbox input { width: auto; }
 	.roll-result { padding: 0.65rem; background: var(--skin-input-bg); border-radius: 0.55rem; }
+	.interaction-help { margin-top: 0; font-size: var(--font-sz-venus); }
 	.encounter-actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
 	.capture-list { display: grid; gap: 0.55rem; }
 	.capture-card { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.65rem; background: var(--skin-input-bg); border-radius: 0.65rem; }
