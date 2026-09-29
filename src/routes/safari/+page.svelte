@@ -56,6 +56,7 @@
 	let spendPokeblock = false
 	let eligibleGroups: ReturnType<typeof groupSpeciesBySr> = []
 	let previewGroups: ReturnType<typeof groupSpeciesBySr> = []
+	let captureStatus: ReturnType<typeof buildCaptureDetails> | undefined
 	let selectedSkill: Skill = "animal handling"
 
 	$: selectedTrainer = cachedTrainers.find((trainer) => trainer.readKey === selectedTrainerReadKey)
@@ -79,6 +80,9 @@
 		: groupSpeciesBySr(selectedBiome.speciesIds
 			.map((id) => speciesById.get(id))
 			.filter((entry): entry is PokemonSpecies => entry != null && entry.sr.data <= SpeciesRating.maxAllowed(selectedTrainer.level).data))
+	$: captureStatus = session?.encounter && encounterSpecies
+		? buildCaptureDetails(encounterSpecies, session.encounter.gauge, session.encounter.stealth?.tier, $currentEdition)
+		: undefined
 
 	onMount(() => {
 		void load()
@@ -296,20 +300,20 @@
 		})
 	}
 
-	const baseCaptureDc = () => {
-		if (!encounterSpecies) return 0
-		return CatchDc.calculate({
-			level: new Level(encounterSpecies.minLevel),
-			sr: encounterSpecies.sr,
-			hp: { current: encounterSpecies.hp, max: encounterSpecies.hp },
-			version: $currentEdition,
+	function buildCaptureDetails(
+		species: PokemonSpecies,
+		gaugeValue: SafariGaugeValue,
+		stealthTierValue: SafariEncounterState["stealth"] extends infer T ? T extends { tier: infer U } ? U : never : never,
+		version: Parameters<typeof CatchDc.calculate>[0]["version"],
+	) {
+		const gauge = captureEffectForGauge(gaugeValue)
+		const stealth = stealthCaptureEffect(stealthTierValue)
+		const base = CatchDc.calculate({
+			level: new Level(species.minLevel),
+			sr: species.sr,
+			hp: { current: species.hp, max: species.hp },
+			version,
 		})
-	}
-
-	const captureDetails = () => {
-		const gauge = captureEffectForGauge(session?.encounter?.gauge ?? 0)
-		const stealth = stealthCaptureEffect(session?.encounter?.stealth?.tier)
-		const base = baseCaptureDc()
 		return {
 			base,
 			gauge,
@@ -324,7 +328,7 @@
 
 		captureError = undefined
 		const encounter = session.encounter
-		const details = captureDetails()
+		const details = buildCaptureDetails(encounterSpecies, encounter.gauge, encounter.stealth?.tier, $currentEdition)
 		const handlingModifier = skillModifier(activeTrainer, "animal handling")
 		const ballsRemaining = session.safariBallsRemaining - 1
 
@@ -496,17 +500,16 @@
 
 				<SafariGauge value={session.encounter.gauge} on:change={(event) => setGauge(event.detail.value)} />
 
-				{#if session?.encounter}
-					{@const details = captureDetails()}
+				{#if session?.encounter && captureStatus}
 					<div class="capture-status panel">
 					<h2>Capture Status</h2>
 					<div class="status-grid">
-						<div><span>Base DC</span><strong>{details.base}</strong></div>
-						<div><span>Gauge</span><strong>{details.gauge.dcModifier === 0 ? "Normal" : `DC ${details.gauge.dcModifier}${details.gauge.advantage ? " + Advantage" : ""}`}</strong></div>
-						<div><span>Stealth</span><strong>{details.stealth.automaticSuccess ? "Automatic success" : details.stealth.dcModifier === 0 ? "Normal" : `DC ${details.stealth.dcModifier}${details.stealth.advantage ? " + Advantage" : ""}`}</strong></div>
-						<div><span>Final DC</span><strong>{details.dc}</strong></div>
-						<div><span>Roll Mode</span><strong>{details.advantage ? "Advantage" : "Normal"}</strong></div>
-						<div><span>Gauge cost on failure</span><strong>{details.stealth.gaugeCost}</strong></div>
+						<div><span>Base DC</span><strong>{captureStatus.base}</strong></div>
+						<div><span>Gauge</span><strong>{captureStatus.gauge.dcModifier === 0 ? "Normal" : `DC ${captureStatus.gauge.dcModifier}${captureStatus.gauge.advantage ? " + Advantage" : ""}`}</strong></div>
+						<div><span>Stealth</span><strong>{captureStatus.stealth.automaticSuccess ? "Automatic success" : captureStatus.stealth.dcModifier === 0 ? "Normal" : `DC ${captureStatus.stealth.dcModifier}${captureStatus.stealth.advantage ? " + Advantage" : ""}`}</strong></div>
+						<div><span>Final DC</span><strong>{captureStatus.dc}</strong></div>
+						<div><span>Roll Mode</span><strong>{captureStatus.advantage ? "Advantage" : "Normal"}</strong></div>
+						<div><span>Gauge cost on failure</span><strong>{captureStatus.stealth.gaugeCost}</strong></div>
 					</div>
 					<p>Animal Handling modifier: <strong>{activeTrainer ? skillModifier(activeTrainer, "animal handling") >= 0 ? "+" : "" : ""}{activeTrainer ? skillModifier(activeTrainer, "animal handling") : 0}</strong></p>
 					{#if session.encounter.lastCaptureRoll}
