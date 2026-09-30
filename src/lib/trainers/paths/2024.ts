@@ -23,8 +23,12 @@ export const TrainerPaths: TrainerPath[] = [ {
 			description: ["Certain trainers choose to excel in one arena, utilizing it to its fullest potential. When you reach level 9, choose an ability score. Each of your Pokémon increases that ability score by one. You must choose the same ability score to increase for all of your Pokémon. This increase will also apply to all Pokémon you catch in the future.", "Additionally, your battle dice become a d8."],
 		},
 		level15: {
-			name: "Rapid Switching",
-			description: ["When you reach level 15, your Pokémon can choose to take a single action or move on the turn they are switched (not both). They still cannot use a bonus action or a reaction on that turn.", "Additionally, your battle dice become a d10."],
+			name: "Seamless Switching",
+			description: [
+				"When you use your Action to voluntarily Switch Pokémon, that Switch Action may also include one Action command for each Pokémon switched into battle, following the normal limit of one Action command per Pokémon. Each incoming Pokémon may move normally, carry out that Action command, receive an eligible Bonus Action Move command if you still possess and spend your Trainer Bonus Action, and use its own Reaction normally. This counts as that Pokémon's participation for the round.",
+				"Seamless Switching does not grant additional Trainer Actions, Bonus Actions, or Reactions. Forced Replacement still grants no free movement or Action command, but a Pokémon entering through Forced Replacement may use its own Reaction immediately.",
+				"Additionally, your battle dice become a d10.",
+			],
 		},
 	},
 }, {
