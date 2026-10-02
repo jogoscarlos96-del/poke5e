@@ -84,6 +84,13 @@
 		<Heading level="2" id="attacks-of-opportunity">Attacks of Opportunity</Heading>
 		<p>If a Pokémon leaves the melee range of another creature without using the Disengage action, or when not returning to a Pokéball, the opponent may use a melee move that has a move time of 1 action immediately as a reaction targeting the fleeing Pokémon. The move costs the normal amount of PP.</p>
 	</section>
+	{#if $currentEdition !== "2018"}
+		<section>
+			<Heading level="2" id="running-away">Running Away</Heading>
+			<p>If Trainers are caught in a fight with wild Pokémon they do not think they can win, they may attempt to run away. As an Action on a PC's turn, the party makes a group DEX check contested by the DEX ability score of the wild Pokémon involved in the combat. More PCs must succeed than fail; ties go to the runners.</p>
+			<p>If the attempt fails, the Trainers cannot attempt to run away again until that PC's next turn (one full round).</p>
+		</section>
+	{/if}
 	<section>
 		<Heading level="2" id="readying-an-action">Readying an Action</Heading>
 		<p>A Pokémon can choose to use the action on their turn to "ready" one of their Moves to use as a reaction that triggers after a set of circumstances determined by the player.</p>
