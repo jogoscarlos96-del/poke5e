@@ -84,10 +84,36 @@ async function getSpectator(code: string): Promise<TrainerBattleSpectatorView | 
 	return data as TrainerBattleSpectatorView | null
 }
 
+async function leave(accessKey: string): Promise<void> {
+	const { error } = await supabase.rpc("leave_trainer_battle", {
+		_access_key: accessKey,
+	})
+	if (error) throw new Error(error.message)
+}
+
 const accessStorageKey = (battleId: string) => `trainer-battle:${battleId}:access`
 
 const storeAccessKey = (battleId: string, accessKey: string): void => {
 	localStorage.setItem(accessStorageKey(battleId), accessKey)
+}
+
+const getStoredAccessKey = (battleId: string): string | null => {
+	return localStorage.getItem(accessStorageKey(battleId))
+}
+
+const clearAccessKey = (battleId: string): void => {
+	localStorage.removeItem(accessStorageKey(battleId))
+}
+
+async function leaveStoredBattle(battleId: string): Promise<void> {
+	const accessKey = getStoredAccessKey(battleId)
+	if (accessKey == null) return
+
+	try {
+		await leave(accessKey)
+	} finally {
+		clearAccessKey(battleId)
+	}
 }
 
 export const TrainerBattleProvider = {
@@ -96,6 +122,10 @@ export const TrainerBattleProvider = {
 	join,
 	getPlayer,
 	getSpectator,
+	leave,
+	leaveStoredBattle,
 	storeAccessKey,
+	getStoredAccessKey,
+	clearAccessKey,
 	normalizeCode,
 } as const

@@ -50,7 +50,20 @@
 		}
 	}
 
-	function setMode(next: Mode) {
+	async function setMode(next: Mode) {
+		if (next === "home" && playerView != null) {
+			busy = true
+			errorMessage = ""
+			try {
+				await TrainerBattleProvider.leaveStoredBattle(playerView.id)
+			} catch (error) {
+				errorMessage = error instanceof Error ? error.message : "Could not leave Trainer Battle."
+				busy = false
+				return
+			}
+			busy = false
+		}
+
 		stopRefreshing()
 		mode = next
 		code = ""
@@ -61,6 +74,19 @@
 		selectedTrainerKey = ""
 		selectedTrainerData = undefined
 		selectedPokemonIds = []
+	}
+
+	function handleRemoteSessionEnd() {
+		stopRefreshing()
+		playerView = null
+		spectatorView = null
+		joinPreview = null
+		mode = "home"
+		code = ""
+		selectedTrainerKey = ""
+		selectedTrainerData = undefined
+		selectedPokemonIds = []
+		errorMessage = "The host ended this Trainer Battle."
 	}
 
 	async function loadTrainer(readKey: string) {
@@ -106,18 +132,34 @@
 	function startPlayerRefreshing(accessKey: string) {
 		stopRefreshing()
 		refreshTimer = setInterval(() => {
-			void TrainerBattleProvider.getPlayer(accessKey).then((view) => {
-				if (view != null) playerView = view
-			})
+			void TrainerBattleProvider.getPlayer(accessKey)
+				.then((view) => {
+					if (view == null) {
+						handleRemoteSessionEnd()
+						return
+					}
+					playerView = view
+				})
+				.catch((error) => {
+					errorMessage = error instanceof Error ? error.message : "Could not refresh Trainer Battle."
+				})
 		}, 3000)
 	}
 
 	function startSpectatorRefreshing(spectatorCode: string) {
 		stopRefreshing()
 		refreshTimer = setInterval(() => {
-			void TrainerBattleProvider.getSpectator(spectatorCode).then((view) => {
-				if (view != null) spectatorView = view
-			})
+			void TrainerBattleProvider.getSpectator(spectatorCode)
+				.then((view) => {
+					if (view == null) {
+						handleRemoteSessionEnd()
+						return
+					}
+					spectatorView = view
+				})
+				.catch((error) => {
+					errorMessage = error instanceof Error ? error.message : "Could not refresh spectator view."
+				})
 		}, 3000)
 	}
 
@@ -258,7 +300,7 @@
 						<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p>
 					</div>
 					<p class="placeholder">The shared battle board and active-Pokémon selection are the next implementation slice.</p>
-					<Button on:click={() => setMode("home")}>Leave View</Button>
+					<Button disabled={busy} on:click={() => setMode("home")}>{busy ? "Leaving…" : "Leave Battle"}</Button>
 				{/if}
 			</section>
 		{:else if mode === "join"}
@@ -273,6 +315,7 @@
 							<p><strong>Host:</strong> {joinPreview.hostTrainerName}</p>
 							<p><strong>Format:</strong> {joinPreview.settings.format === "singles" ? "Singles" : "Doubles"} · <strong>Team limit:</strong> {joinPreview.settings.teamSize} · <strong>Stats:</strong> {joinPreview.settings.scaling === "scale" ? "Scaled" : "Kept"}</p>
 							{#if joinPreview.occupied}<p class="warning">This battle already has a second player.</p>
+							{:else if joinPreview.status === "completed"}<p class="warning">This battle has ended.</p>
 							{:else if joinPreview.status !== "lobby"}<p class="warning">This battle has already started.</p>
 							{:else}
 								<h3>Select Trainer</h3>
@@ -302,7 +345,7 @@
 					</div>
 					<p class="placeholder">The shared battle board and active-Pokémon selection are the next implementation slice.</p>
 				{/if}
-				<div class="footer-actions"><Button on:click={() => setMode("home")}>Back</Button></div>
+				<div class="footer-actions"><Button disabled={busy} on:click={() => setMode("home")}>{playerView && busy ? "Leaving…" : "Back"}</Button></div>
 			</section>
 		{:else}
 			<section>
