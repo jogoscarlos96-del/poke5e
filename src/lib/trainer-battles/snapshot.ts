@@ -37,7 +37,7 @@ function copyPokemonForBattle(pokemon: TrainerPokemon, scaling: TrainerBattleSca
 		revealed: false,
 		fainted: false,
 		position: null,
-		movementRemainingFeet: pokemon.speeds.data.walking,
+		movementRemainingFeet: pokemon.speeds.data.walking ?? 0,
 		activeSlot: null,
 	}
 }
