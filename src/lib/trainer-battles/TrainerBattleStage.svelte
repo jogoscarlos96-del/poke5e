@@ -3,6 +3,7 @@
 	import { Button } from "$lib/ui/elements"
 	import { TrainerBattleProvider } from "./provider"
 	import TrainerBattleBoard from "./TrainerBattleBoard.svelte"
+	import TrainerBattleMovePanel from "./TrainerBattleMovePanel.svelte"
 	import type {
 		BattlePokemonSnapshot,
 		PublicOpponentPokemon,
@@ -93,7 +94,19 @@
 	}
 
 	function unitLabel(pokemonId: string): string {
-		return allUnits.find((unit) => unit.id === pokemonId)?.label ?? "Pokémon"
+		const active = allUnits.find((unit) => unit.id === pokemonId)
+		if (active) return active.label
+
+		const own = playerView?.self.pokemon.find((pokemon) => pokemon.id === pokemonId)
+		if (own) return pokemonLabel(own)
+		const opponent = playerView?.opponentBattle?.pokemon.find((pokemon) => pokemon.id === pokemonId)
+		if (opponent) return publicPokemonLabel(opponent)
+
+		for (const side of ["a", "b"] as const) {
+			const pokemon = spectatorView?.participants[side]?.pokemon.find((candidate) => candidate.id === pokemonId)
+			if (pokemon) return pokemonLabel(pokemon)
+		}
+		return "Pokémon"
 	}
 
 	function toggleActive(id: string) {
@@ -295,7 +308,20 @@
 				on:move={movePokemon}
 			/>
 
-			{#if playerView && isMyTurn}
+			{#if battleState.lastAction}
+				{@const action = battleState.lastAction}
+				<div class="last-action">
+					<strong>{unitLabel(action.pokemonId)} used {action.moveName}{action.targetPokemonId ? ` on ${unitLabel(action.targetPokemonId)}` : ""}.</strong>
+					<div class="last-action-rolls">
+						{#if action.attack}<span>Attack: <strong>{action.attack.total}</strong> (d20 {action.attack.roll} {signed(action.attack.bonus)}) — {action.attack.critical ? "critical hit" : action.attack.hit ? "hit" : "miss"}</span>{/if}
+						{#if action.save}<span>{action.save.attribute.toUpperCase()} save: <strong>{action.save.total}</strong> vs DC {action.save.dc} — {action.save.success ? "success" : "failure"}</span>{/if}
+						{#if action.damage}<span>{action.damage.isHealing ? "Healing" : "Damage"}: <strong>{action.damage.total}</strong> ({action.damage.dice}{action.damage.critical ? ", critical dice" : ""}{action.damage.modifier ? ` ${signed(action.damage.modifier)}` : ""}){action.appliedAmount != null ? ` · ${action.appliedAmount} applied` : " · awaiting application"}</span>{/if}
+					</div>
+				</div>
+			{/if}
+
+			{#if playerView && isMyTurn && myTurnPokemon}
+				<TrainerBattleMovePanel {playerView} pokemon={myTurnPokemon} on:changed={() => dispatch("changed")} />
 				<div class="turn-actions"><Button variant="success" disabled={busy} on:click={endTurn}>{busy ? "Updating…" : "End Turn"}</Button></div>
 			{/if}
 		{/if}
@@ -326,5 +352,7 @@
 	.other-modifier { display: grid; grid-template-columns: 1fr 5rem; align-items: center; gap: .5rem; margin-block: .65rem; }
 	.other-modifier input { font: inherit; padding: .35rem; width: 100%; }
 	.modifier-help { font-size: .85em; font-style: italic; margin-block: .4rem .7rem; }
+	.last-action { margin-top: .8rem; padding: .75rem .85rem; border-radius: .6rem; background: var(--skin-input-bg); }
+	.last-action-rolls { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin-top: .35rem; font-size: .9em; }
 	.stage-error { padding: .75rem 1rem; border: 1px solid currentColor; border-radius: .5rem; color: var(--skin-danger-text); }
 </style>

@@ -1,7 +1,9 @@
 import { supabase } from "$lib/supabase"
+import type { Attribute } from "$lib/dnd/attributes"
 import type {
 	HexPosition,
 	TrainerBattleJoinPreview,
+	TrainerBattleMoveResult,
 	TrainerBattleParticipant,
 	TrainerBattlePlayerView,
 	TrainerBattleSettings,
@@ -18,6 +20,21 @@ export type CreatedTrainerBattle = {
 export type JoinedTrainerBattle = {
 	id: string,
 	accessKey: string,
+}
+
+export type UseTrainerBattleMoveInput = {
+	pokemonId: string,
+	moveSnapshotId: string,
+	moveName: string,
+	targetPokemonId: string | null,
+	timeUnit: TrainerBattleMoveResult["timeUnit"],
+	attackBonus: number | null,
+	saveDc: number | null,
+	saveAttributes: Attribute[],
+	damageDice: string | null,
+	damageModifier: number,
+	isHealing: boolean,
+	rangeFeet: number | null,
 }
 
 type CreatedRow = {
@@ -136,6 +153,34 @@ async function movePokemon(accessKey: string, pokemonId: string, position: HexPo
 	if (error) throw new Error(error.message)
 }
 
+async function useMove(accessKey: string, input: UseTrainerBattleMoveInput): Promise<TrainerBattleMoveResult> {
+	const { data, error } = await supabase.rpc("use_trainer_battle_move", {
+		_access_key: accessKey,
+		_pokemon_id: input.pokemonId,
+		_move_snapshot_id: input.moveSnapshotId,
+		_move_name: input.moveName,
+		_target_pokemon_id: input.targetPokemonId,
+		_time_unit: input.timeUnit,
+		_attack_bonus: input.attackBonus,
+		_save_dc: input.saveDc,
+		_save_attributes: input.saveAttributes,
+		_damage_dice: input.damageDice,
+		_damage_modifier: input.damageModifier,
+		_is_healing: input.isHealing,
+		_range_feet: input.rangeFeet,
+	})
+	if (error || data == null) throw new Error(error?.message ?? "Could not use that move.")
+	return data as TrainerBattleMoveResult
+}
+
+async function applyLastDamage(accessKey: string, amount: number): Promise<void> {
+	const { error } = await supabase.rpc("apply_trainer_battle_last_damage", {
+		_access_key: accessKey,
+		_amount: amount,
+	})
+	if (error) throw new Error(error.message)
+}
+
 async function endTurn(accessKey: string): Promise<void> {
 	const { error } = await supabase.rpc("end_trainer_battle_turn", {
 		_access_key: accessKey,
@@ -201,6 +246,8 @@ export const TrainerBattleProvider = {
 	start,
 	rollInitiative,
 	movePokemon,
+	useMove,
+	applyLastDamage,
 	endTurn,
 	leave,
 	leaveStoredBattle,

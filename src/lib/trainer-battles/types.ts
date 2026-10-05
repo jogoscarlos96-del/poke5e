@@ -1,4 +1,5 @@
 import type { Attribute } from "$lib/dnd/attributes"
+import type { MoveTimeUnit } from "$lib/moves/time"
 import type { Trainer, TrainerPokemon } from "$lib/trainers/types"
 
 export type TrainerBattleFormat = "singles" | "doubles"
@@ -74,6 +75,50 @@ export type TrainerBattleTurnEntry = {
 	modifier: number,
 }
 
+export type TrainerBattleAttackResult = {
+	roll: number,
+	bonus: number,
+	total: number,
+	hit: boolean,
+	critical: boolean,
+}
+
+export type TrainerBattleSaveResult = {
+	attribute: Attribute,
+	roll: number,
+	bonus: number,
+	total: number,
+	dc: number,
+	success: boolean,
+}
+
+export type TrainerBattleDamageResult = {
+	dice: string,
+	rolls: number[],
+	modifier: number,
+	total: number,
+	isHealing: boolean,
+	critical: boolean,
+}
+
+export type TrainerBattleMoveResult = {
+	id: string,
+	round: number,
+	side: TrainerBattleSide,
+	pokemonId: string,
+	moveSnapshotId: string,
+	moveId: string,
+	moveName: string,
+	targetPokemonId: string | null,
+	targetSide: TrainerBattleSide | null,
+	timeUnit: MoveTimeUnit,
+	attack: TrainerBattleAttackResult | null,
+	save: TrainerBattleSaveResult | null,
+	damage: TrainerBattleDamageResult | null,
+	appliedAmount: number | null,
+	createdAt: string,
+}
+
 export type TrainerBattleState = {
 	phase?: TrainerBattlePhase,
 	round: number,
@@ -82,6 +127,9 @@ export type TrainerBattleState = {
 	initiativeRolls?: TrainerBattleTurnEntry[],
 	turnPokemonId: string | null,
 	turnSide: TrainerBattleSide | null,
+	actionUsed?: boolean,
+	bonusActionUsed?: boolean,
+	lastAction?: TrainerBattleMoveResult | null,
 }
 
 export type TrainerBattleSession = {
