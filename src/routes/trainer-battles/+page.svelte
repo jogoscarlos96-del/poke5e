@@ -7,6 +7,7 @@
 	import type { Trainer, TrainerPokemon } from "$lib/trainers/types"
 	import { createBattleParticipant } from "$lib/trainer-battles/snapshot"
 	import { TrainerBattleProvider } from "$lib/trainer-battles/provider"
+	import TrainerBattleStage from "$lib/trainer-battles/TrainerBattleStage.svelte"
 	import { DEFAULT_TRAINER_BATTLE_SETTINGS } from "$lib/trainer-battles/config"
 	import { TRAINER_BATTLE_SCALE_WARNING } from "$lib/trainer-battles/constants"
 	import type {
@@ -129,38 +130,47 @@
 		refreshTimer = undefined
 	}
 
+	async function refreshPlayer(accessKey: string) {
+		try {
+			const view = await TrainerBattleProvider.getPlayer(accessKey)
+			if (view == null) {
+				handleRemoteSessionEnd()
+				return
+			}
+			playerView = view
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : "Could not refresh Trainer Battle."
+		}
+	}
+
+	async function refreshCurrentPlayer() {
+		if (playerView == null) return
+		const accessKey = TrainerBattleProvider.getStoredAccessKey(playerView.id)
+		if (accessKey == null) return
+		await refreshPlayer(accessKey)
+	}
+
+	async function refreshSpectator(spectatorCode: string) {
+		try {
+			const view = await TrainerBattleProvider.getSpectator(spectatorCode)
+			if (view == null) {
+				handleRemoteSessionEnd()
+				return
+			}
+			spectatorView = view
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : "Could not refresh spectator view."
+		}
+	}
+
 	function startPlayerRefreshing(accessKey: string) {
 		stopRefreshing()
-		refreshTimer = setInterval(() => {
-			void TrainerBattleProvider.getPlayer(accessKey)
-				.then((view) => {
-					if (view == null) {
-						handleRemoteSessionEnd()
-						return
-					}
-					playerView = view
-				})
-				.catch((error) => {
-					errorMessage = error instanceof Error ? error.message : "Could not refresh Trainer Battle."
-				})
-		}, 3000)
+		refreshTimer = setInterval(() => void refreshPlayer(accessKey), 1200)
 	}
 
 	function startSpectatorRefreshing(spectatorCode: string) {
 		stopRefreshing()
-		refreshTimer = setInterval(() => {
-			void TrainerBattleProvider.getSpectator(spectatorCode)
-				.then((view) => {
-					if (view == null) {
-						handleRemoteSessionEnd()
-						return
-					}
-					spectatorView = view
-				})
-				.catch((error) => {
-					errorMessage = error instanceof Error ? error.message : "Could not refresh spectator view."
-				})
-		}, 3000)
+		refreshTimer = setInterval(() => void refreshSpectator(spectatorCode), 1200)
 	}
 
 	async function hostBattle() {
@@ -217,6 +227,21 @@
 			startPlayerRefreshing(joined.accessKey)
 		} catch (error) {
 			errorMessage = error instanceof Error ? error.message : "Could not join Trainer Battle."
+		} finally {
+			busy = false
+		}
+	}
+
+	async function resumeBattle() {
+		busy = true
+		errorMessage = ""
+		try {
+			const joined = await TrainerBattleProvider.resume(code)
+			TrainerBattleProvider.storeAccessKey(joined.id, joined.accessKey)
+			playerView = await TrainerBattleProvider.getPlayer(joined.accessKey)
+			startPlayerRefreshing(joined.accessKey)
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : "Could not resume Trainer Battle."
 		} finally {
 			busy = false
 		}
@@ -296,10 +321,10 @@
 						<h3>Battle Lobby</h3>
 						<p><strong>Your Trainer:</strong> {playerView.self.trainer.name}</p>
 						<div class="roster">{#each playerView.self.pokemon as pokemon}<span>{pokemonLabel(pokemon)}</span>{/each}</div>
-						{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected)</p>{:else}<p><strong>Opponent:</strong> Waiting for Player 2…</p>{/if}
+						{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected){playerView.opponent.connected ? "" : " — disconnected"}</p>{:else}<p><strong>Opponent:</strong> Waiting for Player 2…</p>{/if}
 						<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p>
 					</div>
-					<p class="placeholder">The shared battle board and active-Pokémon selection are the next implementation slice.</p>
+					<TrainerBattleStage {playerView} on:changed={refreshCurrentPlayer} />
 					<Button disabled={busy} on:click={() => setMode("home")}>{busy ? "Leaving…" : "Leave Battle"}</Button>
 				{/if}
 			</section>
@@ -316,7 +341,10 @@
 							<p><strong>Format:</strong> {joinPreview.settings.format === "singles" ? "Singles" : "Doubles"} · <strong>Team limit:</strong> {joinPreview.settings.teamSize} · <strong>Stats:</strong> {joinPreview.settings.scaling === "scale" ? "Scaled" : "Kept"}</p>
 							{#if joinPreview.occupied}<p class="warning">This battle already has a second player.</p>
 							{:else if joinPreview.status === "completed"}<p class="warning">This battle has ended.</p>
-							{:else if joinPreview.status !== "lobby"}<p class="warning">This battle has already started.</p>
+							{:else if joinPreview.status === "active" && joinPreview.resumeAvailable}
+								<p>This battle is already in progress and Player 2's slot is available.</p>
+								<Button variant="success" disabled={busy} on:click={resumeBattle}>{busy ? "Resuming…" : "Resume Battle"}</Button>
+							{:else if joinPreview.status !== "lobby"}<p class="warning">This battle is not accepting a new player.</p>
 							{:else}
 								<h3>Select Trainer</h3>
 								<label><span>Local Trainer</span><select bind:value={selectedTrainerKey} on:change={() => loadTrainer(selectedTrainerKey)} disabled={busy}><option value="">— Select Trainer —</option>{#each knownTrainers as trainer}<option value={trainer.readKey}>{trainer.name}</option>{/each}</select></label>
@@ -343,7 +371,7 @@
 						{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected)</p>{/if}
 						<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p>
 					</div>
-					<p class="placeholder">The shared battle board and active-Pokémon selection are the next implementation slice.</p>
+					<TrainerBattleStage {playerView} on:changed={refreshCurrentPlayer} />
 				{/if}
 				<div class="footer-actions"><Button disabled={busy} on:click={() => setMode("home")}>{playerView && busy ? "Leaving…" : "Back"}</Button></div>
 			</section>
@@ -367,6 +395,7 @@
 							</div>
 						{/each}
 					</div>
+					<TrainerBattleStage {spectatorView} />
 				{/if}
 				<div class="footer-actions"><Button on:click={() => setMode("home")}>Back</Button></div>
 			</section>
@@ -383,7 +412,7 @@
 	select, input { font: inherit; padding: .65rem; }
 	.warning, .error { max-width: 48rem; padding: .75rem 1rem; border: 1px solid currentColor; border-radius: .5rem; }
 	.error { color: var(--skin-danger-text); }
-	.placeholder, .privacy-note { font-style: italic; }
+	.privacy-note { font-style: italic; }
 	.team-list { display: grid; gap: .5rem; max-width: 42rem; margin-bottom: 1rem; }
 	.pokemon-choice { display: flex; align-items: center; gap: .65rem; margin: 0; padding: .65rem .8rem; background: var(--skin-input-bg); border-radius: .5rem; }
 	.footer-actions { display: flex; gap: .75rem; margin-top: 1.25rem; }

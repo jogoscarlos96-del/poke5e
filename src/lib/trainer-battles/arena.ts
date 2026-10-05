@@ -1,3 +1,4 @@
+import type { TrainerPokemon } from "$lib/trainers/types"
 import type { HexPosition, TrainerBattleFormat, TrainerBattleSide } from "./types"
 
 export const TRAINER_BATTLE_HEX_FEET = 5
@@ -25,9 +26,17 @@ export function spawnPositions(format: TrainerBattleFormat, side: TrainerBattleS
 	return format === "singles" ? singlesSpawn[side] : doublesSpawn[side]
 }
 
+function oddQToCube(position: HexPosition): { x: number, y: number, z: number } {
+	const x = position.q
+	const z = position.r - Math.floor((position.q - (position.q & 1)) / 2)
+	const y = -x - z
+	return { x, y, z }
+}
+
 export function hexDistance(from: HexPosition, to: HexPosition): number {
-	const ds = (-from.q - from.r) - (-to.q - to.r)
-	return Math.max(Math.abs(from.q - to.q), Math.abs(from.r - to.r), Math.abs(ds))
+	const a = oddQToCube(from)
+	const b = oddQToCube(to)
+	return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.z - b.z))
 }
 
 export function movementDistanceFeet(from: HexPosition, to: HexPosition): number {
@@ -36,4 +45,16 @@ export function movementDistanceFeet(from: HexPosition, to: HexPosition): number
 
 export function isInsideArena(position: HexPosition): boolean {
 	return position.q >= 0 && position.q < TRAINER_BATTLE_ARENA_COLUMNS && position.r >= 0 && position.r < TRAINER_BATTLE_ARENA_ROWS
+}
+
+export function allArenaPositions(): HexPosition[] {
+	return Array.from({ length: TRAINER_BATTLE_ARENA_COLUMNS * TRAINER_BATTLE_ARENA_ROWS }, (_, index) => ({
+		q: index % TRAINER_BATTLE_ARENA_COLUMNS,
+		r: Math.floor(index / TRAINER_BATTLE_ARENA_COLUMNS),
+	}))
+}
+
+export function battleMovementSpeedFeet(pokemon: Pick<TrainerPokemon, "speeds">): number {
+	const values = Object.values(pokemon.speeds.data).filter((value): value is number => typeof value === "number" && value > 0)
+	return values.length === 0 ? 0 : Math.max(...values)
 }

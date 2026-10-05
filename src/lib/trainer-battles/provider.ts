@@ -1,5 +1,6 @@
 import { supabase } from "$lib/supabase"
 import type {
+	HexPosition,
 	TrainerBattleJoinPreview,
 	TrainerBattleParticipant,
 	TrainerBattlePlayerView,
@@ -68,6 +69,15 @@ async function join(code: string, participant: TrainerBattleParticipant): Promis
 	return { id: data.id, accessKey: data.access_key }
 }
 
+async function resume(code: string): Promise<JoinedTrainerBattle> {
+	const { data, error } = await supabase.rpc("resume_trainer_battle", {
+		_join_code: normalizeCode(code),
+	}).single<JoinedRow>()
+
+	if (error || data == null) throw new Error(error?.message ?? "Could not resume Trainer Battle.")
+	return { id: data.id, accessKey: data.access_key }
+}
+
 async function getPlayer(accessKey: string): Promise<TrainerBattlePlayerView | null> {
 	const { data, error } = await supabase.rpc("get_trainer_battle_player", {
 		_access_key: accessKey,
@@ -82,6 +92,45 @@ async function getSpectator(code: string): Promise<TrainerBattleSpectatorView | 
 	})
 	if (error) throw new Error(error.message)
 	return data as TrainerBattleSpectatorView | null
+}
+
+async function setReady(accessKey: string, pokemonIds: string[]): Promise<void> {
+	const { error } = await supabase.rpc("set_trainer_battle_ready", {
+		_access_key: accessKey,
+		_pokemon_ids: pokemonIds,
+	})
+	if (error) throw new Error(error.message)
+}
+
+async function clearReady(accessKey: string): Promise<void> {
+	const { error } = await supabase.rpc("clear_trainer_battle_ready", {
+		_access_key: accessKey,
+	})
+	if (error) throw new Error(error.message)
+}
+
+async function start(accessKey: string): Promise<void> {
+	const { error } = await supabase.rpc("start_trainer_battle", {
+		_access_key: accessKey,
+	})
+	if (error) throw new Error(error.message)
+}
+
+async function movePokemon(accessKey: string, pokemonId: string, position: HexPosition): Promise<void> {
+	const { error } = await supabase.rpc("move_trainer_battle_pokemon", {
+		_access_key: accessKey,
+		_pokemon_id: pokemonId,
+		_q: position.q,
+		_r: position.r,
+	})
+	if (error) throw new Error(error.message)
+}
+
+async function endTurn(accessKey: string): Promise<void> {
+	const { error } = await supabase.rpc("end_trainer_battle_turn", {
+		_access_key: accessKey,
+	})
+	if (error) throw new Error(error.message)
 }
 
 async function leave(accessKey: string): Promise<void> {
@@ -120,8 +169,14 @@ export const TrainerBattleProvider = {
 	create,
 	getJoinPreview,
 	join,
+	resume,
 	getPlayer,
 	getSpectator,
+	setReady,
+	clearReady,
+	start,
+	movePokemon,
+	endTurn,
 	leave,
 	leaveStoredBattle,
 	storeAccessKey,

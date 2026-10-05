@@ -42,6 +42,7 @@ export type BattlePokemonSnapshot = Omit<TrainerPokemon, "moves" | "hp" | "statu
 	revealed: boolean,
 	fainted: boolean,
 	position: HexPosition | null,
+	movementMaxFeet: number,
 	movementRemainingFeet: number,
 	activeSlot: number | null,
 }
@@ -61,6 +62,22 @@ export type TrainerBattleParticipant = {
 	ready: boolean,
 }
 
+export type TrainerBattleTurnEntry = {
+	pokemonId: string,
+	side: TrainerBattleSide,
+	initiative: number,
+	roll: number,
+	modifier: number,
+}
+
+export type TrainerBattleState = {
+	round: number,
+	turnIndex: number,
+	turnOrder: TrainerBattleTurnEntry[],
+	turnPokemonId: string | null,
+	turnSide: TrainerBattleSide | null,
+}
+
 export type TrainerBattleSession = {
 	id: string,
 	joinCode: string,
@@ -68,7 +85,7 @@ export type TrainerBattleSession = {
 	settings: TrainerBattleSettings,
 	participants: Partial<Record<TrainerBattleSide, TrainerBattleParticipant>>,
 	status: "lobby" | "active" | "completed",
-	turnPokemonId: string | null,
+	battleState: TrainerBattleState | null,
 	createdAt: string,
 	updatedAt: string,
 }
@@ -78,6 +95,7 @@ export type TrainerBattleJoinPreview = {
 	settings: TrainerBattleSettings,
 	hostTrainerName: string,
 	occupied: boolean,
+	resumeAvailable: boolean,
 	status: "lobby" | "active" | "completed",
 	createdAt: string,
 	updatedAt: string,
@@ -87,6 +105,7 @@ export type TrainerBattleOpponentLobby = {
 	trainerName: string,
 	ready: boolean,
 	teamCount: number,
+	connected: boolean,
 }
 
 export type TrainerBattlePlayerView = {
@@ -96,6 +115,8 @@ export type TrainerBattlePlayerView = {
 	viewerSide: TrainerBattleSide,
 	self: TrainerBattleParticipant,
 	opponent: TrainerBattleOpponentLobby | null,
+	opponentBattle: OpponentBattleProjection | null,
+	battleState: TrainerBattleState | null,
 	joinCode: string | null,
 	spectatorCode: string | null,
 	createdAt: string,
@@ -107,6 +128,7 @@ export type TrainerBattleSpectatorView = {
 	settings: TrainerBattleSettings,
 	status: "lobby" | "active" | "completed",
 	participants: Partial<Record<TrainerBattleSide, TrainerBattleParticipant>>,
+	battleState: TrainerBattleState | null,
 	createdAt: string,
 	updatedAt: string,
 }
@@ -120,6 +142,7 @@ export type PublicOpponentPokemon = {
 	id: string,
 	nickname: string,
 	pokemonId: TrainerPokemon["pokemonId"],
+	avatar?: TrainerPokemon["avatar"],
 	revealed: boolean,
 	fainted: boolean,
 	activeSlot: number | null,

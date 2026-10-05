@@ -1,5 +1,6 @@
 import type { TrainerData } from "$lib/trainers/data"
 import type { TrainerPokemon } from "$lib/trainers/types"
+import { battleMovementSpeedFeet } from "./arena"
 import { battleMaxHp } from "./scaling"
 import type {
 	BattleMoveSnapshot,
@@ -12,6 +13,7 @@ import type {
 
 function copyPokemonForBattle(pokemon: TrainerPokemon, scaling: TrainerBattleScaling): BattlePokemonSnapshot {
 	const maxHp = battleMaxHp(pokemon.hp.max, pokemon.level.data, scaling)
+	const movementMaxFeet = battleMovementSpeedFeet(pokemon)
 	const moves: BattleMoveSnapshot[] = pokemon.moves.map((move) => ({
 		id: move.id,
 		moveId: move.moveId,
@@ -37,7 +39,8 @@ function copyPokemonForBattle(pokemon: TrainerPokemon, scaling: TrainerBattleSca
 		revealed: false,
 		fainted: false,
 		position: null,
-		movementRemainingFeet: pokemon.speeds.data.walking ?? 0,
+		movementMaxFeet,
+		movementRemainingFeet: movementMaxFeet,
 		activeSlot: null,
 	}
 }
