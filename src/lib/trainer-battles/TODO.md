@@ -1,0 +1,5 @@
+- Add session persistence and permissions.
+- Add Trainer/team selection.
+- Add battle arena UI.
+- Add realtime synchronization.
+- Add tests.
