@@ -31,6 +31,7 @@ export const Url = {
 	},
 	safari: () => localizeUrl(resolve("/safari")).pathname,
 	safariManagement: () => localizeUrl(resolve("/safari-management")).pathname,
+	trainerBattles: () => localizeUrl(resolve("/trainer-battles")).pathname,
 	items: (id?: string) => localizeUrl(id ? resolve("/items/[id]", { id }) : resolve("/items")).pathname,
 	pokemon: (id?: string) => localizeUrl(id ? resolve("/pokemon/[id]", { id }) : resolve("/pokemon")).pathname,
 	moves: (id?: string) => localizeUrl(id ? resolve("/moves/[id]", { id }) : resolve("/moves")).pathname,
