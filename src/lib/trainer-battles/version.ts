@@ -1,1 +1,0 @@
-export const TRAINER_BATTLES_SCHEMA_VERSION = 1
