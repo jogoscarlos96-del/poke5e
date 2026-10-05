@@ -1,0 +1,1 @@
+Trainer Battles is intentionally isolated from normal Trainer/Pokémon state. Do not mutate source Trainer records from battle-session code.
