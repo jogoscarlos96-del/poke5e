@@ -116,6 +116,16 @@ async function start(accessKey: string): Promise<void> {
 	if (error) throw new Error(error.message)
 }
 
+async function rollInitiative(accessKey: string, pokemonId: string, useAlert: boolean, otherModifier: number): Promise<void> {
+	const { error } = await supabase.rpc("roll_trainer_battle_initiative", {
+		_access_key: accessKey,
+		_pokemon_id: pokemonId,
+		_use_alert: useAlert,
+		_other_modifier: otherModifier,
+	})
+	if (error) throw new Error(error.message)
+}
+
 async function movePokemon(accessKey: string, pokemonId: string, position: HexPosition): Promise<void> {
 	const { error } = await supabase.rpc("move_trainer_battle_pokemon", {
 		_access_key: accessKey,
@@ -141,17 +151,31 @@ async function leave(accessKey: string): Promise<void> {
 }
 
 const accessStorageKey = (battleId: string) => `trainer-battle:${battleId}:access`
+const currentBattleStorageKey = "trainer-battle:current"
 
 const storeAccessKey = (battleId: string, accessKey: string): void => {
 	localStorage.setItem(accessStorageKey(battleId), accessKey)
+	localStorage.setItem(currentBattleStorageKey, battleId)
 }
 
 const getStoredAccessKey = (battleId: string): string | null => {
 	return localStorage.getItem(accessStorageKey(battleId))
 }
 
+const getCurrentStoredBattle = (): { battleId: string, accessKey: string } | null => {
+	const battleId = localStorage.getItem(currentBattleStorageKey)
+	if (!battleId) return null
+	const accessKey = getStoredAccessKey(battleId)
+	if (!accessKey) {
+		localStorage.removeItem(currentBattleStorageKey)
+		return null
+	}
+	return { battleId, accessKey }
+}
+
 const clearAccessKey = (battleId: string): void => {
 	localStorage.removeItem(accessStorageKey(battleId))
+	if (localStorage.getItem(currentBattleStorageKey) === battleId) localStorage.removeItem(currentBattleStorageKey)
 }
 
 async function leaveStoredBattle(battleId: string): Promise<void> {
@@ -175,12 +199,14 @@ export const TrainerBattleProvider = {
 	setReady,
 	clearReady,
 	start,
+	rollInitiative,
 	movePokemon,
 	endTurn,
 	leave,
 	leaveStoredBattle,
 	storeAccessKey,
 	getStoredAccessKey,
+	getCurrentStoredBattle,
 	clearAccessKey,
 	normalizeCode,
 } as const

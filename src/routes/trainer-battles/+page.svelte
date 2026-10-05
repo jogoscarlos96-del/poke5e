@@ -33,21 +33,71 @@
 	let joinPreview: TrainerBattleJoinPreview | null = null
 	let playerView: TrainerBattlePlayerView | null = null
 	let spectatorView: TrainerBattleSpectatorView | null = null
+	let returnableView: TrainerBattlePlayerView | null = null
 	let busy = false
 	let errorMessage = ""
 	let refreshTimer: ReturnType<typeof setInterval> | undefined
 
 	onMount(() => {
-		void loadKnownTrainers()
+		void initialize()
 	})
 
 	onDestroy(() => stopRefreshing())
+
+	async function initialize() {
+		await Promise.all([loadKnownTrainers(), findReturnableBattle()])
+	}
 
 	async function loadKnownTrainers() {
 		try {
 			knownTrainers = await trainerProvider.allTrainers()
 		} catch (error) {
 			errorMessage = error instanceof Error ? error.message : "Could not load local Trainers."
+		}
+	}
+
+	async function findReturnableBattle() {
+		const stored = TrainerBattleProvider.getCurrentStoredBattle()
+		if (!stored) {
+			returnableView = null
+			return
+		}
+		try {
+			const view = await TrainerBattleProvider.getPlayer(stored.accessKey)
+			if (view == null) {
+				TrainerBattleProvider.clearAccessKey(stored.battleId)
+				returnableView = null
+				return
+			}
+			returnableView = view
+		} catch {
+			returnableView = null
+		}
+	}
+
+	async function returnToBattle() {
+		const stored = TrainerBattleProvider.getCurrentStoredBattle()
+		if (!stored) {
+			returnableView = null
+			return
+		}
+		busy = true
+		errorMessage = ""
+		try {
+			const view = await TrainerBattleProvider.getPlayer(stored.accessKey)
+			if (view == null) {
+				TrainerBattleProvider.clearAccessKey(stored.battleId)
+				returnableView = null
+				throw new Error("This saved Trainer Battle slot is no longer available.")
+			}
+			playerView = view
+			returnableView = null
+			mode = view.viewerSide === "a" ? "host" : "join"
+			startPlayerRefreshing(stored.accessKey)
+		} catch (error) {
+			errorMessage = error instanceof Error ? error.message : "Could not return to Trainer Battle."
+		} finally {
+			busy = false
 		}
 	}
 
@@ -71,23 +121,27 @@
 		joinPreview = null
 		playerView = null
 		spectatorView = null
+		returnableView = null
 		errorMessage = ""
 		selectedTrainerKey = ""
 		selectedTrainerData = undefined
 		selectedPokemonIds = []
+		if (next === "home") void findReturnableBattle()
 	}
 
-	function handleRemoteSessionEnd() {
+	function handleRemoteSessionEnd(message = "The host ended this Trainer Battle.") {
 		stopRefreshing()
+		if (playerView) TrainerBattleProvider.clearAccessKey(playerView.id)
 		playerView = null
 		spectatorView = null
+		returnableView = null
 		joinPreview = null
 		mode = "home"
 		code = ""
 		selectedTrainerKey = ""
 		selectedTrainerData = undefined
 		selectedPokemonIds = []
-		errorMessage = "The host ended this Trainer Battle."
+		errorMessage = message
 	}
 
 	async function loadTrainer(readKey: string) {
@@ -134,7 +188,7 @@
 		try {
 			const view = await TrainerBattleProvider.getPlayer(accessKey)
 			if (view == null) {
-				handleRemoteSessionEnd()
+				handleRemoteSessionEnd("This battle control slot is no longer available. If you are Player 2, you can reclaim it with the Join Code.")
 				return
 			}
 			playerView = view
@@ -179,12 +233,7 @@
 		errorMessage = ""
 		try {
 			const settings = { format, teamSize, scaling }
-			const participant = createBattleParticipant({
-				trainer: selectedTrainerData,
-				pokemonIds: selectedPokemonIds,
-				side: "a",
-				scaling,
-			})
+			const participant = createBattleParticipant({ trainer: selectedTrainerData, pokemonIds: selectedPokemonIds, side: "a", scaling })
 			const created = await TrainerBattleProvider.create(settings, participant)
 			TrainerBattleProvider.storeAccessKey(created.id, created.accessKey)
 			playerView = await TrainerBattleProvider.getPlayer(created.accessKey)
@@ -215,12 +264,7 @@
 		busy = true
 		errorMessage = ""
 		try {
-			const participant = createBattleParticipant({
-				trainer: selectedTrainerData,
-				pokemonIds: selectedPokemonIds,
-				side: "b",
-				scaling: joinPreview.settings.scaling,
-			})
+			const participant = createBattleParticipant({ trainer: selectedTrainerData, pokemonIds: selectedPokemonIds, side: "b", scaling: joinPreview.settings.scaling })
 			const joined = await TrainerBattleProvider.join(code, participant)
 			TrainerBattleProvider.storeAccessKey(joined.id, joined.accessKey)
 			playerView = await TrainerBattleProvider.getPlayer(joined.accessKey)
@@ -273,6 +317,9 @@
 			<section>
 				<p>Run a synchronized sanctioned Trainer Battle using isolated battle copies of your Trainers and Pokémon. Your normal Trainer sheets are never changed by battle-session HP, PP, statuses, or scaling.</p>
 				<div class="actions">
+					{#if returnableView}
+						<Button width="full" variant="success" disabled={busy} on:click={returnToBattle}>{busy ? "Returning…" : `Return to Battle — ${returnableView.self.trainer.name}`}</Button>
+					{/if}
 					<Button width="full" on:click={() => setMode("host")}>Host Battle</Button>
 					<Button width="full" on:click={() => setMode("join")}>Join Battle</Button>
 					<Button width="full" on:click={() => setMode("watch")}>Watch Battle</Button>
@@ -288,42 +335,20 @@
 						<label><span>Stats</span><select bind:value={scaling}><option value="keep">Keep Stats</option><option value="scale">Scale Stats</option></select></label>
 					</div>
 					{#if scaling === "scale"}<p class="warning"><strong>Scale Stats:</strong> {TRAINER_BATTLE_SCALE_WARNING}</p>{/if}
-
 					<h3>Select Trainer</h3>
-					<label>
-						<span>Local Trainer</span>
-						<select bind:value={selectedTrainerKey} on:change={() => loadTrainer(selectedTrainerKey)} disabled={busy}>
-							<option value="">— Select Trainer —</option>
-							{#each knownTrainers as trainer}<option value={trainer.readKey}>{trainer.name}</option>{/each}
-						</select>
-					</label>
+					<label><span>Local Trainer</span><select bind:value={selectedTrainerKey} on:change={() => loadTrainer(selectedTrainerKey)} disabled={busy}><option value="">— Select Trainer —</option>{#each knownTrainers as trainer}<option value={trainer.readKey}>{trainer.name}</option>{/each}</select></label>
 					{#if knownTrainers.length === 0}<p>No Trainers are currently stored in this browser's local Trainer list.</p>{/if}
-
 					{#if selectedTrainerData}
 						<h3>Choose Team <small>({selectedPokemonIds.length}/{teamSize})</small></h3>
-						<div class="team-list">
-							{#each selectedTrainerData.pokemon as pokemon}
-								<label class="pokemon-choice">
-									<input type="checkbox" checked={selectedPokemonIds.includes(pokemon.id)} disabled={!selectedPokemonIds.includes(pokemon.id) && selectedPokemonIds.length >= teamSize} on:change={() => togglePokemon(pokemon.id, teamSize)} />
-									<span><strong>{pokemonLabel(pokemon)}</strong> — Lv. {pokemon.level.data}</span>
-								</label>
-							{/each}
-						</div>
+						<div class="team-list">{#each selectedTrainerData.pokemon as pokemon}<label class="pokemon-choice"><input type="checkbox" checked={selectedPokemonIds.includes(pokemon.id)} disabled={!selectedPokemonIds.includes(pokemon.id) && selectedPokemonIds.length >= teamSize} on:change={() => togglePokemon(pokemon.id, teamSize)} /><span><strong>{pokemonLabel(pokemon)}</strong> — Lv. {pokemon.level.data}</span></label>{/each}</div>
 					{/if}
-
 					<div class="footer-actions"><Button on:click={() => setMode("home")}>Back</Button><Button variant="success" disabled={busy || !selectionValid(teamSize)} on:click={hostBattle}>{busy ? "Creating…" : "Create Battle"}</Button></div>
 				{:else}
 					<div class="codes">
 						<div><strong>Join Code</strong><code>{playerView.joinCode}</code><Button on:click={() => copyCode(playerView?.joinCode ?? null)}>Copy</Button></div>
 						<div><strong>Spectator Code</strong><code>{playerView.spectatorCode}</code><Button on:click={() => copyCode(playerView?.spectatorCode ?? null)}>Copy</Button></div>
 					</div>
-					<div class="lobby">
-						<h3>Battle Lobby</h3>
-						<p><strong>Your Trainer:</strong> {playerView.self.trainer.name}</p>
-						<div class="roster">{#each playerView.self.pokemon as pokemon}<span>{pokemonLabel(pokemon)}</span>{/each}</div>
-						{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected){playerView.opponent.connected ? "" : " — disconnected"}</p>{:else}<p><strong>Opponent:</strong> Waiting for Player 2…</p>{/if}
-						<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p>
-					</div>
+					<div class="lobby"><h3>Battle Lobby</h3><p><strong>Your Trainer:</strong> {playerView.self.trainer.name}</p><div class="roster">{#each playerView.self.pokemon as pokemon}<span>{pokemonLabel(pokemon)}</span>{/each}</div>{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected){playerView.opponent.connected ? "" : " — disconnected"}</p>{:else}<p><strong>Opponent:</strong> Waiting for Player 2…</p>{/if}<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p></div>
 					<TrainerBattleStage {playerView} on:changed={refreshCurrentPlayer} />
 					<Button disabled={busy} on:click={() => setMode("home")}>{busy ? "Leaving…" : "Leave Battle"}</Button>
 				{/if}
@@ -339,38 +364,28 @@
 							<h3>Battle found</h3>
 							<p><strong>Host:</strong> {joinPreview.hostTrainerName}</p>
 							<p><strong>Format:</strong> {joinPreview.settings.format === "singles" ? "Singles" : "Doubles"} · <strong>Team limit:</strong> {joinPreview.settings.teamSize} · <strong>Stats:</strong> {joinPreview.settings.scaling === "scale" ? "Scaled" : "Kept"}</p>
-							{#if joinPreview.occupied}<p class="warning">This battle already has a second player.</p>
-							{:else if joinPreview.status === "completed"}<p class="warning">This battle has ended.</p>
+							{#if joinPreview.status === "completed"}
+								<p class="warning">This battle has ended.</p>
 							{:else if joinPreview.status === "active" && joinPreview.resumeAvailable}
-								<p>This battle is already in progress and Player 2's slot is available.</p>
+								<p>This battle is already in progress. Resume Player 2's existing team and board position. If that slot is still open in another tab/device, this will transfer control here.</p>
 								<Button variant="success" disabled={busy} on:click={resumeBattle}>{busy ? "Resuming…" : "Resume Battle"}</Button>
-							{:else if joinPreview.status !== "lobby"}<p class="warning">This battle is not accepting a new player.</p>
+							{:else if joinPreview.occupied}
+								<p class="warning">This battle already has a second player.</p>
+							{:else if joinPreview.status !== "lobby"}
+								<p class="warning">This battle is not accepting a new player.</p>
 							{:else}
 								<h3>Select Trainer</h3>
 								<label><span>Local Trainer</span><select bind:value={selectedTrainerKey} on:change={() => loadTrainer(selectedTrainerKey)} disabled={busy}><option value="">— Select Trainer —</option>{#each knownTrainers as trainer}<option value={trainer.readKey}>{trainer.name}</option>{/each}</select></label>
 								{#if selectedTrainerData}
 									<h3>Choose Team <small>({selectedPokemonIds.length}/{joinPreview.settings.teamSize})</small></h3>
-									<div class="team-list">
-										{#each selectedTrainerData.pokemon as pokemon}
-											<label class="pokemon-choice">
-												<input type="checkbox" checked={selectedPokemonIds.includes(pokemon.id)} disabled={!selectedPokemonIds.includes(pokemon.id) && selectedPokemonIds.length >= joinPreview.settings.teamSize} on:change={() => togglePokemon(pokemon.id, joinPreview!.settings.teamSize)} />
-												<span><strong>{pokemonLabel(pokemon)}</strong> — Lv. {pokemon.level.data}</span>
-											</label>
-										{/each}
-									</div>
+									<div class="team-list">{#each selectedTrainerData.pokemon as pokemon}<label class="pokemon-choice"><input type="checkbox" checked={selectedPokemonIds.includes(pokemon.id)} disabled={!selectedPokemonIds.includes(pokemon.id) && selectedPokemonIds.length >= joinPreview.settings.teamSize} on:change={() => togglePokemon(pokemon.id, joinPreview!.settings.teamSize)} /><span><strong>{pokemonLabel(pokemon)}</strong> — Lv. {pokemon.level.data}</span></label>{/each}</div>
 								{/if}
 								<Button variant="success" disabled={busy || !selectionValid(joinPreview.settings.teamSize)} on:click={joinBattle}>{busy ? "Joining…" : "Join Battle"}</Button>
 							{/if}
 						</div>
 					{/if}
 				{:else}
-					<div class="lobby">
-						<h3>Battle Lobby</h3>
-						<p><strong>Your Trainer:</strong> {playerView.self.trainer.name}</p>
-						<div class="roster">{#each playerView.self.pokemon as pokemon}<span>{pokemonLabel(pokemon)}</span>{/each}</div>
-						{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected)</p>{/if}
-						<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p>
-					</div>
+					<div class="lobby"><h3>Battle Lobby</h3><p><strong>Your Trainer:</strong> {playerView.self.trainer.name}</p><div class="roster">{#each playerView.self.pokemon as pokemon}<span>{pokemonLabel(pokemon)}</span>{/each}</div>{#if playerView.opponent}<p><strong>Opponent:</strong> {playerView.opponent.trainerName} ({playerView.opponent.teamCount} Pokémon selected)</p>{/if}<p class="privacy-note">Your opponent's unrevealed roster, HP, PP, moves, and build details are not included in this player view.</p></div>
 					<TrainerBattleStage {playerView} on:changed={refreshCurrentPlayer} />
 				{/if}
 				<div class="footer-actions"><Button disabled={busy} on:click={() => setMode("home")}>{playerView && busy ? "Leaving…" : "Back"}</Button></div>
@@ -382,19 +397,8 @@
 					<label><span>Spectator Code</span><input bind:value={code} autocomplete="off" placeholder="W-XXXXXXXX" /></label>
 					<Button disabled={busy || code.trim() === ""} on:click={watchBattle}>{busy ? "Loading…" : "Watch Battle"}</Button>
 				{:else}
-					<h3>Spectator View</h3>
-					<p>Read-only battle view. Spectators receive no control key.</p>
-					<div class="spectator-grid">
-						{#each ["a", "b"] as side}
-							{@const participant = spectatorView.participants[side as "a" | "b"]}
-							<div class="participant-card">
-								{#if participant}
-									<h4>{participant.trainer.name}</h4>
-									{#each participant.pokemon as pokemon}<p>{pokemonLabel(pokemon)} — HP {pokemon.hp.current}/{pokemon.hp.max}</p>{/each}
-								{:else}<h4>Waiting for Player 2</h4>{/if}
-							</div>
-						{/each}
-					</div>
+					<h3>Spectator View</h3><p>Read-only battle view. Spectators receive no control key.</p>
+					<div class="spectator-grid">{#each ["a", "b"] as side}{@const participant = spectatorView.participants[side as "a" | "b"]}<div class="participant-card">{#if participant}<h4>{participant.trainer.name}</h4>{#each participant.pokemon as pokemon}<p>{pokemonLabel(pokemon)} — HP {pokemon.hp.current}/{pokemon.hp.max}</p>{/each}{:else}<h4>Waiting for Player 2</h4>{/if}</div>{/each}</div>
 					<TrainerBattleStage {spectatorView} />
 				{/if}
 				<div class="footer-actions"><Button on:click={() => setMode("home")}>Back</Button></div>

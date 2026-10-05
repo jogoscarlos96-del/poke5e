@@ -6,6 +6,7 @@ export type TrainerBattleTeamSize = 3 | 4 | 6
 export type TrainerBattleScaling = "keep" | "scale"
 export type TrainerBattleSide = "a" | "b"
 export type TrainerBattleRole = "player" | "spectator"
+export type TrainerBattlePhase = "initiative" | "turns"
 
 export type HexPosition = {
 	q: number,
@@ -67,13 +68,18 @@ export type TrainerBattleTurnEntry = {
 	side: TrainerBattleSide,
 	initiative: number,
 	roll: number,
+	dexModifier: number,
+	alertModifier: number,
+	otherModifier: number,
 	modifier: number,
 }
 
 export type TrainerBattleState = {
+	phase?: TrainerBattlePhase,
 	round: number,
 	turnIndex: number,
 	turnOrder: TrainerBattleTurnEntry[],
+	initiativeRolls?: TrainerBattleTurnEntry[],
 	turnPokemonId: string | null,
 	turnSide: TrainerBattleSide | null,
 }

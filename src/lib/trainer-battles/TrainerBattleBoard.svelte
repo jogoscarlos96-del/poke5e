@@ -127,12 +127,12 @@
 	</svg>
 </div>
 
-<p class="board-help">Each hex is 5 ft. On your Pokémon's turn, press or click its token and release/click on a highlighted hex to move it.</p>
+<p class="board-help">Each hex is 5 ft.{currentTurnPokemonId ? " On your Pokémon's turn, press or click its token and release/click on a highlighted hex to move it." : " Movement becomes available after initiative is resolved."}</p>
 
 <style>
 	.board-shell {
 		inline-size: 100%;
-		overflow: auto;
+		overflow: hidden;
 		border: 2px solid var(--skin-bg-dark);
 		border-radius: .75rem;
 		background: var(--skin-content);
@@ -140,7 +140,8 @@
 
 	.battle-board {
 		display: block;
-		inline-size: max(48rem, 100%);
+		inline-size: 100%;
+		max-inline-size: 100%;
 		block-size: auto;
 		touch-action: none;
 		user-select: none;
