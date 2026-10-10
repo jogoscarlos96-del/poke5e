@@ -202,7 +202,7 @@
 		{
 			"id": "corrosion",
 			"name": "Corrosion",
-			"description": "This Pokémon's moves ignore the poison immunity of creatures granted by their Pokémon type, and can inflict the poisoned status on poison and steel type creatures. If the target’s secondary type gives it vulnerability or resistance to the damage, it follows the secondary type for that effect."
+			"description": "This Pokémon's moves ignore the poison immunity of creatures granted by their Pokémon type, If the target’s secondary type gives it vulnerability or resistance to the damage, it follows the secondary type for that effect. This Pokémon can also inflict the poisoned status on poison- and steel-type creatures."
 		},
 			{
 			"id": "costar",
@@ -339,7 +339,7 @@
 		},
 		{
 			"id": "eelevate",
-			"name": "Spicy Spray",
+			"name": "Eelevate",
 			"description": "This Pokémon is immune to ground moves. Upon causing an opponent to faint, this Pokémon increases the ability scores of its saving throw proficiencies by 2 until the end of combat. This is stackable up to a maximum of +10 to any one ability score.",
 			"updated": {
 				"tag": "New",
@@ -617,7 +617,7 @@
 				"details": "Added a damage bonus."
 			}
 		},
-			{
+		{
 			"id": "hadron-engine",
 			"name": "Hadron Engine",
 			"description": "As a bonus action, this Pokémon may change the terrain to electric terrain for 5 rounds; this bonus action may be used twice per short rest. In electric terrain, this Pokémon has advantage on attack rolls using DEX or WIS as the move power."
