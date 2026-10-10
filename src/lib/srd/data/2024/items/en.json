@@ -208,9 +208,9 @@
 			"id": "timer-ball",
 			"name": "Timer Ball",
 			"type": "pokeball",
-			"cost": 600,
+			"cost": 1000,
 			"description": [
-				"Lets a trainer attempt a Capture Roll to catch a Pokémon. When you use the Throw Pokéball action, you may instead hold the ball and start concentrating. At a later round, when you throw the ball, reduce the capture DC by 1 for each turn spent concentrating, to a max of 10."
+				"Lets a trainer attempt a Capture Roll to catch a Pokémon. This pokéball has a built-in timer. You can take the Utilize action to activate it. On your next turn, you can take the Throw Pokéball action, reducing the capture DC by 15. If you don't, the timer deactivates and the ball must be activated again."
 			],
 			"media": {
 				"sprite": "/assets/items/timer-ball/sprite.png"
@@ -618,8 +618,7 @@
 			"type": "medicine",
 			"cost": 8800,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's maxiumum HP increases by the maximum roll of one of its hit dice.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's maxiumum HP increases by the maximum roll of one of its hit dice.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/hp-up/sprite.png"
@@ -631,8 +630,7 @@
 			"type": "medicine",
 			"cost": 4900,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's STR increases by 1. This cannot increase the Pokémon's ability score above 20.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's STR increases by 1. This cannot increase the Pokémon's ability score above 20.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/protein/sprite.png"
@@ -644,8 +642,7 @@
 			"type": "medicine",
 			"cost": 4900,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's DEX increases by 1. This cannot increase the Pokémon's ability score above 20.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's DEX increases by 1. This cannot increase the Pokémon's ability score above 20.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/iron/sprite.png"
@@ -657,8 +654,7 @@
 			"type": "medicine",
 			"cost": 4900,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's CHA increases by 1. This cannot increase the Pokémon's ability score above 20.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's CHA increases by 1. This cannot increase the Pokémon's ability score above 20.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/carbos/sprite.png"
@@ -670,8 +666,7 @@
 			"type": "medicine",
 			"cost": 4900,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's CON increases by 1. This cannot increase the Pokémon's ability score above 20.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's CON increases by 1. This cannot increase the Pokémon's ability score above 20.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/calcium/sprite.png"
@@ -683,8 +678,7 @@
 			"type": "medicine",
 			"cost": 4900,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. That Pokémon's WIS increases by 1. This cannot increase the Pokémon's ability score above 20.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. That Pokémon's WIS increases by 1. This cannot increase the Pokémon's ability score above 20.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/zinc/sprite.png"
@@ -696,8 +690,7 @@
 			"type": "medicine",
 			"cost": 8800,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. The max PP of one of this Pokémon's moves increases by 2. This cannot increase the move's PP to above twice its baseline PP.",
-				"This is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
+				"A trainer may use an action to administer this to a Pokémon. The max PP of one of this Pokémon's moves increases by 2. This cannot increase the move's PP to above twice its baseline PP.\n\nThis is a vitamin. Pokémon may only benefit from the effects of three vitamins total."
 			],
 			"media": {
 				"sprite": "/assets/items/pp-up/sprite.png"
@@ -733,8 +726,7 @@
 			"type": "medicine",
 			"cost": 400,
 			"description": [
-				"A trainer may use an action to administer this to a Pokémon. For 1 minute, that Pokémon's critical hit range increases by one.",
-				"Most of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
+				"A trainer may use an action to administer this to a Pokémon. For 1 minute, that Pokémon's critical hit range increases by one.\n\nMost of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
 			],
 			"media": {
 				"sprite": "/assets/items/dire-hit/sprite.png"
@@ -1545,8 +1537,7 @@
 			"type": "held item",
 			"cost": 1000,
 			"description": [
-				"The holder is immune to ground-type damage. When the holder takes damage, the item is popped and no longer confers its benefit.",
-				"The Air Balloon can be freely repaired during a short rest."
+				"The holder is immune to ground-type damage. When the holder takes damage, the item is popped and no longer confers its benefit.\n\nThe Air Balloon can be freely repaired during a short rest."
 			],
 			"media": {
 				"sprite": "/assets/items/air-balloon/sprite.png"
@@ -1593,8 +1584,7 @@
 			"type": "held item",
 			"cost": 2000,
 			"description": [
-				"This item has 10 charges. If the holder is a poison-type Pokémon, they may use a bonus action to use a charge, healing HP equal to their proficiency bonus. It recovers its charges at dawn each day.",
-				"If the holder is not a poison-type Pokémon, they take 1d6 poison damage at the end of each of their turns."
+				"This item has 10 charges. If the holder is a poison-type Pokémon, they may use a bonus action to use a charge, healing HP equal to their proficiency bonus. It recovers its charges at dawn each day.\n\nIf the holder is not a poison-type Pokémon, they take 1d6 poison damage at the end of each of their turns."
 			],
 			"media": {
 				"sprite": "/assets/items/black-sludge/sprite.png"
@@ -1679,8 +1669,7 @@
 			"type": "held item",
 			"cost": 4000,
 			"description": [
-				"This item has 1 charge. When the holder is damaged by an attack, its trainer may switch the holder for another of their pokémon as a free action, consuming the charge.",
-				"The Eject Button regains its charge at dawn each day."
+				"This item has 1 charge. When the holder is damaged by an attack, its trainer may switch the holder for another of their pokémon as a free action, consuming the charge.\n\nThe Eject Button regains its charge at dawn each day."
 			],
 			"media": {
 				"sprite": "/assets/items/eject-button/sprite.png"
@@ -1760,8 +1749,7 @@
 			"type": "held item",
 			"cost": 4000,
 			"description": [
-				"This item has 1 charge. If damage would bring the holder to below 1 HP, it instead brings the holder to 1 HP, consuming the charge.",
-				"The Focus Sash regains its charge at dawn each day."
+				"This item has 1 charge. If damage would bring the holder to below 1 HP, it instead brings the holder to 1 HP, consuming the charge.\n\nThe Focus Sash regains its charge at dawn each day."
 			],
 			"media": {
 				"sprite": "/assets/items/focus-sash/sprite.png"
@@ -1917,8 +1905,7 @@
 			"type": "evolution",
 			"cost": 4000,
 			"description": [
-				"The holder's critical hit range increases by one.",
-				"Most of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
+				"The holder's critical hit range increases by one.\n\nMost of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
 			],
 			"media": {
 				"sprite": "/assets/items/razor-claw/sprite.png"
@@ -1996,8 +1983,7 @@
 			"type": "held item",
 			"cost": 2500,
 			"description": [
-				"The holder's critical hit range increases by one.",
-				"Most of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
+				"The holder's critical hit range increases by one.\n\nMost of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
 			],
 			"media": {
 				"sprite": "/assets/items/scope-lens/sprite.png"
@@ -2371,8 +2357,7 @@
 			"type": "held item",
 			"cost": 4200,
 			"description": [
-				"While in combat, as a reaction to seeing another Pokémon raise any of its ability scores, attack roll modifier, AC, or saving throw modifier, the Pokémon holding this herb may consume it to copy the effect on itself. The raised attributes reset at the end of or upon being switched out of combat.",
-				"During a long rest, two Pokémon may share and consume a Mirror Herb. If the first Pokémon knows a move that the second Pokémon can learn as an Egg Move, then the second Pokémon may replace one of its moves with the Egg Move, even if they do not share an Egg Group or are the same gender."
+				"While in combat, as a reaction to seeing another Pokémon raise any of its ability scores, attack roll modifier, AC, or saving throw modifier, the Pokémon holding this herb may consume it to copy the effect on itself. The raised attributes reset at the end of or upon being switched out of combat.\n\nDuring a long rest, two Pokémon may share and consume a Mirror Herb. If the first Pokémon knows a move that the second Pokémon can learn as an Egg Move, then the second Pokémon may replace one of its moves with the Egg Move, even if they do not share an Egg Group or are the same gender."
 			],
 			"media": {
 				"sprite": "/assets/items/mirror-herb/sprite.png"
@@ -2405,7 +2390,6 @@
 			"name": "Choice Band",
 			"type": "held item",
 			"cost": 4000,
-			"beta": true,
 			"description": [
 				"Doubles the holder's MOVE modifier for damage rolls. When the holder uses a move, then until the end of its next turn, it may not activate any move different from the one it just used."
 			],
@@ -2418,7 +2402,6 @@
 			"name": "Choice Scarf",
 			"type": "held item",
 			"cost": 4000,
-			"beta": true,
 			"description": [
 				"After executing a move, until the end of its next turn, the holder gains 10ft of speed, and attacks of opportunity against it have disadvantage. Until the end of its next turn, it may not activate any move different from the one it just used."
 			],
@@ -2431,7 +2414,6 @@
 			"name": "Choice Specs",
 			"type": "held item",
 			"cost": 4000,
-			"beta": true,
 			"description": [
 				"Doubles the holder's Move Power modifier for attack rolls and Save DCs. When the holder uses a move, then until the end of its next turn, it may not activate any move different from the one it just used."
 			],
@@ -3163,8 +3145,7 @@
 			"type": "held item",
 			"cost": 1200,
 			"description": [
-				"When held by a Farfetch'd or Sirfetch'd, the holder's critical hit range increases by two.",
-				"Most of the time, this means attacks can critical on a natural 18, 19, or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 17, 18, 19, or 20."
+				"When held by a Farfetch'd or Sirfetch'd, the holder's critical hit range increases by two.\n\nMost of the time, this means attacks can critical on a natural 18, 19, or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 17, 18, 19, or 20."
 			],
 			"media": {
 				"sprite": "/assets/items/leek/sprite.png"
@@ -3188,8 +3169,7 @@
 			"type": "held item",
 			"cost": 1200,
 			"description": [
-				"When held by a Chansey, its critical hit range increases by one.",
-				"Most of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
+				"When held by a Chansey, its critical hit range increases by one.\n\nMost of the time, this means attacks can critical on a natural 19 or 20. For a move like Slash which already expands critical hit range, criticals can happen on natural 18, 19, or 20."
 			],
 			"media": {
 				"sprite": "/assets/items/lucky-punch/sprite.png"
@@ -3669,8 +3649,7 @@
 			"type": "evolution",
 			"cost": 500,
 			"description": [
-				"Some Pokémon may consume the power of this item to evolve.",
-				"Comes in different flavors, such as strawberry, love, berry, clover, flower, star, and ribbon."
+				"Some Pokémon may consume the power of this item to evolve.\n\nComes in different flavors, such as strawberry, love, berry, clover, flower, star, and ribbon."
 			],
 			"media": {
 				"sprite": null
@@ -3802,8 +3781,7 @@
 			"type": "trainer gear",
 			"cost": null,
 			"description": [
-				"Only licensed trainers are permitted to capture Pokémon, and this license identifies you as having such authorization. It also allows trainers to gain access to special services at Pokémon centers and to purchase goods at the Poké Mart.",
-				"Trainers can lose their license for attacking other trainers or their Pokémon, or failing to take care of their own Pokémon."
+				"Only licensed trainers are permitted to capture Pokémon, and this license identifies you as having such authorization. It also allows trainers to gain access to special services at Pokémon centers and to purchase goods at the Poké Mart.\n\nTrainers can lose their license for attacking other trainers or their Pokémon, or failing to take care of their own Pokémon."
 			],
 			"media": {
 				"sprite": "/assets/items/trainers-license/sprite.png"
@@ -3827,8 +3805,7 @@
 			"type": "trainer gear",
 			"cost": 1000,
 			"description": [
-				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.",
-				"The Old Rod allows you to catch only Magikarp."
+				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.\n\nThe Old Rod allows you to catch only Magikarp."
 			],
 			"media": {
 				"sprite": "/assets/items/old-rod/sprite.png"
@@ -3840,8 +3817,7 @@
 			"type": "trainer gear",
 			"cost": 5000,
 			"description": [
-				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.",
-				"The Good Rod allows you to catch Alomomola, Azumarill, Barboach, Basculin, Bibarel, Briionne, Bruxish, Buizel, Carvanha, Chinchou, Clamperl, Clauncher, Corphish, Corsola, Crawdaunt, Croconaw, Dewpider, Dewott, Ducklett, Feebas, Finneon, Frillish, Froakie, Frogadier, Goldeen, Horsea, Inkay, Kabuto, Krabby, Lanturn, Lombre, Lotad, Luvdisc, Magikarp, Mantyke, Mareanie, Marill, Marshtomp, Mudkip, Octillery, Omanyte, Oshawott, Palpitoad, Piplup, Poliwag, Poliwhirl, Popplio, Prinplup, Psyduck, Pyukumuku, Quagsire, Qwilfish, Remoraid, Seel, Shellder, Shellos, Skrelp, Slowpoke, Spheal, Squirtle, Staryu, Stunfisk, Surskit, Tentacool, Tirtouga, Totodile, Tympole, Tynamo, Wailmer, Wartortle, Whiscash, Wimpod, Wingull, Wishiwashi, or Wooper."
+				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.\n\nThe Good Rod allows you to catch Alomomola, Azumarill, Barboach, Basculin, Bibarel, Briionne, Bruxish, Buizel, Carvanha, Chinchou, Clamperl, Clauncher, Corphish, Corsola, Crawdaunt, Croconaw, Dewpider, Dewott, Ducklett, Feebas, Finneon, Frillish, Froakie, Frogadier, Goldeen, Horsea, Inkay, Kabuto, Krabby, Lanturn, Lombre, Lotad, Luvdisc, Magikarp, Mantyke, Mareanie, Marill, Marshtomp, Mudkip, Octillery, Omanyte, Oshawott, Palpitoad, Piplup, Poliwag, Poliwhirl, Popplio, Prinplup, Psyduck, Pyukumuku, Quagsire, Qwilfish, Remoraid, Seel, Shellder, Shellos, Skrelp, Slowpoke, Spheal, Squirtle, Staryu, Stunfisk, Surskit, Tentacool, Tirtouga, Totodile, Tympole, Tynamo, Wailmer, Wartortle, Whiscash, Wimpod, Wingull, Wishiwashi, or Wooper."
 			],
 			"media": {
 				"sprite": "/assets/items/good-rod/sprite.png"
@@ -3853,8 +3829,7 @@
 			"type": "trainer gear",
 			"cost": 15000,
 			"description": [
-				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.",
-				"The Super Rod allows you to catch Araquanid, Blastoise, Carracosta, Clawitzer, Cloyster, Dewgong, Dragalge, Empoleon, Feraligatr, Floatzel, Gastrodon, Golduck, Golisopod, Gorebyss, Greninja, Gyarados, Huntail, Jellicent, Kabutops, Kingdra, Kingler, Lapras, Ludicolo, Lumineon, Malamar, Mantine, Milotic, Omastar, Politoed, Poliwrath, Primarina, Relicanth, Samurott, Seadra, Seaking, Sealeo, Seismitoad, Sharpedo, Slowbro, Slowking, Starmie, Swampert, Tentacruel, Toxapex, Wailord, Walrein."
+				"Allows you to fish for Pokémon. Fishing for Pokémon takes one hour, and the Pokémon you catch is random.\n\nThe Super Rod allows you to catch Araquanid, Blastoise, Carracosta, Clawitzer, Cloyster, Dewgong, Dragalge, Empoleon, Feraligatr, Floatzel, Gastrodon, Golduck, Golisopod, Gorebyss, Greninja, Gyarados, Huntail, Jellicent, Kabutops, Kingdra, Kingler, Lapras, Ludicolo, Lumineon, Malamar, Mantine, Milotic, Omastar, Politoed, Poliwrath, Primarina, Relicanth, Samurott, Seadra, Seaking, Sealeo, Seismitoad, Sharpedo, Slowbro, Slowking, Starmie, Swampert, Tentacruel, Toxapex, Wailord, Walrein."
 			],
 			"media": {
 				"sprite": "/assets/items/super-rod/sprite.png"
@@ -3938,8 +3913,7 @@
 			"type": "trainer gear",
 			"cost": null,
 			"description": [
-				"Allows a Pokémon Ranger to add +10 to their capture rolls against Pokémon they have fully encircled using their movement.",
-				"Only useable by trainers who take the Ranger trainer path."
+				"Allows a Pokémon Ranger to add +10 to their capture rolls against Pokémon they have fully encircled using their movement.\n\nOnly useable by trainers who take the Ranger trainer path."
 			],
 			"media": {
 				"sprite": null

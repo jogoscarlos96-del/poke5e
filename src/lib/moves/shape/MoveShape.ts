@@ -1,11 +1,16 @@
 import type { MoveJson } from "$lib/srd/moves/schema"
 import { m } from "$lib/site/i18n"
 
-export type MoveShapeType = "cone" | "emanation" | "line" | "cube"
+export type MoveShapeType = "cone" | "emanation" | "line" | "cube" | "cylinder" | "sphere"
 
 export type MoveShape = {
 	type: MoveShapeType,
 	value: number,
+	/**
+	 * For shapes with multiple dimensions.
+	 * - Cylinder: [height]
+	 */
+	otherValues?: number[],
 	unit: "feet",
 }
 
@@ -17,6 +22,8 @@ export const MoveShape = {
 		case "cube": return m.cube({ value: shape.value })
 		case "emanation": return m.emanation({ value: shape.value })
 		case "line": return m.line({ value: shape.value })
+		case "cylinder": return `${shape.value}-foot-radius, ${shape.otherValues?.[0] ?? 0}-foot-high cylinder`
+		case "sphere": return `${shape.value}-foot-radius sphere`
 		default: return `${shape.value} ${shape.unit} ${shape.type}`
 		}
 	},

@@ -130,6 +130,7 @@
 				"attribute": "con"
 			},
 			"description": "You are surrounded by a shield of thick acid for the duration. During this time, your AC increases by 2, and any creature that hits you with a melee attack must succeed on a {save} or take {dice} {type} damage.",
+			"higherLevels": "The damage dice roll for this move changes to 2d6 at level 10.",
 			"categories": []
 		},
 		{
@@ -530,8 +531,9 @@
 			"name": "Ancient Power",
 			"type": "rock",
 			"power": [
-				"str",
-				"dex"
+				"dex",
+				"wis",
+				"cha"
 			],
 			"time": {
 				"unit": "action"
@@ -552,7 +554,11 @@
 				"scope": "melee"
 			},
 			"description": "You lash out with unknown inner power. Make a melee attack roll against a creature, doing {dice} {type} damage on a hit. On a natural attack roll of 19 or 20, all of your ability scores go up by 1 while you remain in battle. This move can be stacked for a maximum of +5 to all ability scores.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "STR removed from move powers; WIS and CHA added."
+			}
 		},
 		{
 			"id": "apple-acid",
@@ -759,7 +765,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You unleash a flurry of fists on a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You unleash a flurry of fists on a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -2089,7 +2095,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You rush forward to deliver a series of hard hits against a target. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You rush forward to deliver a series of hard hits against a target. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -2637,7 +2643,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "Your fire a series of high-speed seeds at a creature. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "Your fire a series of high-speed seeds at a creature. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"ballistic",
 				"multistrike"
@@ -3411,7 +3417,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You strike out with a lightning fast punch. Make a melee attack roll. The target takes {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You strike out with a lightning fast punch. Make a melee attack roll. The target takes {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike",
 				"punch"
@@ -4390,8 +4396,18 @@
 				"modifier": "0",
 				"type": "damage"
 			},
-			"description": "You stir up a massive storm of sharp diamonds in a 30 foot radius, centered on a point in range. When a creature enters the area for the first time on their turn, or begins their turn inside the area, they take {dice} {type} damage. The Diamond Storm lasts for 3 rounds. When you activate this move, roll a d4. On a result of 3 or 4, your AC is increased by 2 while the Diamond Storm is active.",
-			"categories": []
+			"shape": {
+				"type": "cylinder",
+				"value": 30,
+				"otherValues": [60],
+				"unit": "feet"
+			},
+			"description": "You stir up a massive storm of sharp diamonds in a {shape}, centered on a point in range. When a creature enters the area for the first time on a turn or starts its turn there, it takes {dice} {type} damage.\n\nYou do not take damage from the storm. For as long as you are in the storm's cylinder, your have +2 to AC.",
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Shape changed to cylinder. User no longer takes damage from the storm. AC bonus always granted."
+			}
 		},
 		{
 			"id": "dig",
@@ -4815,7 +4831,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You reach out with quick slaps. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You reach out with quick slaps. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -8093,7 +8109,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You reach out and unleash relentless strikes against a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You reach out and unleash relentless strikes against a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -8155,7 +8171,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You reach out and unleash relentless claw attacks against a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You reach out and unleash relentless claw attacks against a creature. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -9223,7 +9239,8 @@
 			"name": "Head Smash",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"con"
 			],
 			"time": {
 				"unit": "action"
@@ -9244,7 +9261,11 @@
 				"scope": "melee"
 			},
 			"description": "You lower your head to deliver a dangerous headbutt. Make a melee attack, dealing {dice} {type} damage on a hit. On a hit, the user takes 1/2 the damage dealt in typeless recoil.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "CON added to move powers."
+			}
 		},
 		{
 			"id": "headbutt",
@@ -10627,7 +10648,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "Your pummel a creature in range with multiple sharp shards of ice. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "Your pummel a creature in range with multiple sharp shards of ice. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -12909,7 +12930,8 @@
 			"name": "Meteor Beam",
 			"type": "rock",
 			"power": [
-				"wis"
+				"wis",
+				"cha"
 			],
 			"time": {
 				"unit": "action"
@@ -12998,7 +13020,8 @@
 			"name": "Mighty Cleave",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"wis"
 			],
 			"time": {
 				"unit": "action"
@@ -13021,7 +13044,11 @@
 			"description": "You wield the light that has accumulated atop your head to cleave the target. Make a melee attack, dealing {dice} {type} damage on a hit. This move hits and deals damage even through moves/abilities that would negate it, such as Protect, Spiky Shield, etc.",
 			"categories": [
 				"slicing"
-			]
+			],
+			"updated": {
+				"tag": "Updated",
+				"details": "WIS added to move powers."
+			}
 		},
 		{
 			"id": "milk-drink",
@@ -14972,7 +14999,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "You strike a creature with sharp projectiles in quick succession. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, another projectile hits again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You strike a creature with sharp projectiles in quick succession. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -15499,6 +15526,7 @@
 			"type": "rock",
 			"power": [
 				"dex",
+				"wis",
 				"cha"
 			],
 			"time": {
@@ -15522,7 +15550,11 @@
 				"scope": "ranged"
 			},
 			"description": "A ray of light bursts out of your gemstone, damaging a creature in range. Make a ranged attack, dealing {dice} {type} damage on a hit.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "WIS added to move powers."
+			}
 		},
 		{
 			"id": "power-shift",
@@ -16335,7 +16367,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "As a reaction, when a creature is fleeing or is switched out by their trainer, you may make a ranged attack roll against it, doing {dice} {type} damage on a hit.",
+			"description": "As a reaction, when a creature in range is fleeing or being switched out by their trainer, you may make a ranged attack roll against it immediately before it flees or switches out, doing {dice} {type} damage on a hit.",
 			"categories": []
 		},
 		{
@@ -17128,7 +17160,7 @@
 			"range": {
 				"type": "melee"
 			},
-			"description": "You bestow a loving blessing on a target feinted Pokémon. Half of the target's HP is restored.",
+			"description": "You bestow a loving blessing on a target fainted Pokémon. Half of the target's HP is restored.",
 			"categories": []
 		},
 		{
@@ -17232,7 +17264,8 @@
 			"name": "Rock Blast",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"dex"
 			],
 			"time": {
 				"unit": "action"
@@ -17254,11 +17287,15 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "You summon a series of rocks that fire their way towards a creature. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You summon a series of rocks that fire their way towards a creature. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"ballistic",
 				"multistrike"
-			]
+			],
+			"updated": {
+				"tag": "Updated",
+				"details": "DEX added to move powers."
+			}
 		},
 		{
 			"id": "rock-climb",
@@ -17334,8 +17371,17 @@
 			"save": {
 				"attribute": "str"
 			},
-			"description": "Large boulders appear above a target creature in range, crashing down on top of them. The target must make a {save}, taking {dice} {type} damage and falling prone on a failed save, and half as much without falling prone on a success.",
-			"categories": []
+			"shape": {
+				"type": "line",
+				"value": 40,
+				"unit": "feet"
+			},
+			"description": "Large boulders appear in the air and crash down in a cascade. Choose two points within range, up to 40 feet away from each other. Any creatures within the line (5 feet wide) created by connecting the two points must make a {save}, taking {dice} {type} damage and falling prone on a failed save, and half as much without falling prone on a success.",
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Changed to an AoE line."
+			}
 		},
 		{
 			"id": "rock-smash",
@@ -17431,7 +17477,8 @@
 			"name": "Rock Wrecker",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"dex"
 			],
 			"time": {
 				"unit": "action"
@@ -17459,7 +17506,7 @@
 			],
 			"updated": {
 				"tag": "Updated",
-				"details": "Damage is updated."
+				"details": "Damage is updated. DEX added to move powers."
 			}
 		},
 		{
@@ -17522,7 +17569,8 @@
 			"name": "Rollout",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"dex"
 			],
 			"time": {
 				"unit": "action"
@@ -17549,7 +17597,11 @@
 				"scope": "melee"
 			},
 			"description": "You roll into a target, repeatedly making attacks with increasing strength. Make a melee attack on a creature, dealing 1d6 + MOVE {type} damage on a hit. If you use this move on your turn in consecutive rounds, double the dice on each successful attack for a maximum of 5 attacks, in which case the damage would reset. Ex: 1d6 on first hit, 2d6 on second, 4d6, 8d6, 16d6. The damage resets if any of the attacks fail to damage a creature, if your speed is reduced to 0, or if you are incapacitated.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "DEX added to move powers."
+			}
 		},
 		{
 			"id": "roost",
@@ -17756,7 +17808,9 @@
 			"name": "Salt Cure",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"con",
+				"cha"
 			],
 			"time": {
 				"unit": "action"
@@ -17779,7 +17833,11 @@
 				"attribute": "dex"
 			},
 			"description": "You salt cure the target, dealing damage over time. Choose a target in range. The target must make a {save}. On failure, the target takes {dice} {type} damage, and it takes 1d6 {type} damage at the start of each of its turns until it is returned to a Pokéball or receives healing.\n\nWater- and Steel-type Pokémon are vulnerable to the damage dealt by this move.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "CON and CHA added as move powers."
+			}
 		},
 		{
 			"id": "sand-attack",
@@ -19371,7 +19429,8 @@
 			"name": "Smack Down",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"dex"
 			],
 			"time": {
 				"unit": "action"
@@ -19382,7 +19441,7 @@
 			},
 			"range": {
 				"type": "distance",
-				"value": 80,
+				"value": 120,
 				"unit": "feet"
 			},
 			"dice": {
@@ -19394,7 +19453,11 @@
 				"scope": "ranged"
 			},
 			"description": "You throw a solid piece of stone at a creature in an attempt to bring them to the ground. Make a ranged attack, dealing {dice} {type} damage on a hit. On a hit, any \"Raised\" creature is knocked prone and loses its flying speed and immunity to ground-type moves until it can move again. This move can target creatures in the invulnerable stage of Fly or Bounce.",
-			"categories": []
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Range increased. DEX added to move powers."
+			}
 		},
 		{
 			"id": "smart-strike",
@@ -20126,7 +20189,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "You fire a series of sharp spikes at a creature in range. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You fire a series of sharp spikes at a creature in range. Make a ranged attack roll, doing {dice} {type} damage on a hit. AAfter successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -20734,7 +20797,8 @@
 			"name": "Stone Axe",
 			"type": "rock",
 			"power": [
-				"str"
+				"str",
+				"dex"
 			],
 			"time": {
 				"unit": "action"
@@ -20760,7 +20824,11 @@
 			"description": "You swing your stone axes at the target. Make a melee attack against a creature, dealing {dice} {type} damage on a hit.\n\nOn a successful hit, spikes cover the ground in a 10-foot square centered on the target, turning it into Difficult Terrain for 1 minute. When the spikes appear, each creature standing in the area except for the creature using this move must succeed on a {save} or suffer 1d10 {type} damage. A creature that enters the area or ends its turn there must also succeed or take the damage.",
 			"categories": [
 				"slicing"
-			]
+			],
+			"updated": {
+				"tag": "Updated",
+				"details": "DEX added to move powers."
+			}
 		},
 		{
 			"id": "stone-edge",
@@ -20789,8 +20857,17 @@
 			"save": {
 				"attribute": "dex"
 			},
-			"description": "The earth moves beneath a target’s feet as sharp stone pierce through the ground underneath them. Creatures in a 10 foot radius centered on a point you choose in range must make a {save}, taking {dice} {type} damage on a fail, or half as much on a save.",
-			"categories": []
+			"shape": {
+				"type": "line",
+				"value": 60,
+				"unit": "feet"
+			},
+			"description": "The earth moves beneath a target's feet as sharp stones pierce through the ground underneath them. Choose a point you can see on the ground within range. Pillars of stone erupt in a wall, 5 feet wide and 30 feet tall, between you and the point. Creatures caught in the line must make a {save}, taking {dice} {type} damage on a fail, or half as much on a save. They are additionally pushed to one side of the wall (you choose which side).\n\nThe wall has AC 10 and 30 Hit Points, and qualifies as Rock-type for resistances and vulnerabilities. Reducing the wall to 0 Hit Points destroys it.\n\nWhen you execute this move, previous walls created by you using this move are destroyed.",
+			"categories": [],
+			"updated": {
+				"tag": "Updated",
+				"details": "Move overhauled into a persistent wall."
+			}
 		},
 		{
 			"id": "stored-power",
@@ -21780,7 +21857,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You strike out against a creature with a quick- hitting, hard tail. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You strike out against a creature with a quick- hitting, hard tail. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
@@ -22323,7 +22400,7 @@
 				"unit": "feet"
 			},
 			"shape": {
-				"type": "emanation",
+				"type": "sphere",
 				"value": 30,
 				"unit": "feet"
 			},
@@ -22335,7 +22412,7 @@
 			"save": {
 				"attribute": "dex"
 			},
-			"description": "You summon forth a volley of green arrows to pierce creatures in range. All creatures in a {shape}, centered on a point within range, must make a {save}, taking {dice} {type} damage on a hit, or half as much on a save. Flying-type creatures or ones with Levitate, Magnet Rise, or similar ability CAN be hit by this move. Any creature that fails the saving throw falls to the ground and is now grounded. Grounded creatures are susceptible to to ground-type moves until they raise up, regardless of their type or ability.",
+			"description": "You summon forth a volley of green arrows to pierce creatures in range. Each creature in a {shape} centered on a point within range makes a {save}, taking {dice} {type} damage on a failed save or half as much damage on a successful one. Any creature that fails the saving throw falls to the ground and becomes grounded, losing its ground-type immunity if it had it, until it moves.\n\nDamage dealt by this move ignores immunity to ground-type damage. If the target's non-Flying type(s) gives it vulnerability or resistance to this attack, it follows that type.",
 			"categories": []
 		},
 		{
@@ -22403,7 +22480,7 @@
 			"attack": {
 				"scope": "melee"
 			},
-			"description": "You thrash about wildly, doing several attacks without control. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately hit again for an additional 1d10 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of two additional hits. At the end of this attack, you become confused.",
+			"description": "You thrash about wildly, doing several attacks without control. Make a melee attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you immediately strike again for 1d10 {type} damage, then roll another d4, and on a result of 3 or 4, you immediately strike one last time for 1d10 {type} damage. At the end of this attack, you become confused.",
 			"categories": []
 		},
 		{
@@ -23918,7 +23995,7 @@
 			"attack": {
 				"scope": "ranged"
 			},
-			"description": "You fire a barrage of sharp shurikens at a target. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, another shuriken strikes the target for an additional 1d4 {type} damage. Continue this process until you fail to roll a 3 or 4 on the d4 roll, up to a maximum of four additional hits.",
+			"description": "You fire a barrage of sharp shurikens at a target. Make a ranged attack roll, doing {dice} {type} damage on a hit. After successfully hitting a target, roll a d4. On a result of 3 or 4, you may immediately strike again for another 1d4 {type} damage. Repeat this process up to a total of four times, stopping early if you fail to roll a 3 or 4 on the d4 roll.",
 			"categories": [
 				"multistrike"
 			]
