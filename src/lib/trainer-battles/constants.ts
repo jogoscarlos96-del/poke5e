@@ -1,0 +1,1 @@
+export const TRAINER_BATTLE_SCALE_WARNING = "Scale Stats is recommended for Pokémon above level 20. Pokémon above level 10 use half maximum HP (rounded down) and level-10 damage dice for this battle only. All other stats and modifiers remain unchanged."

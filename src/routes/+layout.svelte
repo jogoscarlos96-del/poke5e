@@ -124,6 +124,12 @@
 		color: "green",
 		icon: IdBadgeIcon,
 	}, {
+		id: "trainer-battles",
+		href: Url.trainerBattles(),
+		name: "Trainer Battles",
+		color: "navy",
+		icon: VsIcon,
+	}, {
 		id: "safari",
 		href: Url.safari(),
 		name: "Safari Zone",
