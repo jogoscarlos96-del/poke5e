@@ -23,7 +23,7 @@
 		<InfoTable label="Terrain Extent">
 			<thead>
 				<tr>
-					<th>Move</th>
+					<th>Terrain</th>
 					<th>Extent</th>
 					<th>Duration</th>
 				</tr>
@@ -49,6 +49,73 @@
 					<td>40ft radius</td>
 					<td>3 rounds</td>
 				</tr>
+				{#if $currentEdition === "2024"}
+					<tr>
+						<td>Fighting Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Darkness Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Fire Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Watery Terrain</td>
+						<td>60ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Icy Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Poison Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Ground Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Hive Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Rocky Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Steely Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Ghostly Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Draconic Terrain</td>
+						<td>40ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+					<tr>
+						<td>Normal Terrain</td>
+						<td>60ft radius</td>
+						<td>3 rounds</td>
+					</tr>
+				{/if}
 			</tbody>
 		</InfoTable>
 	</section>
